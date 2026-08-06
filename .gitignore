@@ -1,0 +1,10 @@
+dist/
+node_modules/
+*.tsbuildinfo
+*.tgz
+
+# Local agent-tooling state. Also covered by a global ignore on this machine,
+# but a public repo should not depend on a clone having that global ignore.
+.midnight-expert/
+AGENTS.local.md
+CLAUDE.local.md

@@ -1,0 +1,143 @@
+{
+  "table": "AST_TO_KAST_TEST_DATA + AST_TO_KAST_ARGS_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_ast_to_kast.py",
+  "fields": [
+    "ast",
+    "expected",
+    "kwargs"
+  ],
+  "note": "`_ast_to_kast(ast, **kwargs)`; `expected` is KAST v4 JSON via `KAst.to_dict()`.",
+  "cases": [
+    {
+      "ast": {
+        "node": "Import",
+        "module_name": "A",
+        "public": true
+      },
+      "expected": {
+        "node": "KImport",
+        "name": "A",
+        "isPublic": true
+      },
+      "kwargs": {}
+    },
+    {
+      "ast": {
+        "node": "Import",
+        "module_name": "B",
+        "public": false
+      },
+      "expected": {
+        "node": "KImport",
+        "name": "B",
+        "isPublic": false
+      },
+      "kwargs": {}
+    },
+    {
+      "ast": {
+        "node": "Require",
+        "path": "domains.md"
+      },
+      "expected": {
+        "node": "KRequire",
+        "require": "domains.md"
+      },
+      "kwargs": {}
+    },
+    {
+      "ast": {
+        "node": "Module",
+        "name": "MAIN",
+        "sentences": [],
+        "imports": [],
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      },
+      "expected": {
+        "node": "KFlatModule",
+        "name": "MAIN",
+        "localSentences": [],
+        "imports": [],
+        "att": {
+          "node": "KAtt",
+          "att": {}
+        }
+      },
+      "kwargs": {}
+    },
+    {
+      "ast": {
+        "node": "Att",
+        "items": []
+      },
+      "expected": {
+        "node": "KAtt",
+        "att": {}
+      },
+      "kwargs": {}
+    },
+    {
+      "ast": {
+        "node": "Att",
+        "items": [
+          [
+            "concrete",
+            ""
+          ]
+        ]
+      },
+      "expected": {
+        "node": "KAtt",
+        "att": {
+          "concrete": ""
+        }
+      },
+      "kwargs": {}
+    },
+    {
+      "ast": {
+        "node": "Definition",
+        "modules": [
+          {
+            "node": "Module",
+            "name": "MAIN",
+            "sentences": [],
+            "imports": [],
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          }
+        ],
+        "requires": []
+      },
+      "expected": {
+        "node": "KDefinition",
+        "mainModule": "MAIN",
+        "modules": [
+          {
+            "node": "KFlatModule",
+            "name": "MAIN",
+            "localSentences": [],
+            "imports": [],
+            "att": {
+              "node": "KAtt",
+              "att": {}
+            }
+          }
+        ],
+        "requires": [],
+        "att": {
+          "node": "KAtt",
+          "att": {}
+        }
+      },
+      "kwargs": {
+        "main_module": "MAIN"
+      }
+    }
+  ]
+}

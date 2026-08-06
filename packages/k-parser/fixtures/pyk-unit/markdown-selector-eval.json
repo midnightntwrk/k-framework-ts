@@ -1,0 +1,168 @@
+{
+  "table": "EVAL_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_markdown.py",
+  "fields": [
+    "text",
+    "atoms",
+    "expected"
+  ],
+  "note": "`SelectorParser(text).parse().eval(atoms)`.",
+  "cases": [
+    {
+      "text": "a",
+      "atoms": [],
+      "expected": false
+    },
+    {
+      "text": "a",
+      "atoms": [
+        "a"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a",
+      "atoms": [
+        "a",
+        "b"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a",
+      "atoms": [
+        "b"
+      ],
+      "expected": false
+    },
+    {
+      "text": "!a",
+      "atoms": [],
+      "expected": true
+    },
+    {
+      "text": "!a",
+      "atoms": [
+        "a"
+      ],
+      "expected": false
+    },
+    {
+      "text": "!a",
+      "atoms": [
+        "a",
+        "b"
+      ],
+      "expected": false
+    },
+    {
+      "text": "!a",
+      "atoms": [
+        "b"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a & b",
+      "atoms": [],
+      "expected": false
+    },
+    {
+      "text": "a & b",
+      "atoms": [
+        "a"
+      ],
+      "expected": false
+    },
+    {
+      "text": "a & b",
+      "atoms": [
+        "b"
+      ],
+      "expected": false
+    },
+    {
+      "text": "a & b",
+      "atoms": [
+        "a",
+        "b"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a | b",
+      "atoms": [],
+      "expected": false
+    },
+    {
+      "text": "a | b",
+      "atoms": [
+        "a"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a | b",
+      "atoms": [
+        "b"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a | b",
+      "atoms": [
+        "a",
+        "b"
+      ],
+      "expected": true
+    },
+    {
+      "text": "!a | b & c",
+      "atoms": [],
+      "expected": true
+    },
+    {
+      "text": "!a | b & c",
+      "atoms": [
+        "a"
+      ],
+      "expected": false
+    },
+    {
+      "text": "!a | b & c",
+      "atoms": [
+        "b, c"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a & (!b | c)",
+      "atoms": [],
+      "expected": false
+    },
+    {
+      "text": "a & (!b | c)",
+      "atoms": [
+        "a"
+      ],
+      "expected": true
+    },
+    {
+      "text": "a & (!b | c)",
+      "atoms": [
+        "a",
+        "b"
+      ],
+      "expected": false
+    },
+    {
+      "text": "a & (!b | c)",
+      "atoms": [
+        "a",
+        "b",
+        "c"
+      ],
+      "expected": true
+    }
+  ]
+}

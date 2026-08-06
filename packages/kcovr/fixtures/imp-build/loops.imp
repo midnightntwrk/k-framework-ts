@@ -1,0 +1,23 @@
+int i, j, acc, tmp;
+i = 30;
+acc = 0;
+while (!(i <= 0)) {
+  j = 3;
+  while (!(j <= 0)) {
+    if (!(j <= 1) && j <= 2) {
+      acc = acc + i / j;
+    } else {
+      if (j <= 1) {
+        acc = acc + -1;
+      } else {
+        tmp = acc + (i + j);
+        acc = tmp / 2;
+      }
+    }
+    j = j + -1;
+  }
+  if (acc <= 0) { } else {
+    acc = acc + 1;
+  }
+  i = i + -1;
+}

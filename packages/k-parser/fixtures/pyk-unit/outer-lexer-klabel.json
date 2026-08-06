@@ -1,0 +1,240 @@
+{
+  "table": "KLABEL_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_lexer.py",
+  "fields": [
+    "text",
+    "expectedToken",
+    "expectedRemaining"
+  ],
+  "note": "`_klabel(la, it)`.",
+  "cases": [
+    {
+      "text": "syntax",
+      "expectedToken": {
+        "text": "syntax",
+        "type": "KW_SYNTAX",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "syntaxx",
+      "expectedToken": {
+        "text": "syntaxx",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "<foo()>",
+      "expectedToken": {
+        "text": "<foo()>",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": ">",
+      "expectedToken": {
+        "text": ">",
+        "type": "GT",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": ">a",
+      "expectedToken": {
+        "text": ">a",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "> a",
+      "expectedToken": {
+        "text": ">",
+        "type": "GT",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": " a"
+    },
+    {
+      "text": "/**/",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          4
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a //",
+      "expectedToken": {
+        "text": "a",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": " //"
+    },
+    {
+      "text": "// a",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          4
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "//a",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          3
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/ a",
+      "expectedToken": {
+        "text": "/",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": " a"
+    },
+    {
+      "text": "/a",
+      "expectedToken": {
+        "text": "/a",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/**/ a",
+      "expectedToken": {
+        "text": "a",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          6
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a /**/",
+      "expectedToken": {
+        "text": "a",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": " /**/"
+    },
+    {
+      "text": "a/**/",
+      "expectedToken": {
+        "text": "a/**/",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/**/a",
+      "expectedToken": {
+        "text": "/**/a",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a/*1*//*2*/",
+      "expectedToken": {
+        "text": "a/*1*//*2*/",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*//*2*/a",
+      "expectedToken": {
+        "text": "/*1*//*2*/a",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*/a/*2*/",
+      "expectedToken": {
+        "text": "/*1*/a/*2*/",
+        "type": "KLABEL",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    }
+  ]
+}

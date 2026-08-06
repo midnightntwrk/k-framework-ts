@@ -1,0 +1,117 @@
+{
+  "node": "Definition",
+  "modules": [
+    {
+      "node": "Module",
+      "location": [
+        6,
+        1,
+        10,
+        10
+      ],
+      "name": "TIMER",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "timerStart"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "TIMER.timerStart"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "timerStop"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "TIMER.timerStop"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    }
+  ],
+  "requires": []
+}

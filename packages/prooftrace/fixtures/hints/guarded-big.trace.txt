@@ -1,0 +1,184 @@
+version: 13
+hook: MAP.concat Lbl'Unds'Map'Unds'{} ()
+  arg: kore[Lbl'Stop'Map{}()]
+  arg: kore[Lbl'UndsPipe'-'-GT-Unds'{}(\dv{SortKConfigVar{}}("$PGM"),Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))))]
+hook result: kore[Lbl'UndsPipe'-'-GT-Unds'{}(\dv{SortKConfigVar{}}("$PGM"),Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))))]
+function: LblinitGeneratedTopCell{} ()
+rule: 172 1 [] []
+  VarInit = kore[Lbl'UndsPipe'-'-GT-Unds'{}(\dv{SortKConfigVar{}}("$PGM"),Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))))]
+function: LblinitKCell{} (0)
+rule: 173 1 [] []
+  VarInit = kore[Lbl'UndsPipe'-'-GT-Unds'{}(\dv{SortKConfigVar{}}("$PGM"),Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))))]
+hook: MAP.lookup LblMap'Coln'lookup{} (0:0:0:0)
+  arg: kore[Lbl'UndsPipe'-'-GT-Unds'{}(\dv{SortKConfigVar{}}("$PGM"),Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))))]
+  arg: kore[\dv{SortKConfigVar{}}("$PGM")]
+hook result: kore[Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))))]
+function: Lblproject'Coln'KItem{} (0:0)
+rule: 223 1 [] []
+  VarK = kore[Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))))]
+function exit: 223 notail
+function exit: 173 notail
+function: LblinitGeneratedCounterCell{} (1)
+rule: 171 0 [] []
+function exit: 171 notail
+function exit: 172 notail
+config: kore[Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(Lblhalve'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))),dotk{}())),Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0")))]
+side condition entry: 134 1
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (0)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 168 0 [GUARDED.depth-z] [/tmp/kfts-prooftrace-fixture/guarded.k:17]
+function exit: 168 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("0")]
+hook result: kore[\dv{SortInt{}}("1")]
+function exit: 167 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortInt{}}("2")]
+function exit: 167 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("2")]
+hook result: kore[\dv{SortInt{}}("3")]
+function exit: 167 notail
+hook: INT.le Lbl'Unds-LT-Eqls'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("3")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortBool{}}("false")]
+side condition exit: 134 false
+side condition entry: 135 1
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (0)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 168 0 [GUARDED.depth-z] [/tmp/kfts-prooftrace-fixture/guarded.k:17]
+function exit: 168 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("0")]
+hook result: kore[\dv{SortInt{}}("1")]
+function exit: 167 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortInt{}}("2")]
+function exit: 167 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("2")]
+hook result: kore[\dv{SortInt{}}("3")]
+function exit: 167 notail
+hook: INT.gt Lbl'Unds-GT-'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("3")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortBool{}}("true")]
+side condition exit: 135 true
+rule: 135 3 [GUARDED.halve-big] [/tmp/kfts-prooftrace-fixture/guarded.k:24]
+  Var'Unds'DotVar0 = kore[Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))]
+  Var'Unds'DotVar1 = kore[dotk{}()]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())))]
+function: Lblpred'LParUndsRParUnds'GUARDED'Unds'Nat'Unds'Nat{} (0:0:0:0)
+rule: 212 1 [GUARDED.pred-s] [/tmp/kfts-prooftrace-fixture/guarded.k:22]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))]
+function exit: 212 notail
+side condition entry: 134 1
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (0)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 168 0 [GUARDED.depth-z] [/tmp/kfts-prooftrace-fixture/guarded.k:17]
+function exit: 168 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("0")]
+hook result: kore[\dv{SortInt{}}("1")]
+function exit: 167 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortInt{}}("2")]
+function exit: 167 notail
+hook: INT.le Lbl'Unds-LT-Eqls'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("2")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortBool{}}("false")]
+side condition exit: 134 false
+side condition entry: 135 1
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (0)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 168 0 [GUARDED.depth-z] [/tmp/kfts-prooftrace-fixture/guarded.k:17]
+function exit: 168 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("0")]
+hook result: kore[\dv{SortInt{}}("1")]
+function exit: 167 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortInt{}}("2")]
+function exit: 167 notail
+hook: INT.gt Lbl'Unds-GT-'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("2")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortBool{}}("true")]
+side condition exit: 135 true
+rule: 135 3 [GUARDED.halve-big] [/tmp/kfts-prooftrace-fixture/guarded.k:24]
+  Var'Unds'DotVar0 = kore[Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))]
+  Var'Unds'DotVar1 = kore[dotk{}()]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()))]
+function: Lblpred'LParUndsRParUnds'GUARDED'Unds'Nat'Unds'Nat{} (0:0:0:0)
+rule: 212 1 [GUARDED.pred-s] [/tmp/kfts-prooftrace-fixture/guarded.k:22]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())]
+function exit: 212 notail
+side condition entry: 134 1
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (0)
+rule: 167 1 [GUARDED.depth-s] [/tmp/kfts-prooftrace-fixture/guarded.k:18]
+  VarN = kore[Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}()]
+function: Lbldepth'LParUndsRParUnds'GUARDED'Unds'Int'Unds'Nat{} (1)
+rule: 168 0 [GUARDED.depth-z] [/tmp/kfts-prooftrace-fixture/guarded.k:17]
+function exit: 168 notail
+hook: INT.add Lbl'UndsPlus'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("0")]
+hook result: kore[\dv{SortInt{}}("1")]
+function exit: 167 notail
+hook: INT.le Lbl'Unds-LT-Eqls'Int'Unds'{} ()
+  arg: kore[\dv{SortInt{}}("1")]
+  arg: kore[\dv{SortInt{}}("1")]
+hook result: kore[\dv{SortBool{}}("true")]
+side condition exit: 134 true
+rule: 134 3 [GUARDED.halve-small] [/tmp/kfts-prooftrace-fixture/guarded.k:25]
+  Var'Unds'DotVar0 = kore[Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))]
+  Var'Unds'DotVar1 = kore[dotk{}()]
+  VarN = kore[Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())]
+config: kore[Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(Lbldone'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Cmd'Unds'Nat{}(Lbls'LParUndsRParUnds'GUARDED-SYNTAX'Unds'Nat'Unds'Nat{}(Lblz'LParRParUnds'GUARDED-SYNTAX'Unds'Nat{}())),dotk{}())),Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0")))]

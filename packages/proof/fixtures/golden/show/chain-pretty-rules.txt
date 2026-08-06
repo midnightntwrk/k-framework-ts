@@ -1,0 +1,18 @@
+
+┌─ 1 (root, init)
+│
+│  (1 step)
+│  rules:
+│      R1
+├─ 2
+│
+│  (1 step)
+│  rules:
+│      R2
+└─ 3 (leaf, target)
+
+
+┌─ 4 (root, leaf, pending)
+
+Target Node:
+3 (leaf, target)

@@ -1,0 +1,14 @@
+
+┌─ 1 (root, init)
+│
+│  (182 steps)
+├─ 3 (terminal)
+│
+│  (1 step)
+├─ 4
+│
+│  (310 steps)
+└─ 6 (leaf, terminal)
+
+
+┌─ 5 (root, leaf, target, terminal)

@@ -1,0 +1,638 @@
+{
+  "table": "ATTR_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_lexer.py",
+  "fields": [
+    "text",
+    "expectedTokens",
+    "expectedRemaining"
+  ],
+  "note": "`_attr(la, it)`, driven to `StopIteration`; the generator returns the lookahead.",
+  "cases": [
+    {
+      "text": "a]",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            2
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": " a ] ",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            4
+          ]
+        }
+      ],
+      "expectedRemaining": " "
+    },
+    {
+      "text": "a<b>]",
+      "expectedTokens": [
+        {
+          "text": "a<b>",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "1a-B<-->]",
+      "expectedTokens": [
+        {
+          "text": "1a-B<-->",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            9
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a()] ",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            4
+          ]
+        }
+      ],
+      "expectedRemaining": " "
+    },
+    {
+      "text": "a(\"\")]",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "\"\"",
+          "type": "STRING",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            5
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a(\"hello\")]",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "\"hello\"",
+          "type": "STRING",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            10
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            11
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a( )] ",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": " ",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            4
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": " "
+    },
+    {
+      "text": "a(())] ",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "()",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            5
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": " "
+    },
+    {
+      "text": "a(/*)] ",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "/*",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            5
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": " "
+    },
+    {
+      "text": "a(()())] ",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "()()",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            7
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            8
+          ]
+        }
+      ],
+      "expectedRemaining": " "
+    },
+    {
+      "text": "a( tag content (()) () )]",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": " tag content (()) () ",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            24
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            25
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a,b,c]",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": ",",
+          "type": "COMMA",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "b",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ",",
+          "type": "COMMA",
+          "loc": [
+            1,
+            4
+          ]
+        },
+        {
+          "text": "c",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            5
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": " /* 1 */ a /* 2 */ , b /* 3 */ ]",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            10
+          ]
+        },
+        {
+          "text": ",",
+          "type": "COMMA",
+          "loc": [
+            1,
+            20
+          ]
+        },
+        {
+          "text": "b",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            22
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            32
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a<A>(\"hello\"), b(foo(bar(%), baz))]",
+      "expectedTokens": [
+        {
+          "text": "a<A>",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            5
+          ]
+        },
+        {
+          "text": "\"hello\"",
+          "type": "STRING",
+          "loc": [
+            1,
+            6
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            13
+          ]
+        },
+        {
+          "text": ",",
+          "type": "COMMA",
+          "loc": [
+            1,
+            14
+          ]
+        },
+        {
+          "text": "b",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            16
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            17
+          ]
+        },
+        {
+          "text": "foo(bar(%), baz)",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            18
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            34
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            35
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    }
+  ]
+}

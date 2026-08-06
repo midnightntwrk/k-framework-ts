@@ -1,0 +1,380 @@
+{
+  "table": "PARSER_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_markdown.py",
+  "fields": [
+    "kText",
+    "expected"
+  ],
+  "note": "`SelectorParser(text).parse()`; nodes are Atom/Not/And/Or.",
+  "cases": [
+    {
+      "kText": "a",
+      "expected": {
+        "node": "Atom",
+        "name": "a"
+      }
+    },
+    {
+      "kText": " a ",
+      "expected": {
+        "node": "Atom",
+        "name": "a"
+      }
+    },
+    {
+      "kText": "(a)",
+      "expected": {
+        "node": "Atom",
+        "name": "a"
+      }
+    },
+    {
+      "kText": "((a))",
+      "expected": {
+        "node": "Atom",
+        "name": "a"
+      }
+    },
+    {
+      "kText": "foo",
+      "expected": {
+        "node": "Atom",
+        "name": "foo"
+      }
+    },
+    {
+      "kText": "!a",
+      "expected": {
+        "node": "Not",
+        "op": {
+          "node": "Atom",
+          "name": "a"
+        }
+      }
+    },
+    {
+      "kText": "a & b",
+      "expected": {
+        "node": "And",
+        "ops": [
+          {
+            "node": "Atom",
+            "name": "a"
+          },
+          {
+            "node": "Atom",
+            "name": "b"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "a & b & c",
+      "expected": {
+        "node": "And",
+        "ops": [
+          {
+            "node": "Atom",
+            "name": "a"
+          },
+          {
+            "node": "Atom",
+            "name": "b"
+          },
+          {
+            "node": "Atom",
+            "name": "c"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "a & (b & c)",
+      "expected": {
+        "node": "And",
+        "ops": [
+          {
+            "node": "Atom",
+            "name": "a"
+          },
+          {
+            "node": "And",
+            "ops": [
+              {
+                "node": "Atom",
+                "name": "b"
+              },
+              {
+                "node": "Atom",
+                "name": "c"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kText": "!(a & b)",
+      "expected": {
+        "node": "Not",
+        "op": {
+          "node": "And",
+          "ops": [
+            {
+              "node": "Atom",
+              "name": "a"
+            },
+            {
+              "node": "Atom",
+              "name": "b"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kText": "(a & b) & c",
+      "expected": {
+        "node": "And",
+        "ops": [
+          {
+            "node": "And",
+            "ops": [
+              {
+                "node": "Atom",
+                "name": "a"
+              },
+              {
+                "node": "Atom",
+                "name": "b"
+              }
+            ]
+          },
+          {
+            "node": "Atom",
+            "name": "c"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "a & !b & !c",
+      "expected": {
+        "node": "And",
+        "ops": [
+          {
+            "node": "Atom",
+            "name": "a"
+          },
+          {
+            "node": "Not",
+            "op": {
+              "node": "Atom",
+              "name": "b"
+            }
+          },
+          {
+            "node": "Not",
+            "op": {
+              "node": "Atom",
+              "name": "c"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "kText": "a | b",
+      "expected": {
+        "node": "Or",
+        "ops": [
+          {
+            "node": "Atom",
+            "name": "a"
+          },
+          {
+            "node": "Atom",
+            "name": "b"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "a | b | c",
+      "expected": {
+        "node": "Or",
+        "ops": [
+          {
+            "node": "Atom",
+            "name": "a"
+          },
+          {
+            "node": "Atom",
+            "name": "b"
+          },
+          {
+            "node": "Atom",
+            "name": "c"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "!a | !b | c",
+      "expected": {
+        "node": "Or",
+        "ops": [
+          {
+            "node": "Not",
+            "op": {
+              "node": "Atom",
+              "name": "a"
+            }
+          },
+          {
+            "node": "Not",
+            "op": {
+              "node": "Atom",
+              "name": "b"
+            }
+          },
+          {
+            "node": "Atom",
+            "name": "c"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "a | b & !c",
+      "expected": {
+        "node": "Or",
+        "ops": [
+          {
+            "node": "Atom",
+            "name": "a"
+          },
+          {
+            "node": "And",
+            "ops": [
+              {
+                "node": "Atom",
+                "name": "b"
+              },
+              {
+                "node": "Not",
+                "op": {
+                  "node": "Atom",
+                  "name": "c"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kText": "!(a | b)",
+      "expected": {
+        "node": "Not",
+        "op": {
+          "node": "Or",
+          "ops": [
+            {
+              "node": "Atom",
+              "name": "a"
+            },
+            {
+              "node": "Atom",
+              "name": "b"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kText": "(a | b) & !c",
+      "expected": {
+        "node": "And",
+        "ops": [
+          {
+            "node": "Or",
+            "ops": [
+              {
+                "node": "Atom",
+                "name": "a"
+              },
+              {
+                "node": "Atom",
+                "name": "b"
+              }
+            ]
+          },
+          {
+            "node": "Not",
+            "op": {
+              "node": "Atom",
+              "name": "c"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "kText": "!a & b | c",
+      "expected": {
+        "node": "Or",
+        "ops": [
+          {
+            "node": "And",
+            "ops": [
+              {
+                "node": "Not",
+                "op": {
+                  "node": "Atom",
+                  "name": "a"
+                }
+              },
+              {
+                "node": "Atom",
+                "name": "b"
+              }
+            ]
+          },
+          {
+            "node": "Atom",
+            "name": "c"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "!a & (b | c)",
+      "expected": {
+        "node": "And",
+        "ops": [
+          {
+            "node": "Not",
+            "op": {
+              "node": "Atom",
+              "name": "a"
+            }
+          },
+          {
+            "node": "Or",
+            "ops": [
+              {
+                "node": "Atom",
+                "name": "b"
+              },
+              {
+                "node": "Atom",
+                "name": "c"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

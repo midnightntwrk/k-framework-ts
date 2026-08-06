@@ -1,0 +1,31 @@
+{
+  // Emit config, used only by `bun run build`.  The sibling `tsconfig.json` is
+  // the development one: it type-checks `src` *and* `test` with `noEmit`, and
+  // it pulls in Bun's types.
+  //
+  // This package is never published, so `dist` exists for exactly one reason:
+  // `exports` points there, and a sibling's test importing
+  // `@kframework-ts/wasm-fixtures` resolves through `exports` like any other
+  // workspace dependency.  Build before running the soaks.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    // The base config allows `.ts` import specifiers so `test/` can import
+    // `../src/index.ts` directly.  `src/` itself uses `.js` specifiers — the
+    // ESM convention — so nothing here needs it, and emit forbids it.  See
+    // `packages/kompiled/tsconfig.build.json` for why this is not simplified
+    // back to `rewriteRelativeImportExtensions`.
+    "allowImportingTsExtensions": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    // Like `packages/kompiled`, this package reads the filesystem — `node:fs`,
+    // `node:path`, `node:crypto`, `node:child_process` — so the compiler needs
+    // `@types/node`.  `@types/bun` stays excluded from the emit config.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

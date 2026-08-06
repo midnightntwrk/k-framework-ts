@@ -1,0 +1,5 @@
+d1fc4ebe1787f90f1adb398a1cfcd88349b331f2879aa01a067df1602791b5d5 /fix/syn/v1/alpha.k:10:5
+0373cc8e808192e6f29b25bf39ba7e30c8da4d0c19b1d17a4ac90c45db2b8645 /fix/syn/v1/path with spaces.k:20:3
+0dc7cbccac97da4abd83ecfdd471416ab386815a51d0f8a3ba02ce76d2db6168 /fix/syn/v1/path:with:colons.k:30:7
+f5bf48020f44b5a116247ffaf795663b2a07dca3bee912a44ad805092382c848 /fix/syn/v1/nested/alpha.k:40:9
+eef84b9b2bd7e43703ea6c1e33844031cafbb9d447453f65a8cdb6fc1a8651fe /fix/syn/v1/beta.md:50:11

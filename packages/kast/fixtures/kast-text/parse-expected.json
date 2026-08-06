@@ -1,0 +1,259 @@
+{
+  "kast-default-output/kast-out1.kast": {
+    "error": "Unexpected character: '0'",
+    "parses": false
+  },
+  "kast-default-output/kast-out1.kast.out": {
+    "parses": true,
+    "term": {
+      "args": [
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "3"
+        },
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "4"
+        }
+      ],
+      "arity": 2,
+      "label": {
+        "name": "#Equals",
+        "node": "KLabel",
+        "params": []
+      },
+      "node": "KApply",
+      "variable": false
+    }
+  },
+  "kast-default-output/kast-out2.kast": {
+    "error": "Unexpected character: '1'",
+    "parses": false
+  },
+  "kast-default-output/kast-out2.kast.out": {
+    "parses": true,
+    "term": {
+      "args": [
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "3"
+        },
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "3"
+        }
+      ],
+      "arity": 2,
+      "label": {
+        "name": "#Equals",
+        "node": "KLabel",
+        "params": []
+      },
+      "node": "KApply",
+      "variable": false
+    }
+  },
+  "kast-input/kast-in1.kast": {
+    "parses": true,
+    "term": {
+      "args": [
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "3"
+        },
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "4"
+        }
+      ],
+      "arity": 2,
+      "label": {
+        "name": "#Equals",
+        "node": "KLabel",
+        "params": []
+      },
+      "node": "KApply",
+      "variable": false
+    }
+  },
+  "kast-input/kast-in2.kast": {
+    "parses": true,
+    "term": {
+      "args": [
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "3"
+        },
+        {
+          "node": "KToken",
+          "sort": {
+            "name": "Int",
+            "node": "KSort",
+            "params": []
+          },
+          "token": "3"
+        }
+      ],
+      "arity": 2,
+      "label": {
+        "name": "#Equals",
+        "node": "KLabel",
+        "params": []
+      },
+      "node": "KApply",
+      "variable": false
+    }
+  },
+  "kast-kore-input/kast-in1.kast": {
+    "error": "Unexpected character: '\\\\'",
+    "parses": false
+  },
+  "kast-kore-input/kast-in2.kast": {
+    "error": "Unexpected character: '\\\\'",
+    "parses": false
+  },
+  "kast-kore-input/kast-in3.kast": {
+    "error": "Unexpected character: '\\\\'",
+    "parses": false
+  },
+  "kast-rule/kast-in1.kast": {
+    "error": "Unexpected character: '='",
+    "parses": false
+  },
+  "kast-rule/kast-in1.kast.out": {
+    "error": "Unexpected character: '='",
+    "parses": false
+  },
+  "kast-rule/kast-in2.kast": {
+    "error": "Unexpected character: '<'",
+    "parses": false
+  },
+  "kast-rule/kast-in2.kast.out": {
+    "error": "Unexpected character: '='",
+    "parses": false
+  },
+  "kast-rule/kast-in3.kast": {
+    "error": "Unexpected character: '<'",
+    "parses": false
+  },
+  "kast-rule/kast-in3.kast.out": {
+    "parses": true,
+    "term": {
+      "args": [
+        {
+          "arity": 0,
+          "items": [],
+          "node": "KSequence"
+        }
+      ],
+      "arity": 1,
+      "label": {
+        "name": "<k>",
+        "node": "KLabel",
+        "params": []
+      },
+      "node": "KApply",
+      "variable": false
+    }
+  },
+  "kast-rule/kast-in4.kast": {
+    "error": "Unexpected character: '+'",
+    "parses": false
+  },
+  "kast-rule/kast-in4.kast.out": {
+    "error": "Unexpected character: '='",
+    "parses": false
+  },
+  "kast-rule/kast-in5.kast": {
+    "error": "Unexpected character: '<'",
+    "parses": false
+  },
+  "kast-rule/kast-in5.kast.out": {
+    "parses": true,
+    "term": {
+      "args": [
+        {
+          "args": [
+            {
+              "arity": 0,
+              "items": [],
+              "node": "KSequence"
+            }
+          ],
+          "arity": 1,
+          "label": {
+            "name": "<k>",
+            "node": "KLabel",
+            "params": []
+          },
+          "node": "KApply",
+          "variable": false
+        },
+        {
+          "args": [
+            {
+              "node": "KToken",
+              "sort": {
+                "name": "Int",
+                "node": "KSort",
+                "params": []
+              },
+              "token": "0"
+            }
+          ],
+          "arity": 1,
+          "label": {
+            "name": "<generatedCounter>",
+            "node": "KLabel",
+            "params": []
+          },
+          "node": "KApply",
+          "variable": false
+        }
+      ],
+      "arity": 2,
+      "label": {
+        "name": "<generatedTop>",
+        "node": "KLabel",
+        "params": []
+      },
+      "node": "KApply",
+      "variable": false
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "node": "Definition",
+  "modules": [],
+  "requires": [
+    {
+      "node": "Require",
+      "path": "kast.md"
+    },
+    {
+      "node": "Require",
+      "path": "domains.md"
+    }
+  ]
+}

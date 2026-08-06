@@ -1,0 +1,510 @@
+{
+  "node": "Definition",
+  "modules": [
+    {
+      "node": "Module",
+      "location": [
+        3,
+        1,
+        22,
+        10
+      ],
+      "name": "UNIFICATION",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#renameVariables"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "UNIFICATION.renameVariables"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Set",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#variables"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "UNIFICATION.variables"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Set",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#metaKVariables"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "UNIFICATION.metaVariables"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#variablesMap"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "UNIFICATION.variablesMap"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#renameMetaKVariables"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Set",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "UNIFICATION.rename"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#freezeKVariables"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "UNIFICATION.freezeVariables"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bool",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#unifiable"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "UNIFICATION.unifiable"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "MetaVariable",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "SET",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    }
+  ],
+  "requires": [
+    {
+      "node": "Require",
+      "path": "domains.md"
+    }
+  ]
+}

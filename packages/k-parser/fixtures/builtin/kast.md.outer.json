@@ -1,0 +1,4347 @@
+{
+  "node": "Definition",
+  "modules": [
+    {
+      "node": "Module",
+      "location": [
+        26,
+        1,
+        28,
+        10
+      ],
+      "name": "SORT-K",
+      "sentences": [
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": [
+              [
+                "hook",
+                "K.K"
+              ]
+            ]
+          }
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        35,
+        1,
+        42,
+        10
+      ],
+      "name": "BASIC-K",
+      "sentences": [
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": [
+              [
+                "hook",
+                "K.KItem"
+              ]
+            ]
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KItem",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KConfigVar",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": [
+              [
+                "token",
+                ""
+              ]
+            ]
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KConfigVar",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "ML-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "SORT-BOOL",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        58,
+        1,
+        61,
+        10
+      ],
+      "name": "KSTRING",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KString",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "[\\\"](([^\\\"\\n\\r\\\\])|([\\\\][nrtf\\\"\\\\])|([\\\\][x][0-9a-fA-F]{2})|([\\\\][u][0-9a-fA-F]{4})|([\\\\][U][0-9a-fA-F]{8}))*[\\\"]"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        63,
+        1,
+        66,
+        10
+      ],
+      "name": "BUILTIN-ID-TOKENS",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#LowerId",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "[a-z][a-zA-Z0-9]*"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "prec",
+                        "2"
+                      ],
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#UpperId",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "[A-Z][a-zA-Z0-9]*"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "prec",
+                        "2"
+                      ],
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        68,
+        1,
+        71,
+        10
+      ],
+      "name": "SORT-KBOTT",
+      "sentences": [
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KBott",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "SORT-K",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        73,
+        1,
+        91,
+        10
+      ],
+      "name": "KAST",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KBott",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#token"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KString",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KString",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#KToken"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#klabel"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KLabel",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#WrappedKLabel"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KLabel",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KList",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#KApply"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KBott",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KLabel",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "`(\\\\`|\\\\\\\\|[^`\\\\\\n\\r])+`"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#LowerId",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "[#a-z][a-zA-Z0-9]*"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ],
+                      [
+                        "prec",
+                        "1"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KList",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": ".KList"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#EmptyKList"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KList",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KList",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#KList"
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "assoc",
+                        ""
+                      ],
+                      [
+                        "unit",
+                        "#EmptyKList"
+                      ],
+                      [
+                        "prefer",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "BASIC-K",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "SORT-KBOTT",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "KSTRING",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "BUILTIN-ID-TOKENS",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        95,
+        1,
+        103,
+        10
+      ],
+      "name": "KSEQ",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": ".K"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#EmptyK"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "."
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#EmptyK"
+                      ],
+                      [
+                        "deprecated",
+                        ""
+                      ],
+                      [
+                        "unparseAvoid",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "~>"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#KSequence"
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "assoc",
+                        ""
+                      ],
+                      [
+                        "unit",
+                        "#EmptyK"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxAssoc",
+          "assoc": "LEFT",
+          "klabels": [
+            "#KSequence"
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "bracket",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "defaultBracket"
+                      ],
+                      [
+                        "applyPriority",
+                        "1"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KAST",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "K-TOP-SORT",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        135,
+        1,
+        160,
+        10
+      ],
+      "name": "ML-SYNTAX",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Top"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Top"
+                      ],
+                      [
+                        "group",
+                        "mlUnary"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Bottom"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Bottom"
+                      ],
+                      [
+                        "group",
+                        "mlUnary"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Not"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Not"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlUnary, mlOp"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort2",
+            "params": [
+              "Sort1",
+              "Sort2"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Ceil"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Ceil"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlUnary, mlOp"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Floor"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Floor"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlUnary, mlOp"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "{"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "#Equals"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "}"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Equals"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlEquals, mlOp"
+                      ],
+                      [
+                        "comm",
+                        ""
+                      ],
+                      [
+                        "format",
+                        "%1%i%n%2%d%n%3%i%n%4%d%n%5"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxPriority",
+          "groups": [
+            [
+              "mlUnary"
+            ],
+            [
+              "mlEquals"
+            ],
+            [
+              "mlAnd"
+            ]
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "#And"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#And"
+                      ],
+                      [
+                        "assoc",
+                        ""
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "comm",
+                        ""
+                      ],
+                      [
+                        "unit",
+                        "#Top"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlAnd, mlOp"
+                      ],
+                      [
+                        "format",
+                        "%i%1%d%n%2%n%i%3%d"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            },
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "#Or"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Or"
+                      ],
+                      [
+                        "assoc",
+                        ""
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "comm",
+                        ""
+                      ],
+                      [
+                        "unit",
+                        "#Bottom"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlOp"
+                      ],
+                      [
+                        "format",
+                        "%i%1%d%n%2%n%i%3%d"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            },
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "#Implies"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Implies"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlImplies, mlOp"
+                      ],
+                      [
+                        "format",
+                        "%i%1%d%n%2%n%i%3%d"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxPriority",
+          "groups": [
+            [
+              "mlImplies"
+            ],
+            [
+              "mlQuantifier"
+            ]
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort2",
+            "params": [
+              "Sort1",
+              "Sort2"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Exists"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "."
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort2",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Exists"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "mlBinder",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlQuantifier, mlOp"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Forall"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "."
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort2",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#Forall"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "mlBinder",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlQuantifier, mlOp"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#AG"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#AG"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlOp"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#wEF"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "weakExistsFinally"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlOp"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#wAF"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "weakAlwaysFinally"
+                      ],
+                      [
+                        "mlOp",
+                        ""
+                      ],
+                      [
+                        "group",
+                        "mlOp"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "SORT-K",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": [
+          [
+            "not-lr1",
+            ""
+          ]
+        ]
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        196,
+        1,
+        198,
+        10
+      ],
+      "name": "KVARIABLE-SYNTAX",
+      "sentences": [
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#KVariable",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        201,
+        1,
+        211,
+        10
+      ],
+      "name": "KSEQ-SYMBOLIC",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#KVariable",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "(\\!|\\?|@)?([A-Z][A-Za-z0-9'_]*|_|_[A-Z][A-Za-z0-9'_]*)"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ],
+                      [
+                        "prec",
+                        "1"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#UpperId",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KConfigVar",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "(\\$)([A-Z][A-Za-z0-9'_]*)"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KBott",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#KVariable",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KBott",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KConfigVar",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KSEQ",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "ML-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "KVARIABLE-SYNTAX",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        235,
+        1,
+        248,
+        10
+      ],
+      "name": "KCELLS",
+      "sentences": [
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Cell",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bag",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bag",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bag",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "assoc",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "#cells"
+                      ],
+                      [
+                        "unit",
+                        "#cells"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": ".Bag"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#cells"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": ".::Bag"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#cells"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Cell",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bag",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bag",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "bracket",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bag",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#RuleBody",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "["
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "["
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "]"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "]"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bag",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#withConfig"
+                      ],
+                      [
+                        "avoid",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxAssoc",
+          "assoc": "NON_ASSOC",
+          "klabels": [
+            "#withConfig"
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bag",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KBott",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KAST",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        269,
+        1,
+        290,
+        10
+      ],
+      "name": "RULE-CELLS",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#OptionalDots",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "..."
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#dots"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#noDots"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Int",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "GeneratedCounterCell",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "<generatedCounter>"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "</generatedCounter>"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "cell",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "<generatedCounter>"
+                      ],
+                      [
+                        "internal",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KCELLS",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "RULE-LISTS",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        305,
+        1,
+        318,
+        10
+      ],
+      "name": "CONFIG-CELLS",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#CellName",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "[a-zA-Z][a-zA-Z0-9\\-]*"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ],
+                      [
+                        "prec",
+                        "1"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#LowerId",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#UpperId",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Cell",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "<"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#CellName",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#CellProperties",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ">"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "</"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#CellName",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ">"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#configCell"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Cell",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "<"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#CellName",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "/>"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#externalCell"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#CellProperties",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#CellProperty",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#CellProperties",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#cellPropertyList"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#cellPropertyListTerminator"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#CellProperty",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#CellName",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "="
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KString",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#cellProperty"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KCELLS",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "RULE-LISTS",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        340,
+        1,
+        349,
+        10
+      ],
+      "name": "REQUIRES-ENSURES",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#RuleBody",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#RuleContent",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#RuleBody",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ruleNoConditions"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#RuleBody",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "requires"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bool",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ruleRequires"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#RuleBody",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "ensures"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bool",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ruleEnsures"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#RuleBody",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "requires"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bool",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "ensures"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bool",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ruleRequiresEnsures"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "BASIC-K",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        360,
+        1,
+        364,
+        10
+      ],
+      "name": "K-TOP-SORT",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KBott",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "SORT-KBOTT",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        366,
+        1,
+        370,
+        10
+      ],
+      "name": "K-BOTTOM-SORT",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KItem",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KBott",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KBott",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "SORT-KBOTT",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        372,
+        1,
+        375,
+        10
+      ],
+      "name": "K-SORT-LATTICE",
+      "sentences": [],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "K-TOP-SORT",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "K-BOTTOM-SORT",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        377,
+        1,
+        385,
+        10
+      ],
+      "name": "AUTO-CASTS",
+      "sentences": [],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        387,
+        1,
+        398,
+        10
+      ],
+      "name": "AUTO-FOLLOW",
+      "sentences": [],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        400,
+        1,
+        412,
+        10
+      ],
+      "name": "PROGRAM-LISTS",
+      "sentences": [],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "SORT-K",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        414,
+        1,
+        419,
+        10
+      ],
+      "name": "RULE-LISTS",
+      "sentences": [],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        421,
+        1,
+        426,
+        10
+      ],
+      "name": "RECORD-PRODUCTIONS",
+      "sentences": [],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        428,
+        1,
+        433,
+        10
+      ],
+      "name": "SORT-PREDICATES",
+      "sentences": [],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        444,
+        1,
+        448,
+        10
+      ],
+      "name": "KREWRITE",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "=>"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#KRewrite"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxAssoc",
+          "assoc": "NON_ASSOC",
+          "klabels": [
+            "#KRewrite"
+          ]
+        },
+        {
+          "node": "SyntaxPriority",
+          "groups": [
+            [
+              "#KRewrite"
+            ],
+            [
+              "#withConfig"
+            ]
+          ]
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        451,
+        1,
+        481,
+        10
+      ],
+      "name": "K",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "#as"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#KAs"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#fun"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#fun2"
+                      ],
+                      [
+                        "prefer",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort1",
+            "params": [
+              "Sort1",
+              "Sort2"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#fun"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort2",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "=>"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort2",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#fun3"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort1",
+            "params": [
+              "Sort1",
+              "Sort2"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#let"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort2",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "="
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort2",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "#in"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort1",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#let"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bool",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ":=K"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_:=K_"
+                      ],
+                      [
+                        "group",
+                        "equalEqualK"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ":/=K"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "K",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_:/=K_"
+                      ],
+                      [
+                        "group",
+                        "notEqualEqualK"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": "LEFT"
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KSEQ-SYMBOLIC",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "REQUIRES-ENSURES",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "RECORD-PRODUCTIONS",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "SORT-PREDICATES",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "K-SORT-LATTICE",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "AUTO-CASTS",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "AUTO-FOLLOW",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "KREWRITE",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        484,
+        1,
+        492,
+        10
+      ],
+      "name": "K-TERM",
+      "sentences": [],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KSEQ-SYMBOLIC",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "RECORD-PRODUCTIONS",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "SORT-PREDICATES",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "K-SORT-LATTICE",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "AUTO-CASTS",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "AUTO-FOLLOW",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "KREWRITE",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        510,
+        1,
+        514,
+        10
+      ],
+      "name": "DEFAULT-LAYOUT",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "#Layout",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "(\\/\\*([^\\*]|(\\*+([^\\*\\/])))*\\*+\\/)"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "(\\/\\/[^\\n\\r]*)"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "([\\ \\n\\r\\t])"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        524,
+        1,
+        528,
+        10
+      ],
+      "name": "DEFAULT-CONFIGURATION",
+      "sentences": [
+        {
+          "node": "Config",
+          "bubble": "<k> $PGM:K </k>",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "BASIC-K",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        546,
+        1,
+        550,
+        10
+      ],
+      "name": "K-AMBIGUITIES",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "amb"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "amb"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        563,
+        1,
+        570,
+        10
+      ],
+      "name": "K-LOCATIONS",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#location"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "String",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#location"
+                      ],
+                      [
+                        "format",
+                        "%3"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "STRING-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "INT-SYNTAX",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    }
+  ],
+  "requires": []
+}

@@ -1,0 +1,558 @@
+# Fixture provenance
+
+Every `.test`, `.k`, `.md`, `.out` and `.json` file vendored here is
+**byte-for-byte what is checked into the `k` repository** at tag `v7.1.337` —
+the tag this package transcribes. None of it is hand-authored, none of it has
+been reformatted or trimmed, and all 124 vendored files were verified by
+sha256 against the checkout after copying (the `## Checksums` section below is
+that verification, kept in the tree so it can be re-run). That is the whole
+point: `src/` will be a hand-transcription of six Python files, and a
+hand-transcription is not self-verifying. These are the evidence.
+
+Three kinds of file here are **not** upstream material, and each is called out
+separately below:
+
+- `pyk-unit/*.json` — pyk's inline parametrized test tables, extracted by the
+  checked-in `pyk-unit/extract-pyk-fixtures.py`.
+- `builtin/*.outer.json` — pyk's surface AST for each prelude file, produced by
+  the checked-in `builtin/dump-outer.py`.
+- the two scripts themselves.
+
+`.oxfmtrc.json` and `.oxlintrc.json` both exclude `fixtures/`, so no tool can
+reformat these bytes.
+
+## What this directory is for
+
+This package is the pipeline **upstream** of `@kframework-ts/kast`'s
+`KDefinition`: markdown fence selection, the outer lexer, the outer parser, the
+`outer_syntax` surface AST, and the bridge from that to KAST. Every one of
+those layers is being transcribed from Python by hand, and every one of them
+has an upstream oracle that is portable — text files and parametrized tables,
+not a K install. This directory collects all of them, before a line of the
+lexer exists, because deciding what "correct" means is the part that must not
+be done after the fact.
+
+The corpus answers four different questions, and the subdirectories are drawn
+along those lines:
+
+| directory         | question                                                                     |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `pyk-unit/`       | does each internal function agree with pyk's, case by case?                  |
+| `outer-lexer/`    | does the whole lexer agree with pyk's on real K source, token for token?     |
+| `markdown/`       | does fence selection agree, both block extraction and the selector language? |
+| `parse-outer/`    | does the end-to-end `parseOuter` — including `require` slurping — agree?     |
+| `rarities/`       | where does the outer/inner boundary actually run?                            |
+| `builtin/`        | does the densest real K source in existence parse, and into what?            |
+| `imp-outer-json/` | does the output match **Java**, the only oracle independent of pyk?          |
+
+Note what nothing here covers: **inner** parsing. Rule bodies stay opaque
+bubbles, exactly as in Java's `--outer-parsed-json`, so no fixture asserts
+anything about the contents of a bubble beyond its text and its location.
+
+## Source
+
+|                    |                                                                                |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Repository         | `runtimeverification/k`                                                        |
+| Tag                | `v7.1.337`                                                                     |
+| Commit             | `4a46d1231473b599c699160132fd6e76a5c46406` (2026-06-18)                        |
+| Upstream directories | `pyk/src/tests/unit/test-data/`, `pyk/regression-new/`, `k-distribution/include/kframework/builtin/` |
+| Files vendored     | 124                                                                            |
+| License            | BSD-3-Clause — see `../THIRD-PARTY-NOTICES.md`                                 |
+| Vendored           | 2026-08-05                                                                     |
+
+The six Python files these fixtures exercise, at the same tag — the same list
+as `src/version.ts`'s `TRANSCRIBED_FROM`, and the list both checked-in
+generators refuse to run against a mismatch of:
+
+```
+$ git show v7.1.337:pyk/src/pyk/kast/outer_lexer.py  | sha256sum
+c9ff7eb091d4cdd7e25e62bc10ea651b637ed623cf3f8ebe517216e1897238ac   (959 lines)
+
+$ git show v7.1.337:pyk/src/pyk/kast/outer_parser.py | sha256sum
+d63011402f9f8fb8dbafd461b0ec0833fb9c9283ab56b9923d6672bb2e3cd128   (418 lines)
+
+$ git show v7.1.337:pyk/src/pyk/kast/outer_syntax.py | sha256sum
+5e31852d1bb775a070d91429a7720dce5d6c8a5cd7cb738e2d825cd88da03920   (295 lines)
+
+$ git show v7.1.337:pyk/src/pyk/kast/markdown.py     | sha256sum
+2dd7db70eb542f8371abc1a5d4faa52ba8f02e30c135d5f60a8c8f6d7f03548a   (226 lines)
+
+$ git show v7.1.337:pyk/src/pyk/kast/_ast_to_kast.py | sha256sum
+52260d4de7be648562325b06703258fee66503497452c9ea4edc83d07bf07a2b   (60 lines)
+
+$ git show v7.1.337:pyk/src/pyk/kast/utils.py        | sha256sum
+f6bf742332ece60d2f2fe21335eb84c8ff1f8b179f364031911e98041c661896   (87 lines)
+```
+
+## `pyk-unit/` — pyk's inline tables, extracted (16 files, 267 cases)
+
+Upstream pins its outer parser with `@pytest.mark.parametrize` tables written
+as module-level tuples. Hand-translating ~270 cases to TypeScript would be
+~270 opportunities to introduce a difference that looks like a passing test, so
+they are not hand-translated: `extract-pyk-fixtures.py` imports the test modules
+and serialises the tables verbatim.
+
+Regenerate with a **source checkout** of `k` at `v7.1.337` — not an installed
+`pyk`, which is usually a different version:
+
+```
+cd pyk-unit
+PYTHONPATH=<k-checkout>/pyk/src python3 extract-pyk-fixtures.py
+```
+
+`pytest` must be importable (the test modules build their decorators at import
+time); nothing runs pytest. The script refuses to run unless all six sources
+above hash to what is recorded, and re-running reproduces the committed files
+byte for byte. Its docstring documents the encoding and the one non-obvious
+mechanic — pyk's `tests/` directory is a namespace package, so an unrelated
+installed `tests` package shadows it and the hierarchy has to be registered by
+hand.
+
+| file                            | upstream table                                       | cases | what it pins                                                        |
+| ------------------------------- | ---------------------------------------------------- | ----: | ------------------------------------------------------------------- |
+| `outer-lexer-comment.json`      | `COMMENT_TEST_DATA`                                  |     9 | `_maybe_comment`: `//` to EOL, `/*…*/`, and the unterminated cases  |
+| `outer-lexer-bubble.json`       | `BUBBLE_TEST_DATA`                                   |    42 | the hard one — keyword termination, flanking vs interior comments, labels, trailing attributes |
+| `outer-lexer-context.json`      | `CONTEXT_TEST_DATA`                                  |     2 | the CONTEXT state, where `alias` terminates a bubble and nowhere else |
+| `outer-lexer-default.json`      | `DEFAULT_TEST_DATA`                                  |    28 | the DEFAULT state: nats, ids, strings, regexes, keyword-vs-identifier |
+| `outer-lexer-modname.json`      | `MODNAME_TEST_DATA`                                  |    10 | module names, and `private`/`public` before one                     |
+| `outer-lexer-klabel.json`       | `KLABEL_TEST_DATA`                                   |    19 | klabels, and the comment-adjacency rules that decide their extent   |
+| `outer-lexer-attr.json`         | `ATTR_TEST_DATA`                                     |    15 | the attribute sub-lexer: keys, `<…>`, balanced-paren content, strings |
+| `outer-parser-sentence.json`    | `SENTENCE_TEST_DATA`                                 |    72 | every sentence form, and the `SortDecl`/`Sort` NAT asymmetry        |
+| `outer-parser-import.json`      | `IMPORT_TEST_DATA`                                   |     3 | `imports`, `imports public`, `imports private`                      |
+| `outer-parser-module.json`      | `MODULE_TEST_DATA`                                   |     7 | module bodies, each with its 4-tuple `location`                     |
+| `outer-parser-definition.json`  | `DEFINITION_TEST_DATA`                               |     6 | `requires` + modules, and the empty definition                      |
+| `outer-parser-require.json`     | `test_require` (a plain function, not a table)       |     1 | `requires "foo.k"` — reconstructed in table shape by the extractor  |
+| `markdown-selector-parse.json`  | `PARSER_TEST_DATA`                                   |    20 | the selector mini-language's grammar and precedence                 |
+| `markdown-selector-eval.json`   | `EVAL_TEST_DATA`                                     |    23 | its evaluation against an atom set                                  |
+| `markdown-parse-tags.json`      | `PARSE_TAGS_TEST_DATA`                               |     3 | `k` vs `{.foo .bar}` info strings                                   |
+| `ast-to-kast.json`              | `AST_TO_KAST_TEST_DATA` + `AST_TO_KAST_ARGS_TEST_DATA` | 7   | the faithful `outer_syntax → KAst` subset pyk can actually do       |
+
+The two `ast-to-kast` tables are merged into one 7-case table with an
+always-present `kwargs`, because they differ only in whether `_ast_to_kast` is
+called with keyword arguments.
+
+**Not extracted**: `test_bubble_has_no_source_location_without_source_path` and
+`test_bubble_records_source_location_when_source_path_given`
+(`test_outer_parser.py:500-523`). They are assertions about a `Path` argument,
+not table rows, and the behaviour they pin — `StringSentence.location`/`source`
+are set *only* when a source path was supplied — is a contract item for
+`parser.ts` rather than data.
+
+## `outer-lexer/` — 37 golden files, 9,283 tokens
+
+Copied verbatim from `pyk/src/tests/unit/test-data/outer-lexer/`. These are the
+lexer's fidelity harness and the single most valuable thing in this directory:
+a self-describing text format (input, `===`, then `TOKEN_TYPE` / `line,col` /
+text records) that needs no translation, only the ~60-line reader in
+`../test/fixtures.ts`.
+
+Upstream reads them with `_parse` at `test_outer_lexer.py:653`. This package's
+reader was checked **differentially** against that function: for all 37 files,
+the parsed input text and every field of every one of the 9,283 tokens are
+identical. Two of the format's semantics are easy to get wrong and are
+therefore worth naming: the input text never ends in a newline unless the file
+has a blank line before `===`, and a token's text ends at a blank line only if
+the *next* line names a token type.
+
+| group                          | files | tokens | what it covers                                                         |
+| ------------------------------ | ----: | -----: | ---------------------------------------------------------------------- |
+| `domains-00` … `domains-14-*`  |    15 |  9,018 | K's whole `domains.md`, split into chunks — the bulk of the corpus     |
+| `imp-syntax`                   |     1 |    103 | a complete small definition                                            |
+| `syntax-*` (5)                 |     5 |     77 | priority blocks, `left`/`right`/`non-assoc`, group attributes, sets    |
+| `rule-*` (5), `module*` (2)    |     7 |     51 | rules with labels, attributes, comments; module headers                |
+| `bubble-multi-line`, `context*`, `attr-key-with-dots`, `nat*`, `empty`, `priority-group-non-assoc` |  9 |  34 | the individually tricky ones — multi-line bubbles, `context alias`, dotted attribute keys, and the empty file (1 `EOF` token) |
+
+The number to know is **9,283**, not the 9,290 the pre-package planning
+estimated; the real count was measured both by this package's reader and by
+pyk's, and `../test/fixtures.test.ts` pins it.
+
+**The universal invariant** (`test_outer_lexer.py:647-651`) holds over every
+one of those 9,283 tokens: the token's recorded `Loc` actually locates its text
+in the source. `tokensWithBadLocations` in `../test/fixtures.ts` is that check,
+and it is run over the vendored data itself, which is what proves the files mean
+what the reader thinks they mean.
+
+## `markdown/` — 16 golden files
+
+Two upstream directories, names preserved:
+
+| subdirectory            | files | what it pins                                                                   |
+| ----------------------- | ----: | ------------------------------------------------------------------------------ |
+| `markdown-code-blocks/` |    12 | `code_blocks(text)` — 11 blocks in total across the 12 files, including fence lengths, indentation, empty blocks, info strings, and two files with no block at all |
+| `markdown-select/`      |     4 | `select_code_blocks(text, selector)` end to end, with the selector on the first line (empty means `None`, which selects *every* block) |
+
+The `markdown-select` goldens are what make the length-preservation invariant
+concrete: the expected output is the input with every non-selected character
+replaced by a space, same length, so all locations still refer to the original
+`.md`. Both readers were checked differentially against
+`_parse_code_blocks_test_data` and `_parse_select_test_data` — identical output
+on all 16 files.
+
+## `parse-outer/` — 15 files, the end-to-end fixture
+
+The complete upstream directory, inputs *and* outputs, driving the same test
+`test_utils.py:22-38` does.
+
+| file(s)                                                    | what it pins                                        |
+| ---------------------------------------------------------- | --------------------------------------------------- |
+| `a.k`, `b.k`, `c.k`, `d.k`                                 | the `require` graph — `d.k` is a diamond            |
+| `include.k` + `include/e.k`                                | resolution through an include directory             |
+| `markdown.md`                                              | a definition inside a literate source                |
+| `*.expected.json` (6)                                      | `KDefinition.to_dict()` — the end of the pipeline    |
+| `a.k.out.json`, `b.k.out.json`                             | a second, `Location`-free `KDefinition` — see below |
+
+`d.k` is the interesting one: slurping is a worklist DFS with `pending.pop()`
+over `reversed(requires)`, so the first `require` is visited first and the
+module order in the output is file-visit order (`d, b, a, c`). Note also that
+`parse_outer` **drops** requires — every `KDefinition.requires` in these
+goldens is `[]` — and that every module's `localSentences` is `[]`, because
+pyk's `_sentence_to_ksentence` is an unimplemented stub. These files therefore
+pin ordering, imports and the `Location` codec, and say nothing about
+sentences.
+
+`a.k.out.json` and `b.k.out.json` deserve a note, because their name suggests
+something they are not. They are **not** `outer_syntax` dumps: each is a
+`KDefinition` dict identical to its `.expected.json` sibling except that every
+module's `att` is `{}` rather than carrying an
+`org.kframework.attributes.Location`. Nothing upstream reads them — a grep over
+the whole `k` tree finds no reference — so they look like leftover output of
+`pyk parse-outer --output-file` from before locations were attached. They are
+vendored anyway, as a second, independently-produced witness of the same two
+definitions: a `KDefinition` that differs from the expected one in exactly one
+documented way is a useful thing to have when a location bug is suspected.
+
+> `packages/kast/fixtures/parse-outer/` vendors the six `*.expected.json` too,
+> for a different test. Packages do not share fixtures (`konvert/README.md`
+> rule), so this one carries its own complete copy — inputs included, which the
+> other cannot use.
+
+## `rarities/` — individually chosen hard cases
+
+Upstream directory names are preserved (`checks/`, `context-alias/`,
+`context-alias-2/`, `markdownSelectors/`) so each file's origin is legible from
+its path: everything under `rarities/` except `inverse-suite/` came from
+`pyk/regression-new/<that directory>/`.
+
+| file                                | upstream                                        | why it is here                                                                    | pyk today                                        |
+| ----------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `context-alias/test.k`              | `regression-new/context-alias/test.k`           | `context alias` — the one keyword that terminates a bubble only in CONTEXT state  | parses (1 module, 19 sentences)                  |
+| `context-alias-2/test.k`            | `regression-new/context-alias-2/test.k`         | more of the same, with labels                                                     | parses (1 module, 14 sentences)                  |
+| `checks/checkLexicalIdentifiers.k`  | `regression-new/checks/checkLexicalIdentifiers.k` | `syntax lexical` declarations                                                   | parses (2 modules, 11 sentences)                 |
+| `checks/checkRegexRanges.k`         | `regression-new/checks/checkRegexRanges.k`      | regex terminals with ranges and escapes                                           | parses (1 module, 4 sentences)                   |
+| `markdownSelectors/test.md`         | `regression-new/markdownSelectors/test.md`      | a module that **opens in one fence and closes in another**                        | **throws** — see the divergences below           |
+| `checks/markdownErrorLocation.md`   | `regression-new/checks/markdownErrorLocation.md` | line/col through indented, unterminated and malformed fences                     | **throws** — see the divergences below           |
+| `checks/missingBar.k` + `.out`      | `regression-new/checks/missingBar.k`            | a true outer-parse negative (`.out` says `[Error] Outer Parser`)                  | rejects: `Expected KW_CLAIM, KW_CONFIG, KW_RULE, got: ID_LOWER` |
+| `checks/duplicateModule.k` + `.out` | `regression-new/checks/duplicateModule.k`       | `.out` says `[Error] Outer Parser`, but the check is a **post-parse** one          | parses clean (2 modules) — see below             |
+| `checks/parseErrorExpected.k` + `.out` | `regression-new/checks/parseErrorExpected.k` | Java reports only `[Error] Inner Parser` here, so it outer-parses for Java        | **rejects**: `Expected BUBBLE, got: KW_RULE`     |
+
+Negatives are gated on the `[Error] …` prefix inside the `.out` file, never on
+directory membership — which is exactly why `duplicateModule.k` is filed as a
+*positive*: its `.out` says `[Error] Outer Parser`, but the error is a duplicate
+declaration found after parsing, and pyk (like this package) does not do
+post-parse validation passes at all. Vendoring the `.out` next to it is what
+lets a test state that distinction rather than assume it.
+
+### Three pyk/Java divergences this corpus surfaced
+
+None of these were known when the package was planned; they were found by
+running pyk over the vendored files. Each is a decision the port has to make
+deliberately, so each file is vendored *because* it fails.
+
+1. **`markdownSelectors/test.md`** — `parse_tags` rejects a pandoc attribute
+   that is not a `.tag`: the fence `` ```{.k .discard .numberLines startFrom="0"} ``
+   makes it raise on `startFrom="0"`. Java accepts the block and ignores the
+   extra attribute. The failure happens during *selection*, before any
+   selector is evaluated, so it fails under `k` and under the definition's own
+   `(k|keep) & !discard` alike. (The message is literally
+   ``Expected '.', found: {tag[0]!r}`` — `markdown.py:83` is a missing-`f`
+   f-string bug upstream.)
+2. **`checks/markdownErrorLocation.md`** — the fence ```` ``` { not used ````
+   makes `parse_tags` raise `Invalid tag: ' { not used'`. Java treats an
+   uninterpretable info string as "not selected" and carries on; the `.out`
+   shows it reaching the compiler.
+3. **`checks/parseErrorExpected.k`** — a bare `rule` immediately followed by
+   another `rule` is an empty bubble, which pyk's parser rejects outright.
+   Java outer-parses it and reports five *inner* parse errors, which is why the
+   `.out` says `[Error] Inner Parser`.
+
+### `rarities/inverse-suite/` — 32 files that must outer-parse clean
+
+The sharpest probe of the outer/inner boundary: files that **fail `kompile`**,
+for reasons that are all downstream of outer parsing. If this package ever
+rejects one of them, it has pulled work across the boundary that does not
+belong to it.
+
+| subdirectory         | files | selected by                                                                  |
+| -------------------- | ----: | ---------------------------------------------------------------------------- |
+| `checks/`            |    12 | their `.out` begins `[Error] Inner Parser` — the error is in a rule body      |
+| `checkWarns/`        |    16 | the whole upstream directory; every failure is `[Error] Compiler` or a warning |
+| `bad-bytes-literal/` |     4 | `[Error] Inner Parser` — bad byte literals inside rules                       |
+
+Only the `.k` inputs are vendored; the `.out` files are not, because the
+assertion here is "parses", not "produces that message". Every one of the 32
+was confirmed to parse clean under pyk before being vendored.
+
+The 13th `[Error] Inner Parser` file in `checks/`, `parseErrorExpected.k`, is
+**deliberately not** in the inverse suite — pyk rejects it (divergence 3
+above), so it is filed with the rarities as the divergence it is.
+
+## `builtin/` — K's prelude, 9 files, plus a surface-AST golden each
+
+The highest feature density per byte of K source that exists, and all of it
+BSD-3-Clause: 123 KB of `domains.md` alone, with hooks, regex terminals,
+`smt-hook` attributes containing nested parentheses, triple-escaped regex
+lines, and YAML frontmatter. Copied verbatim from
+`k-distribution/include/kframework/builtin/`.
+
+The `.outer.json` goldens beside them are **pyk's output**, not upstream
+material, produced by the checked-in generator:
+
+```
+cd builtin
+PYTHONPATH=<k-checkout>/pyk/src python3 dump-outer.py
+```
+
+Same version guard as the extractor. Two reproducibility choices are baked in:
+`source=None` is passed to `OuterParser`, so no absolute path from the
+generating machine can reach a golden; and `.md` files are selected with the
+`'k'` selector — the default `parse_outer`, `slurp_definitions` and the CLI all
+use — with selection gated purely on the `.md` suffix, exactly as
+`utils.py:74` does it.
+
+| file             | bytes   | pyk parses into            |
+| ---------------- | ------: | -------------------------- |
+| `domains.md`     | 123,428 | 57 modules, 427 sentences  |
+| `kast.md`        |  22,493 | 30 modules, 62 sentences   |
+| `ffi.md`         |   8,401 | 2 modules, 12 sentences    |
+| `rat.md`         |   7,545 | 5 modules, 55 sentences    |
+| `substitution.md`|   3,844 | 5 modules, 7 sentences     |
+| `json.md`        |   1,616 | 2 modules, 5 sentences     |
+| `prelude.md`     |     812 | 0 modules, 2 `requires`    |
+| `timer.md`       |     259 | 1 module, 2 sentences      |
+| `unification.k`  |     805 | 1 module, 8 sentences      |
+
+9 of 9 parse, for 103 modules and 578 sentences in total. `prelude.md` having
+zero modules is not a failure — it is two `require` lines and nothing else,
+which is what makes it a good slurping fixture later.
+
+`domains.md` also pins the markdown length-preservation invariant concretely:
+123,428 bytes in, 123,428 bytes out of `select_code_blocks(text, 'k')`.
+
+The `.outer.json` files are deliberately absent from `## Checksums`: they are
+regenerated material, and their checksums would be one more thing to update by
+hand every time the generator runs. Their authority is the generator plus the
+pyk tag above.
+
+## `imp-outer-json/` — the Java oracle
+
+| file       | what it is                                                                     |
+| ---------- | ------------------------------------------------------------------------------ |
+| `imp.json` | 425 KB of **Java**-produced KAST v4: `kompile --outer-parsed-json` over `imp.k` |
+| `imp.k`    | the input, from `regression-new/imp-llvm/imp.k` — the same file the Makefile uses |
+
+This is the only oracle here that is independent of pyk, and the acceptance
+test for the net-new `outer_syntax → KSentence` layer that pyk cannot do at all
+(`_sentence_to_ksentence` is a stub that raises). It contains **89
+`KFlatModule`s, 802 sentences and 218 `KBubble`s** — the shape of a real
+definition, with rule bodies left unparsed exactly as this package will leave
+them.
+
+Two known serialisation gaps have to be normalised before diffing (both also
+named in `../test/astToKast.test.ts`): Java emits `KProduction` with a
+`klabel` field where pyk's serialiser emits `sort`, and pyk adds a
+`requires: []` key Java does not.
+
+`imp.k` comes from `imp-llvm/`, **not** from `imp-outer-json/` (which has only a
+`Makefile` and the JSON) and **not** from the `imp-semantics` repository, which
+has no license grant at all — see below.
+
+## Deliberately not vendored, and why
+
+- **The opt-in corpora** — full pl-tutorial (43 `.k` + 13 literate `.md`), KEVM
+  (20 `.md`), KMIR (19 `.md`), KWasm (13), `kontrol/cheatcodes.md`. 108 real
+  files, 107 of which parse clean under pyk today. They are megabytes of
+  third-party semantics, and they belong behind an environment variable
+  pointing at a local checkout (the `wasm-soak` precedent in
+  `packages/kompiled`), not in this repository. The one failure —
+  `f(/* comment */)` in `mir-semantics`, which Java accepts and pyk rejects —
+  goes in that harness's divergence allowlist, not here.
+- **`imp-semantics`** — no LICENSE file and no `license` in its
+  `pyproject.toml`. No license grant means never vendored, regardless of how
+  convenient the fixture would be. `regression-new/imp-llvm/imp.k` (BSD-3) is
+  the IMP fixture instead.
+- **The `Makefile`s and `ktest.mak` harness** beside every `regression-new`
+  case. Reproducing a `.out` needs a K install; that is exactly why the `.out`
+  files that matter are vendored rather than regenerated.
+- **`.out` files for the inverse suite** — 32 more files pinning messages from
+  a compiler this package does not contain. The assertion there is "parses",
+  and the phase tag that justified each file's inclusion is recorded in the
+  table above instead.
+- **`munge-tests/` and `pyk_toml_test.toml`** — the other two directories in
+  `pyk/src/tests/unit/test-data/`. Neither is outer-parser material;
+  `munge-tests` belongs to `@kframework-ts/kore`'s name mangling.
+- **A `kompile`d `compiled.json` for any of this** — the KAST-v4 end state is
+  already covered by `parse-outer/*.expected.json` (small, checked in upstream)
+  and `imp-outer-json/imp.json` (large, but the only Java oracle). A third copy
+  of the same idea would cost megabytes and add nothing.
+
+## What these fixtures do not cover
+
+Honest gaps, so nobody mistakes silence for evidence:
+
+- **No sentence-level KAST anywhere except `imp.json`.** Every
+  `parse-outer/*.expected.json` has `"localSentences": []`, because the pyk
+  code that produced them cannot convert sentences. The one fixture that pins
+  the sentence layer is Java's, and matching it is phase 5.
+- **No `UserList` expansion.** Java expands `List{Foo,","}` into `_List_`-style
+  productions with a `userList` attribute; `imp.json` therefore contains
+  productions this package will not generate until that is implemented. This is
+  a known gap in the oracle diff, not a fixture defect.
+- **No error-message goldens for the lexer or parser.** Only three negative
+  files are vendored (`missingBar.k`, plus the two divergence cases), and pyk's
+  exact `ValueError` text for them is recorded in this file rather than as
+  data. Message-level fidelity is a `test/` concern, and this package
+  deliberately does not reproduce pyk's three bare `KeyError` crashes
+  (`import`, `require`, `syntax priorities`) as crashes.
+- **No non-UTF-8 input, and no CRLF.** Every vendored file is UTF-8 with `\n`
+  line endings — which is also what lets `../test/fixtures.ts` use a
+  single-separator `splitLines` in place of Python's `str.splitlines()`.
+- **Nothing about performance.** `domains.md` at 123 KB is the largest input
+  here; the opt-in corpora are where a real size signal would come from.
+
+## Checksums
+
+sha256 of every vendored file, relative to this directory, sorted. Regenerate
+with:
+
+```sh
+cd fixtures && find . -type f \! -name '*.outer.json' \! -name '*.py' \
+  \! -path './pyk-unit/*' \! -name PROVENANCE.md -printf '%P\n' | sort | xargs sha256sum
+```
+
+```
+eb5b7c3cd001d5fe3cbd481598bb53c3abfd417c409135276008d50edf79aa0d  builtin/domains.md
+9715ca4b6424dc2d2c7145b356dd78138350d8ac7b7d42bd735b909582efa6aa  builtin/ffi.md
+f167dae52f2fb2cc0f87631b93b0bb5425f5f8adeb61d666126ddae25e6d12fa  builtin/json.md
+42c815ea80ed522dde962e231bdacc3d0d7e643016f8d649eab8d4be1d570040  builtin/kast.md
+60abd2e7ee255b202dd95f50f760ab09b71a78547454d99a8a3d0fc33020172c  builtin/prelude.md
+685711fa32c16b27f4e4e9da20b2a9ea0d2a63a7dba566eba711e35dde31fd03  builtin/rat.md
+c7e3fe10066a8b0cb8dcfd60c2b8e9bda78914b1e8d488ceeeacd16f231e293e  builtin/substitution.md
+4b718e4ac1929f5bf9ccdb1f27a7998870c5105aeaeb300358a8a1fc601605e4  builtin/timer.md
+4a6fc7b72406d14a26c584366e8395b93071f6377ca8ca44aeba3edea5da8dbd  builtin/unification.k
+214137f0fa3a7f9dde19deccf142856d5805be8346c91028e796542392c7ccdf  imp-outer-json/imp.json
+fe5ca3d0a7ac3f9424622a57496e1dc027bf7cf7065fe6d8057d1801672f42ec  imp-outer-json/imp.k
+f927c840bc3408c029858f39ecc703695396a47c887b9ddead4ac60f3d2ab537  markdown/markdown-code-blocks/block-with-newline.test
+043e6d4890a7e2536c1fb27d9c3d968c100fad4168cd70323a9a43359d0474b2  markdown/markdown-code-blocks/empty-block-with-info.test
+c9483379a8029ac9c696f7e2c3f815d83f1d1213b63e772056d8cfbb935a7544  markdown/markdown-code-blocks/empty-block.test
+4f83336cf9609d50266ce4f39b35026f7cf5c3339b1b5b3a306831ae937705f8  markdown/markdown-code-blocks/empty-file.test
+2b1588244ebd8ce5b017bf0a15315927c30437a7aa2cb52fd892f90fcffb3f84  markdown/markdown-code-blocks/indented-closing-fence.test
+c82559fded845e6c7441edb693e8c9d66c67b4e93402809c60a3f30654216874  markdown/markdown-code-blocks/indented-opening-fence.test
+eb92e59149cc03085a825e782850c3ca51aa208bcb8e75e6b9a8e9018c510f1d  markdown/markdown-code-blocks/long-fence.test
+ddb1bfed5d5b3d89960bd14f923b62b23bf41a355948ae74b53a4f48c82e64a8  markdown/markdown-code-blocks/longer-closing-fence.test
+14ddb2bd08980b818b8ff4307a52efa48a8f02d7ce9ad7c03d72fa92fd95a760  markdown/markdown-code-blocks/lorem-ipsum.test
+d5d2cba3c2bd275dc32d9f1a7f92d60504db4e8b2cd490bbdcf95edce63f688e  markdown/markdown-code-blocks/no-blocks.test
+230f2530cee2f263ebbce26c70e41c45db6c2b860315d852a20987553ddee32f  markdown/markdown-code-blocks/simple-block-with-info.test
+07bee90bf8f51c401347b5cbc2f849c4cc0655be7595c663e20ea672ae007cb9  markdown/markdown-code-blocks/simple-block.test
+6acbcce8405815c512beb8c0643c22dca10c05d7b7646e52cc6e20b3551b36af  markdown/markdown-select/empty.test
+a044dffc3eaa0b8230257ebb94bf0599fba7c18831e10f38597ff2d490d3d371  markdown/markdown-select/multiple-tags.test
+0cf3e90c355bf287d20c22b37c70601001c6e036fe3ad5b7842cb7932efd1642  markdown/markdown-select/no-selector.test
+c55e7a40277037d3b4a6bb584b0a7d835617cdefe32f3622ad58f29e7a63e1e0  markdown/markdown-select/with-selector.test
+cdc5bcd1820be952a78daaeb20eed81d13c40befe162e0056c83a4313379a766  outer-lexer/attr-key-with-dots.test
+9df1ab95b12f3cd13b3b43f21247905f71a63e19d464fad5bbce43cff116e663  outer-lexer/bubble-multi-line.test
+ae3cff434ffd703db7a5b47296464afc51470426d05d1461e80a34a72c80960a  outer-lexer/context-alias.test
+5413163c8bc78dd8cc3a37ae8f8befb4b18feb7a708015f9bed85738097abb32  outer-lexer/context.test
+cb43f4de27f81976fbf9d325feb0ca8710805b4b508a633b0678b121fdd47761  outer-lexer/domains-00.test
+74f999d6586bde75f24a62d160651b6cef5102b19cfc1d2f1c4e5ecdec9b6d4a  outer-lexer/domains-01-array.test
+e7ccfbff984a535f752707369135051d878709b3baf6e5070ddeedbf292a6573  outer-lexer/domains-02-map.test
+30c120d8199acab3a220bf3ea76500ee3a37df33d6e4c04a83763f3a7c1b54cf  outer-lexer/domains-03-rangemap.test
+aa24a071059376292b9c0cab53a996758180a67e16a5ecec01a2748902dae56a  outer-lexer/domains-04-collections.test
+150331218619de205e965c2f73256980d9e779603aeeeebcc0950594997e8afb  outer-lexer/domains-05-bool.test
+c5b8ca8b488de68fff5c21c8959779d215c0e4bba3279e74c5f5feb7bd65c8f5  outer-lexer/domains-06-int.test
+a6eca90f9f0b142b9189413ded5bca7df47c263629b1709b9f7f65bb9a64d4c9  outer-lexer/domains-07-float.test
+4e42eace5946965e7e0bbf144cf303093968f214bf5be902d4f40839464ff107  outer-lexer/domains-08-string.test
+7c93c3eb85483da3a3037df72c56e6a6e61bd3f7b143e339ff41542c75b3ada5  outer-lexer/domains-09-bytes.test
+f8eb939eae15370e0dc9ddb24b2911ecd50b66e6a36f07af297d6528b4bedc5d  outer-lexer/domains-10-id.test
+cf8b24ec616e4d2f73082a5972bdffc7f48d33f8f26aa4840766a76529ccaef3  outer-lexer/domains-11-k.test
+ab3eded471e3613a1daebbbaceb3c6a98df72b19a3e049e6447c0b62420dd14b  outer-lexer/domains-12-io.test
+5c033d73f397469af722d913f433071ec920de05747c34bad6fede70b3839bc7  outer-lexer/domains-13-mint.test
+3947c2f4af438a5e94ec42ba0247a312a7fcc129ba374f13b75f046487af9f52  outer-lexer/domains-14-strategy.test
+7566c4ab1a759a19a68e02fc283e493213e39c21ffbf3c68eee76a474cf71ea8  outer-lexer/empty.test
+dbd502ac876e7733b851b2bcb9f16a7fc38e692e0a5f386fab075ca87c30592d  outer-lexer/imp-syntax.test
+d21b14b27bd4a9a588bdd770ae6c596331f7f288a9e5aa4debb638214d20de33  outer-lexer/module-rule.test
+7322680ec487dc5f99ba68eddc263364a825fb4cad5b0d6479a1056294ba949c  outer-lexer/module.test
+2af575e708ef6bdd5d5d30f44a9adbf5316ebe337fee74ed2d5b3c0f140dd9e2  outer-lexer/nat.test
+8a30314dd02c200754cb06664468c54367c90b14e07bc9aa4555e3588e984042  outer-lexer/nats-comment.test
+05d0c500c2565fb3282358794d4238a3cb2e36f6ce11c84170b6f696bea256c4  outer-lexer/nats.test
+cc3e22ea401072914a06602892f38045226bc1046d98c8ec0b2ea7a7de6d479e  outer-lexer/priority-group-non-assoc.test
+22ecd4e3c2ffb27f8a70763f90ac986253748cde68474a85fa425778183f8800  outer-lexer/rule-comment-1.test
+a962d11b02544bcf38307e65f11e995094f8367892f10512c2657b3d83ff6867  outer-lexer/rule-comment-2.test
+b29b203f83439823263082236f4543439c00ec5c1d3a440ecbe39a9762c5653a  outer-lexer/rule-label-attr.test
+144d8ebb1ec4b49bc26df176896c716f3ce221a49d7903df8341d4ed115e54a1  outer-lexer/rule-stdin-getc.test
+4baf7d1714208e3c3cc4a3345bcb0c44278c4ef9c5f9ad77d8807b5b599b503c  outer-lexer/rule.test
+538ed74ff66ef647bd0df0775ed7045729c5e8f801674e8923f836e63bfda8e4  outer-lexer/syntax-group-attr.test
+c5b207e9c0b59b0446cd2d2061d411fd8091ec520a4f881a9aaad9f412b26e3a  outer-lexer/syntax-left.test
+fc4884943bd7df6e18f49c8d688837618ae594107941eea1b9496d9a1c1cd922  outer-lexer/syntax-non-assoc.test
+7102691152fbd403bb71ceaff500acff762ab63cbe436d7a0fd82a9ac134f8b8  outer-lexer/syntax-priority.test
+8d6133b8716b8fb37d15c084688761c71237cc0d25f6e12e8a130ac0128abcc8  outer-lexer/syntax-set.test
+9d76c6940a52989276632a199d32186ec53595ddd05cbf38807a524b122b660c  parse-outer/a.k
+91a2399301dac80dd54118f80e9715d5b29735b71e55a38fab27e0537efe5637  parse-outer/a.k.expected.json
+107b652745814e3e0751add7696c662a27cd2c806e06efa919d49afa7a086557  parse-outer/a.k.out.json
+4df521ef137e7f003b3695a663f1f14dc6efd52e2189c0bc21cd529dddcfec76  parse-outer/b.k
+2f85bed0730b199ac341f029df7b873b35d531d5651dc4241305eda5346fe18b  parse-outer/b.k.expected.json
+98ec0bd344b36ca77e2cfb521f42fd11bb62a213165270c63f1ba49d6504cfd2  parse-outer/b.k.out.json
+5256542978b5e7aef5a47b303ca6dc251c54f7c0f356b2b1feb7e7c67991ef48  parse-outer/c.k
+2f301b8ac7116872198f31e15dcba85080f15ea32b0e4e614fe03c7fcce892f7  parse-outer/c.k.expected.json
+0d3753578558ef8d1a1578f658212321a1e0203edf78a2fc20256428813904f3  parse-outer/d.k
+bb3875b8fef5fbcd5d4e0dfd0dd10886595479c28c89b84963ab203817df68f0  parse-outer/d.k.expected.json
+e3df6d364d5446a32c543268f7bf149106660e16218f32ac55bcc94066bbd493  parse-outer/include.k
+69354b7c1f56ea8beae2879fcf85f16978bd9751010e5a8aa3db0bd3cda526a3  parse-outer/include.k.expected.json
+1a3f4a9e24835c6f303f9f25db7ff5a50e8d8fdb9f9c60f59f7a840e2f6a1888  parse-outer/include/e.k
+43d3b8ea7cbeb63786f889eead91258edd0132f1ce4cff89c21824daaf91485b  parse-outer/markdown.md
+793d5d5e5a0c35edc2a4b936533e5a9b1077f2bca08f52802811479ce634dbcd  parse-outer/markdown.md.expected.json
+49ff2a44db30bdfee38f3386674df250de548941880eea67fd1bc89f45efd549  rarities/checks/checkLexicalIdentifiers.k
+031adf224838822e04c66d17905440e205a0f2c3f0cb44afdad4cdccd7909856  rarities/checks/checkRegexRanges.k
+6d6a86bdaf6a71cbc0797247a0805eff0b2ecaa9910b7d0c0a2184b8ac592163  rarities/checks/duplicateModule.k
+192d8b9a2d42611447a3d3389a9b0559c46484c7d3b7a8b3fd9fea297ba43378  rarities/checks/duplicateModule.k.out
+eaf1e667995940a99e582fc6739d20453383556d9566e6714972355176b839e3  rarities/checks/markdownErrorLocation.md
+8673b282103bbe1baccee559cd7099821dcdf3ee25d099296425489ad2a528ce  rarities/checks/markdownErrorLocation.md.out
+e880a112a7d73dcc5e566824f9e6e500326dd0f196784fdedcb68ff39b57d6bc  rarities/checks/missingBar.k
+9c4c0b692e8df45233b8599bebdf262311c5fb6dfcdc8962ffa7364d9b674705  rarities/checks/missingBar.k.out
+d6d9b1eaed45807d20f71eb1152eb7f27895144048ed51f5386fc4437bababa3  rarities/checks/parseErrorExpected.k
+4c34597a7406124ebcb2ead70399996967a00bbf9d8291aecc79d9e8eb9a1c6c  rarities/checks/parseErrorExpected.k.out
+2b418769f9c2910dda5b8528e453fb74a54c9e81b844157bfce23d19a5f969aa  rarities/context-alias-2/test.k
+d9e8907456fa555968dfecef5bc540f4e87204bfaca13152e04c4a3dcb9a4975  rarities/context-alias/test.k
+3b4cb9624c2b23ae96036a1870fb8741e63d46d7cffeb7132b0240edcdd3039e  rarities/inverse-suite/bad-bytes-literal/quote.k
+9812f4004bd16b84cc28a64a023bdb0b4a6245784f7f3b6ed729ca5fc1a28d56  rarities/inverse-suite/bad-bytes-literal/slash.k
+c757d5af1b5c48af0d78dcb7534ee48c8acef4fbcfe3603c0dbb017f66e43bdd  rarities/inverse-suite/bad-bytes-literal/unicode-escape.k
+d9dd92141055c809d7558d6bfad4d684f7dafc9172208e3a4f0b0bccf210984f  rarities/inverse-suite/bad-bytes-literal/unicode.k
+3ad0e003c5189eb8c0829195669128b4d5d6f68121fd2293b5e739d1f4ac7f42  rarities/inverse-suite/checkWarns/checkHaskellAnywhere.k
+e9bd93071a5f007328a77c45def7f91090965a711195a041d0f0914ba3d70343  rarities/inverse-suite/checkWarns/checkRHSHaskell.k
+53eada9e191b8f0fabe5cc60f3b51107cd19696df4f3743f390ebcfc0c820201  rarities/inverse-suite/checkWarns/checkUnusedSymbol.k
+62d8c44e5624c4f289fbb92201336ee6843f45a8b960c37625da30344593743d  rarities/inverse-suite/checkWarns/checkUnusedVar.k
+3682156f5370543337dcef929ea988324b4fb39ab5ec1553395de5451cf0d3a1  rarities/inverse-suite/checkWarns/configVarInitial.k
+9df65e2914b3757b128e842865814fd5fe29cc948a576f29d0f05904c09228b2  rarities/inverse-suite/checkWarns/deprecated.k
+5b45c315c4e3bd96763a3dbac556560b6a72b8eedf0cfa03eccb6decd67ced0f  rarities/inverse-suite/checkWarns/existsLHSBoundFail.k
+5a33129f7af6c557594e652ba4d384852212d6826860954dfa7d9cd43021aa62  rarities/inverse-suite/checkWarns/existsLHSBoundPass.k
+b780d6e9c4a973448eff375699e05217aff9668ccf89ebd3af432837a8a6934e  rarities/inverse-suite/checkWarns/missingKlabel.k
+9001074481a70836213bd3ff3cfbbfb913ceee20d7d4ba2b46e4342df6024c43  rarities/inverse-suite/checkWarns/noEvaluatorsExhaustive.k
+3180c8008315d8a2c8c3cd9fc4e96ad73a3842c6aad0a9b6a386fea71544e5dc  rarities/inverse-suite/checkWarns/nonUniqueOverload.k
+f947d0c26239544f721d409c7caf9aef55d7c4934f0fa3f904bb36a9fdaeba92  rarities/inverse-suite/checkWarns/nullarySymbol.k
+eba65d7346dee14fb188a1fad248448069b0d1c8133fb13be82af536ee6c378d  rarities/inverse-suite/checkWarns/requireBuiltinK.k
+937e73ee6dcd505dd07837a7cd9f268228694e97603b49f1483e093f4e03fcd4  rarities/inverse-suite/checkWarns/singletonOverload.k
+c7d6cfdcc2d3bf5db70c952b2d51b0a5528380b3ae458e31167f4e0c6c12ea01  rarities/inverse-suite/checkWarns/symbolKLabel.k
+5a80ce658b6ff4835753fa9c677bd4e01b6cc56a98159f58eea90c4290e7cb2e  rarities/inverse-suite/checkWarns/syntaxGroups.k
+06571fe7155111a638e34e8e37e5f358db0aab239476caf15bcff84b91a57ab1  rarities/inverse-suite/checks/badFunctionRuleWithContext.k
+d5e34120e14473087ec1a3b5b188cc0e09f66c28ddf0480089d739a8b768811f  rarities/inverse-suite/checks/checkMIntLiteral.k
+c7bc0359073d93de7c41c2b52be126dad378fae26a22f6968ee7218cfc9d0654  rarities/inverse-suite/checks/checkPriorityBlocks.k
+f0e6d10eceeb55597c5d82230aafb4cd7df36a3a6aa300d13a92e2d7a1ca0496  rarities/inverse-suite/checks/checkRecordProdDuplicateLabels.k
+6fb022813b0d6445b2ded509a9b4b7632ea46eb70f5fc723bae574a706ec9468  rarities/inverse-suite/checks/functionContextInRewrite.k
+c767257468fe1a4b7b17db7cad4d044df3d75481b97deddb23bede2746613af1  rarities/inverse-suite/checks/nestedFunctionContext.k
+d215d07834468ad22f5274d2890d8cd2561c4474bc6a575ed096576e8ad22a49  rarities/inverse-suite/checks/nestedFunctionContextInFun.k
+df25acab4c128bb5543e2e3d3055507d2f79d220cd54db205fc583de04c80dec  rarities/inverse-suite/checks/paramAmb.k
+05210b5006262d76ca3db2e88fc1d46e6e964678009a0c865312d8f89170b337  rarities/inverse-suite/checks/priorityError.k
+c0420d25a9b1cfa2e99ca788d0132b62ff53055c4ab54ea7c6164fae39d6b83f  rarities/inverse-suite/checks/signature.k
+31ff9ca5c9f6a69059fd0138d0c7feb0339ca4f3a02accf0c63c0ba6d999c725  rarities/inverse-suite/checks/wideningAnywhere.k
+bcd031310fa77afc4df483a270b43029922a8d0f4f1a68d49b5e621f4ded2fcb  rarities/inverse-suite/checks/wideningMacro.k
+8a540fb506f008aa0261eb066005dcfa15eab155ebcc1a9e586d86c42646454a  rarities/markdownSelectors/test.md
+```

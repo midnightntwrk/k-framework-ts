@@ -1,0 +1,56 @@
+
+┌─ 1 (root, init)
+│     <generatedTop>
+│       <T>
+│         <k>
+│           3 + 4
+│           ~> K_CELL_31707e0c:K
+│           ~> .K
+│         </k>
+│         <state>
+│           STATE_CELL
+│         </state>
+│       </T>
+│       <generatedCounter>
+│         GENERATEDCOUNTER_CELL_ae2db996:Int
+│       </generatedCounter>
+│     </generatedTop>
+│
+│  (1 step)
+├─ 3
+│     <generatedTop>
+│       <T>
+│         <k>
+│           7
+│           ~> K_CELL_31707e0c:K
+│           ~> .K
+│         </k>
+│         <state>
+│           STATE_CELL:Map
+│         </state>
+│       </T>
+│       <generatedCounter>
+│         GENERATEDCOUNTER_CELL_ae2db996:Int
+│       </generatedCounter>
+│     </generatedTop>
+│
+┊  constraint: true
+┊  subst:
+┊      GENERATEDCOUNTER_CELL_73eeffd3 <- GENERATEDCOUNTER_CELL_ae2db996:Int
+└─ 2 (leaf, target)
+      <generatedTop>
+        <T>
+          <k>
+            7
+            ~> K_CELL_31707e0c:K
+            ~> .K
+          </k>
+          <state>
+            STATE_CELL
+          </state>
+        </T>
+        <generatedCounter>
+          GENERATEDCOUNTER_CELL_73eeffd3:Int
+        </generatedCounter>
+      </generatedTop>
+

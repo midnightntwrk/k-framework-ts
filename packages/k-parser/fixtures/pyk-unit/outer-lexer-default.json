@@ -1,0 +1,348 @@
+{
+  "table": "DEFAULT_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_lexer.py",
+  "fields": [
+    "text",
+    "expectedToken",
+    "expectedRemaining"
+  ],
+  "note": "`_default(la, it)`.",
+  "cases": [
+    {
+      "text": "",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          0
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": " ",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "// comment",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          10
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/* comment */",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          13
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": " //",
+      "expectedToken": {
+        "text": "",
+        "type": "EOF",
+        "loc": [
+          1,
+          3
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "0",
+      "expectedToken": {
+        "text": "0",
+        "type": "NAT",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "01",
+      "expectedToken": {
+        "text": "01",
+        "type": "NAT",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "012abc",
+      "expectedToken": {
+        "text": "012",
+        "type": "NAT",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": "abc"
+    },
+    {
+      "text": "abc012",
+      "expectedToken": {
+        "text": "abc012",
+        "type": "ID_LOWER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "#abc012",
+      "expectedToken": {
+        "text": "#abc012",
+        "type": "ID_LOWER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "Abc012",
+      "expectedToken": {
+        "text": "Abc012",
+        "type": "ID_UPPER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "#Abc012",
+      "expectedToken": {
+        "text": "#Abc012",
+        "type": "ID_UPPER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": ":",
+      "expectedToken": {
+        "text": ":",
+        "type": "COLON",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "::=",
+      "expectedToken": {
+        "text": "::=",
+        "type": "DCOLONEQ",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "\"\"",
+      "expectedToken": {
+        "text": "\"\"",
+        "type": "STRING",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "\"a\"",
+      "expectedToken": {
+        "text": "\"a\"",
+        "type": "STRING",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "\"\\n\"",
+      "expectedToken": {
+        "text": "\"\\n\"",
+        "type": "STRING",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "\"\\\"\"",
+      "expectedToken": {
+        "text": "\"\\\"\"",
+        "type": "STRING",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "\"\\\\\"",
+      "expectedToken": {
+        "text": "\"\\\\\"",
+        "type": "STRING",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "r",
+      "expectedToken": {
+        "text": "r",
+        "type": "ID_LOWER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "r1",
+      "expectedToken": {
+        "text": "r1",
+        "type": "ID_LOWER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "r\"\"",
+      "expectedToken": {
+        "text": "r\"\"",
+        "type": "REGEX",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "r\"\\n\"",
+      "expectedToken": {
+        "text": "r\"\\n\"",
+        "type": "REGEX",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "r\"\\\"\"",
+      "expectedToken": {
+        "text": "r\"\\\"\"",
+        "type": "REGEX",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "r\"\\\\\"",
+      "expectedToken": {
+        "text": "r\"\\\\\"",
+        "type": "REGEX",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "rule",
+      "expectedToken": {
+        "text": "rule",
+        "type": "KW_RULE",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "rule0",
+      "expectedToken": {
+        "text": "rule0",
+        "type": "ID_LOWER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "rulerule",
+      "expectedToken": {
+        "text": "rulerule",
+        "type": "ID_LOWER",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    }
+  ]
+}

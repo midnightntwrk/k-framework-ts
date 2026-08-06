@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    // The root compiler stays pure, but the published package also contains
+    // the Node-only `./fs` entry point and `klean` executable. Their Node
+    // imports are private implementation details, so this is a build-time
+    // requirement rather than a consumer type dependency.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

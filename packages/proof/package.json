@@ -1,0 +1,82 @@
+{
+  "name": "@kframework-ts/proof",
+  "version": "0.1.0",
+  "description": "K Framework proof artifacts — APR proofs, the implies family, summaries, and pyk's proof-data directory format at K v7.1.337",
+  "keywords": [
+    "apr-proof",
+    "formal-verification",
+    "k-framework",
+    "kcfg",
+    "proof",
+    "pyk",
+    "reachability-logic"
+  ],
+  "homepage": "https://github.com/SebastienGllmt/k-framework-ts/tree/main/packages/proof#readme",
+  "bugs": {
+    "url": "https://github.com/SebastienGllmt/k-framework-ts/issues"
+  },
+  "license": "MIT OR Apache-2.0",
+  "author": "Sebastien Guillemot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastienGllmt/k-framework-ts.git",
+    "directory": "packages/proof"
+  },
+  "bin": {
+    "kproof": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "ROADMAP.md",
+    "THIRD-PARTY-NOTICES.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./store": {
+      "types": "./dist/store.d.ts",
+      "import": "./dist/store.js"
+    },
+    "./prove": {
+      "types": "./dist/prove.d.ts",
+      "import": "./dist/prove.js"
+    },
+    "./show": {
+      "types": "./dist/show.d.ts",
+      "import": "./dist/show.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "test": "bun test",
+    "check:types": "tsc --noEmit",
+    "check": "bun run check:types && bun test",
+    "prepublishOnly": "bun run --cwd ../.. check && bun run build"
+  },
+  "dependencies": {
+    "@kframework-ts/cterm": "workspace:*",
+    "@kframework-ts/kast": "workspace:*",
+    "@kframework-ts/kcfg": "workspace:*",
+    "@kframework-ts/kore-rpc": "workspace:*",
+    "@kframework-ts/ktool": "workspace:*"
+  },
+  "devDependencies": {
+    "@kframework-ts/konvert": "workspace:*",
+    "@types/node": "^26.1.2"
+  },
+  "engines": {
+    "bun": ">=1.3.14",
+    "node": ">=20"
+  }
+}

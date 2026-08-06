@@ -1,0 +1,14 @@
+
+┌─ 1 (root)
+│
+│  (4 steps)
+└─ 2 (leaf)
+
+
+
+
+module SUMMARY-TEST
+rule <generatedTop>(<k>(X => 2))
+  requires _>Int_(X, 0)
+  ensures true
+endmodule

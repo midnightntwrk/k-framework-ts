@@ -1,0 +1,111 @@
+# Does the newest K release still match what these packages were transcribed from?
+name: K drift
+
+# The point of this job is that nobody has to watch K. It asks the question on a
+# schedule, and only says something when the answer changes — so catching up on
+# ten unwatched K releases costs one notification, not ten releases. See
+# docs/versioning.md.
+on:
+  schedule:
+    # Mondays, 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "K release tag to check (defaults to K's latest)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    name: Compare declared K sources against a K release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - run: bun install --frozen-lockfile
+      - run: bun run --filter '*' build
+
+      - name: Resolve the K release to check
+        id: k
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED: ${{ inputs.release }}
+        run: |
+          set -euo pipefail
+          if [ -n "$REQUESTED" ]; then
+            tag="$REQUESTED"
+          else
+            tag=$(gh api repos/runtimeverification/k/releases/latest --jq .tag_name)
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Checking against K $tag"
+
+      # Each package that transcribes K sources exposes the same `check-k`
+      # command over its own manifest, so adding a package means adding a word
+      # to the loop below — the list must stay equal to the set of packages
+      # whose `src/cli.ts` implements `check-k`, or a package drifts unwatched.
+      # Exit codes: 0 unchanged (for a multi-revision manifest: matches a
+      # recorded revision), 1 changed, 3 could not locate, 2 could not run.
+      #
+      # `kore-rpc` additionally resolves the haskell-backend submodule commit
+      # through the GitHub contents API, which is the one call here that is not
+      # raw.githubusercontent; unauthenticated, it is rate-limited per IP, and
+      # a 403 surfaces as exit 2 ("could not ask") rather than as a verdict.
+      - name: Check declared sources
+        id: check
+        env:
+          TAG: ${{ steps.k.outputs.tag }}
+        run: |
+          set -uo pipefail
+          status=0
+          : > report.md
+          for pkg in kast cterm kcfg kast-json kore kore-rpc konvert kompiled k-parser kcovr ktool klean; do
+            echo "### \`$pkg\`" >> report.md
+            echo '```' >> report.md
+            node "packages/$pkg/dist/bin.js" check-k "$TAG" >> report.md 2>&1
+            code=$?
+            echo '```' >> report.md
+            echo "exit code: $code" >> report.md
+            echo >> report.md
+            # 2 is "could not ask" — a broken run, not a finding about K, but it
+            # still needs a human, so it is not swallowed either.
+            [ "$code" -ne 0 ] && status=1
+          done
+          cat report.md
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Open an issue when something moved
+        if: steps.check.outputs.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.k.outputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          title="K $TAG: declared sources no longer match"
+          # One issue per K release, not one per week.
+          if gh issue list --repo "$REPO" --state open --search "$title in:title" \
+               --json title --jq '.[].title' | grep -Fxq "$title"; then
+            echo "An open issue already tracks $TAG; nothing to do."
+            exit 0
+          fi
+          {
+            echo "The scheduled drift check found that K \`$TAG\` no longer matches what"
+            echo "one or more packages record in their manifest."
+            echo
+            cat report.md
+            echo "A \`changed\` result means a transcribed source was edited — diff it before"
+            echo "trusting the package at that release. A \`could not locate\` result means K"
+            echo "moved a path, which is **not** a verdict about compatibility: the manifest"
+            echo "has to be re-established by hand. See \`docs/versioning.md\`."
+          } > body.md
+          gh issue create --repo "$REPO" --title "$title" --body-file body.md

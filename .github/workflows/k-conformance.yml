@@ -1,0 +1,119 @@
+# Live K conformance is intentionally separate from ci.yml.  The normal
+# workspace checks must remain hermetic: they use checked-in fixtures and do
+# not install K or start a symbolic-execution server.
+name: K conformance
+
+on:
+  # This is opt-in because it downloads and installs the complete K toolchain.
+  # Enable a required check only after this lane has proven stable enough for
+  # the repository's branch-protection policy.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: k-conformance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  cterm-and-kcfg:
+    name: CTerm and KCFG against K 7.1.337
+    # The pinned K artifact is specifically an Ubuntu Noble package.  Do not
+    # change this to ubuntu-latest: a runner-image transition must be paired
+    # with selecting and verifying a new K package.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      K_RELEASE: v7.1.337
+      K_DEB: kframework_7.1.337_amd64_ubuntu_noble.deb
+      K_DEB_SHA256: 3692997e6bfa4be490d24bd9201289d4a05872889c9da725dda21e99d03d6990
+      # The Debian release package installs K's executables under /usr/bin.
+      # Live tests take this explicit bin directory so a host-installed K
+      # cannot silently satisfy a conformance run.
+      KFRAMEWORK_TS_K_BIN: /usr/bin
+      # `kompileCached` owns this directory.  It is deliberately outside the
+      # checkout: no generated K definition can appear as a working-tree edit.
+      # `runner.temp` is not available in job-level `env` (it evaluated to
+      # empty here, yielding the unwritable `/kframework-ts-kompile-cache`),
+      # so the cache sits beside the checkout in the runner's work directory.
+      KFRAMEWORK_TS_KOMPILE_CACHE: ${{ github.workspace }}/../kframework-ts-kompile-cache
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install the pinned K Framework distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$RUNNER_TEMP/$K_DEB"
+          curl --fail --location --retry 3 --output "$package" \
+            "https://github.com/runtimeverification/k/releases/download/$K_RELEASE/$K_DEB"
+          printf '%s  %s\n' "$K_DEB_SHA256" "$package" | sha256sum --check --strict
+          sudo apt-get update
+          sudo apt-get install --yes "$package"
+
+      - name: Verify the selected K tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$KFRAMEWORK_TS_K_BIN/kompile"
+          test -x "$KFRAMEWORK_TS_K_BIN/kore-rpc"
+          test -x "$KFRAMEWORK_TS_K_BIN/kore-rpc-booster"
+          actual=$("$KFRAMEWORK_TS_K_BIN/kompile" --version | sed -n 's/^K version:[[:space:]]*//p' | head -n 1)
+          test "$actual" = "$K_RELEASE"
+
+      - run: bun install --frozen-lockfile
+
+      # The live test imports public workspace entry points.  Those exports
+      # intentionally point at gitignored `dist/` output, so a fresh checkout
+      # must build before Bun can resolve the conformance harness.
+      - run: bun run build
+
+      # `kompileCached` keys individual definitions by canonical kompile args,
+      # source text, and the selected executable.  This outer cache also keys
+      # on every local source that can affect a live scenario: its contract
+      # intentionally does not attempt to discover arbitrary files below an
+      # include directory.
+      - name: Restore cached K definitions
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.KFRAMEWORK_TS_KOMPILE_CACHE }}
+          key: >-
+            k-conformance-${{ runner.os }}-${{
+            hashFiles(
+            '.github/workflows/k-conformance.yml',
+            'bun.lock',
+            'packages/cterm/src/**',
+            'packages/cterm/test/**',
+            'packages/kcfg/src/**',
+            'packages/kcfg/test/**',
+            'packages/kast/src/**',
+            'packages/konvert/src/**',
+            'packages/kore/src/**',
+            'packages/kore-rpc/src/**',
+            'packages/ktool/src/**',
+            'packages/ktool/test/fixtures/**'
+            )
+            }}
+
+      # Do not run the broad test suite here: it already runs in ci.yml and
+      # would make this expensive lane look meaningful even if its live test
+      # were accidentally removed.  The conformance gate itself is explicit.
+      - name: Run the CTerm live-K conformance scenario
+        run: bun test packages/cterm/test/live-k.test.ts
+
+      - name: Run the KCFG live-K conformance scenario
+        run: bun test packages/kcfg/test/live-k.test.ts
+
+      # B9's three spawn-layer fast paths: the native Bison parser (needs a
+      # definition kompiled with --gen-glr-bison-parser), the in-process
+      # definition cache, and a real kserver.  It also pins the /dev/stdin
+      # regression — `kore-print` and the LLVM `interpreter` cannot be called at
+      # all from Node or Bun with pyk's argv, and no unit test can show that.
+      - name: Run the ktool throughput conformance scenario
+        run: bun test packages/ktool/test/live-throughput.test.ts

@@ -1,0 +1,35 @@
+{
+  // Emit config, used only by `bun run build`.  The sibling `tsconfig.json` is
+  // the development one: it type-checks `src` *and* `test` with `noEmit`, and
+  // it pulls in Bun's types.  Neither belongs in what a consumer installs.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    // The base config allows `.ts` import specifiers so `test/` can import
+    // `../src/index.ts` directly.  `src/` itself uses `.js` specifiers — the
+    // ESM convention — so nothing here needs it, and emit forbids it.
+    //
+    // Do not "simplify" src back to `.ts` specifiers plus
+    // `rewriteRelativeImportExtensions`: tsgo 7.0.2 applies that rewrite to
+    // the `.js` emit but NOT to the `.d.ts` emit, shipping declaration files
+    // that import from `./foo.ts` — a path that does not exist in the
+    // tarball.  `.js` specifiers need no rewriting, so the bug cannot bite.
+    "allowImportingTsExtensions": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    // The tarball ships `dist` only, so a map pointing at `../src/*.ts` would
+    // dangle.  Embedding the source text in the maps keeps step-through
+    // debugging and go-to-definition working without shipping `src` twice.
+    "inlineSources": true,
+    // The published `.d.ts` must not make consumers depend on `@types/bun`.
+    // `node` (not `bun`) is here because `src/eq.ts` and `src/manip.ts` import
+    // `node:crypto` for sha256 — an internal detail: nothing in the public
+    // surface names a Node type, so declarations stay dependency-free (the
+    // smoke test proves the tarball loads without either types package).
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

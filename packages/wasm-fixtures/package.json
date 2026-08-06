@@ -1,0 +1,41 @@
+{
+  "name": "@kframework-ts/wasm-fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PRIVATE, never published — the vendored KWasm kompiled directory and the WASM soak plumbing shared by kompiled and konvert",
+  "license": "MIT OR Apache-2.0",
+  "author": "Sebastien Guillemot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastienGllmt/k-framework-ts.git",
+    "directory": "packages/wasm-fixtures"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./kompile-soak": {
+      "types": "./dist/kompile-soak.d.ts",
+      "import": "./dist/kompile-soak.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "test": "bun test",
+    "check:types": "tsc --noEmit",
+    "check": "bun run check:types && bun test",
+    "kompile-soak": "bun run src/kompile-soak-bin.ts"
+  },
+  "devDependencies": {
+    "@kframework-ts/kast": "workspace:*",
+    "@types/node": "^26.1.2"
+  },
+  "engines": {
+    "bun": ">=1.3.14",
+    "node": ">=20"
+  }
+}

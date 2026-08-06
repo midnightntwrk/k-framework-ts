@@ -1,0 +1,511 @@
+{
+  "node": "Definition",
+  "modules": [
+    {
+      "node": "Module",
+      "location": [
+        35,
+        1,
+        41,
+        10
+      ],
+      "name": "KVAR-SYNTAX-PROGRAM-PARSING",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KVar",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Lexical",
+                      "regex": "[A-Za-z\\_][A-Za-z0-9\\_]*"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "prec",
+                        "1"
+                      ],
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#LowerId",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "#UpperId",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "token",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "BUILTIN-ID-TOKENS",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        43,
+        1,
+        45,
+        10
+      ],
+      "name": "KVAR-SYNTAX",
+      "sentences": [
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KVar",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": [
+              [
+                "token",
+                ""
+              ],
+              [
+                "hook",
+                "KVAR.KVar"
+              ]
+            ]
+          }
+        }
+      ],
+      "imports": [],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        47,
+        1,
+        55,
+        10
+      ],
+      "name": "KVAR-COMMON",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KVar",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "String2KVar"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "String",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "STRING.string2token"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "KVar",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "freshKVar"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "freshGenerator",
+                        ""
+                      ],
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "private",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "Rule",
+          "bubble": "freshKVar(I:Int) => String2KVar(\"_\" +String Int2String(I))",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KVAR-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "STRING",
+          "public": false
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        57,
+        1,
+        59,
+        10
+      ],
+      "name": "KVAR",
+      "sentences": [],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "KVAR-COMMON",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        91,
+        1,
+        97,
+        10
+      ],
+      "name": "SUBSTITUTION",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "["
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KItem",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "/"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KItem",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "]"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "SUBSTITUTION.substOne"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Sort",
+            "params": [
+              "Sort"
+            ],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Sort",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "["
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Map",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "]"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "SUBSTITUTION.substMany"
+                      ],
+                      [
+                        "impure",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "MAP",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "KVAR",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    }
+  ],
+  "requires": []
+}

@@ -1,0 +1,55 @@
+{
+  "_comment": "HAND-AUTHORED, not vendored. See test/data/README.md for provenance and derivation.",
+  "label": "proof-1",
+  "request": {
+    "jsonrpc": "2.0",
+    "id": "proof-1-001",
+    "method": "execute",
+    "params": {
+      "state": {
+        "format": "KORE",
+        "version": 1,
+        "term": { "tag": "EVar", "name": "X", "sort": { "tag": "SortApp", "name": "SortInt", "args": [] } }
+      },
+      "max-depth": 1000
+    }
+  },
+  "cancel": {
+    "jsonrpc": "2.0",
+    "id": "proof-1-001-cancel",
+    "method": "cancel",
+    "params": {}
+  },
+  "cancelled": {
+    "jsonrpc": "2.0",
+    "id": "proof-1-001",
+    "error": {
+      "code": -32000,
+      "message": "Request cancelled",
+      "data": null
+    }
+  },
+  "followUpRequest": {
+    "jsonrpc": "2.0",
+    "id": "proof-1-002",
+    "method": "simplify",
+    "params": {
+      "state": {
+        "format": "KORE",
+        "version": 1,
+        "term": { "tag": "Top", "sort": { "tag": "SortApp", "name": "SortGeneratedTopCell", "args": [] } }
+      }
+    }
+  },
+  "followUpResponse": {
+    "jsonrpc": "2.0",
+    "id": "proof-1-002",
+    "result": {
+      "state": {
+        "format": "KORE",
+        "version": 1,
+        "term": { "tag": "Top", "sort": { "tag": "SortApp", "name": "SortGeneratedTopCell", "args": [] } }
+      }
+    }
+  }
+}

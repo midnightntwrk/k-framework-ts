@@ -1,0 +1,23 @@
+{
+  // Shared compiler options for every package. Packages extend this and supply
+  // their own `include` (and `types`, since only the dev config wants Bun's).
+  // Nothing here is package-specific, so a new package needs a three-line
+  // tsconfig.json and nothing else.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": false,
+    "resolveJsonModule": true
+  }
+}

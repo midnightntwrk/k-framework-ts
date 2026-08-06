@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    # Packages version independently, so a tag names one: `kast-json-v0.1.0`.
+    # See docs/versioning.md.
+    tags: ["*-v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Types, lint, format, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # Matches `engines.bun`. The tests read only checked-in fixtures, so
+          # this job needs no K installation and no network beyond the install.
+          bun-version: 1.3.14
+
+      - run: bun install --frozen-lockfile
+
+      # Build first: workspace `exports` resolve through gitignored `dist/`,
+      # and hermetic tests import sibling packages (including the private
+      # semantics fixture packages) — on a clean checkout those imports need dist.
+      - run: bun run build
+
+      # Root scripts: lint and format run once over the whole workspace, types
+      # and tests fan out across `packages/*`.
+      - run: bun run check
+
+  smoke:
+    name: Packed ${{ matrix.package }} on Node ${{ matrix.node }}
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # A new package joins by adding its directory name here and dropping a
+        # `ci/smoke.mjs` next to its `package.json`.
+        #
+        # The semantics fixture packages are deliberately absent: they are
+        # `"private": true` and never published, so there are no tarballs for
+        # this job. They stay out of the dependency walk below too, which reads
+        # `dependencies` only; consumers take them as dev dependencies.
+        package:
+          [
+            cterm,
+            k-parser,
+            kast,
+            kast-json,
+            kcfg,
+            kcovr,
+            kfuzz,
+            klean,
+            kompiled,
+            konvert,
+            kore,
+            kore-rpc,
+            ktool,
+            proof,
+            prooftrace,
+          ]
+        # The floor claimed by `engines.node`, plus current LTS and current.
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run --filter '*' build
+
+      - name: Install the packed tarball into a scratch project and import it
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          pack_dir=$(mktemp -d)
+          packed=""
+          # Packed with bun, deliberately: npm writes `workspace:*` into the
+          # tarball verbatim and consumers then fail with EUNSUPPORTEDPROTOCOL,
+          # while bun rewrites it to the concrete version. This job has to pack
+          # the way a release does, or it would pass on an artifact nobody can
+          # install. Installing is still npm-under-plain-Node — the strictest
+          # consumer, and the point of the job.
+          #
+          # Siblings get packed too, transitively: the version bun rewrote a
+          # `workspace:*` to is not on the registry, so npm can resolve that
+          # name only from a tarball handed to it in the same install. Read off
+          # `dependencies` rather than listed per package, which keeps joining
+          # the matrix above a one-line change — and keeps every tarball
+          # standalone, since a dependency this package failed to declare is
+          # then simply absent when `smoke.mjs` imports it. A sibling's
+          # directory is its unscoped name, which is what README.md's "Adding a
+          # package" requires.
+          pack() {
+            case " $packed " in *" $1 "*) return ;; esac
+            packed="$packed $1"
+            (cd "$GITHUB_WORKSPACE/packages/$1" && bun pm pack --destination "$pack_dir")
+            for dep in $(bun -e "for (const d of Object.keys(require('$GITHUB_WORKSPACE/packages/$1/package.json').dependencies ?? {})) if (d.startsWith('@kframework-ts/')) console.log(d.split('/')[1])"); do
+              pack "$dep"
+            done
+          }
+          pack '${{ matrix.package }}'
+          consumer=$(mktemp -d)
+          cp ci/smoke.mjs "$consumer/"
+          cd "$consumer"
+          echo '{"name":"consumer","type":"module","private":true}' > package.json
+          # Those tarballs are the only .tgz files in a freshly made directory,
+          # so this needs no knowledge of how npm mangles a scoped name into a
+          # filename. zod is `kast-json`'s peer dependency; installing it
+          # unconditionally costs nothing and keeps the command uniform.
+          npm install "$pack_dir"/*.tgz zod@4.4.3
+          node smoke.mjs

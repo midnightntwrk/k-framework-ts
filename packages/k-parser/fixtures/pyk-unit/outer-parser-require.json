@@ -1,0 +1,18 @@
+{
+  "table": "test_require",
+  "source": "pyk/src/tests/unit/kast/test_outer_parser.py",
+  "fields": [
+    "kText",
+    "expected"
+  ],
+  "note": "NOT a table upstream: `test_require()` is a plain function, reconstructed here in table shape.",
+  "cases": [
+    {
+      "kText": "requires \"foo.k\"",
+      "expected": {
+        "node": "Require",
+        "path": "foo.k"
+      }
+    }
+  ]
+}

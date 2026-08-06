@@ -1,0 +1,216 @@
+{
+  "table": "MODULE_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_parser.py",
+  "fields": [
+    "kText",
+    "expected"
+  ],
+  "note": "`OuterParser(kText).module()`; every case carries a 4-tuple `location`.",
+  "cases": [
+    {
+      "kText": "module FOO endmodule",
+      "expected": {
+        "node": "Module",
+        "location": [
+          1,
+          1,
+          1,
+          21
+        ],
+        "name": "FOO",
+        "sentences": [],
+        "imports": [],
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "module FOO [foo] endmodule",
+      "expected": {
+        "node": "Module",
+        "location": [
+          1,
+          1,
+          1,
+          27
+        ],
+        "name": "FOO",
+        "sentences": [],
+        "imports": [],
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "foo",
+              ""
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "module FOO imports BAR endmodule",
+      "expected": {
+        "node": "Module",
+        "location": [
+          1,
+          1,
+          1,
+          33
+        ],
+        "name": "FOO",
+        "sentences": [],
+        "imports": [
+          {
+            "node": "Import",
+            "module_name": "BAR",
+            "public": true
+          }
+        ],
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "module FOO imports BAR imports BAZ endmodule",
+      "expected": {
+        "node": "Module",
+        "location": [
+          1,
+          1,
+          1,
+          45
+        ],
+        "name": "FOO",
+        "sentences": [],
+        "imports": [
+          {
+            "node": "Import",
+            "module_name": "BAR",
+            "public": true
+          },
+          {
+            "node": "Import",
+            "module_name": "BAZ",
+            "public": true
+          }
+        ],
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "module FOO rule x endmodule",
+      "expected": {
+        "node": "Module",
+        "location": [
+          1,
+          1,
+          1,
+          28
+        ],
+        "name": "FOO",
+        "sentences": [
+          {
+            "node": "Rule",
+            "bubble": "x",
+            "label": "",
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          }
+        ],
+        "imports": [],
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "module FOO rule x rule y endmodule",
+      "expected": {
+        "node": "Module",
+        "location": [
+          1,
+          1,
+          1,
+          35
+        ],
+        "name": "FOO",
+        "sentences": [
+          {
+            "node": "Rule",
+            "bubble": "x",
+            "label": "",
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          },
+          {
+            "node": "Rule",
+            "bubble": "y",
+            "label": "",
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          }
+        ],
+        "imports": [],
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "module FOO [foo] imports BAR rule x endmodule",
+      "expected": {
+        "node": "Module",
+        "location": [
+          1,
+          1,
+          1,
+          46
+        ],
+        "name": "FOO",
+        "sentences": [
+          {
+            "node": "Rule",
+            "bubble": "x",
+            "label": "",
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          }
+        ],
+        "imports": [
+          {
+            "node": "Import",
+            "module_name": "BAR",
+            "public": true
+          }
+        ],
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "foo",
+              ""
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

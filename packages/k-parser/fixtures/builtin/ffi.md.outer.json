@@ -1,0 +1,1292 @@
+{
+  "node": "Definition",
+  "modules": [
+    {
+      "node": "Module",
+      "location": [
+        23,
+        1,
+        57,
+        10
+      ],
+      "name": "FFI-SYNTAX",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "FFIType",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#void"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_void"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#uint8"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_uint8"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#sint8"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_sint8"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#uint16"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_uint16"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#sint16"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_sint16"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#uint32"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_uint32"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#sint32"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_sint32"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#uint64"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_uint64"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#sint64"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_sint64"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#float"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_float"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#double"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_double"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#uchar"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_uchar"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#schar"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_schar"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#ushort"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_ushort"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#sshort"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_sshort"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#uint"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_uint"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#sint"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_sint"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#ulong"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_ulong"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#slong"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_slong"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#longdouble"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_longdouble"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#pointer"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_pointer"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#complexfloat"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_complexfloat"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#complexdouble"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_complexdouble"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#complexlongdouble"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_complexlongdouble"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#struct"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "#ffi_struct"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "LIST",
+          "public": false
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        59,
+        1,
+        207,
+        10
+      ],
+      "name": "FFI",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bytes",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#ffiCall"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "FFIType",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.call"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bytes",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#ffiCall"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "FFIType",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.call_variadic"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bytes",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#ffiCall"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bool",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "List",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "FFIType",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "Rule",
+          "bubble": "#ffiCall(false, Addr::Int, Args::List, Types::List, _, Ret::FFIType) => #ffiCall(Addr, Args, Types, Ret)",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "#ffiCall(true, Addr::Int, Args::List, Types::List, NFixed::Int, Ret::FFIType) => #ffiCall(Addr, Args, range(Types, 0, size(Types) -Int NFixed), range(Types, NFixed, 0), Ret)",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Int",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#functionAddress"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "String",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.address"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bytes",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#alloc"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KItem",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.alloc"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Int",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#address"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bytes",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.bytes_address"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#free"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "KItem",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.free"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#nativeRead"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bytes",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.read"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "K",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#nativeWrite"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bytes",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FFI.write"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "FFI-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "BYTES",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "STRING",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "BOOL",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "LIST",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "INT",
+          "public": false
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    }
+  ],
+  "requires": [
+    {
+      "node": "Require",
+      "path": "domains.md"
+    }
+  ]
+}

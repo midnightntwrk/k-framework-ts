@@ -1,0 +1,1024 @@
+{
+  "table": "BUBBLE_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_lexer.py",
+  "fields": [
+    "text",
+    "expectedTokens",
+    "expectedRemaining"
+  ],
+  "note": "`_bubble_or_context(la, it, context=False)`.",
+  "cases": [
+    {
+      "text": "",
+      "expectedTokens": [
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            0
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": " ",
+      "expectedTokens": [
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "//a",
+      "expectedTokens": [
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            3
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*/",
+      "expectedTokens": [
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*//*2*//*3*/",
+      "expectedTokens": [
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            15
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*/ /*2*/ /*3*/rule",
+      "expectedTokens": [
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            13
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*/hello/*2*/rule",
+      "expectedTokens": [
+        {
+          "text": "hello",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            6
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            16
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*/hello/*2*/world/*3*/rule",
+      "expectedTokens": [
+        {
+          "text": "hello/*2*/world",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            6
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            26
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*1*/hello/*2*/world/*3*/rule/*4*/",
+      "expectedTokens": [
+        {
+          "text": "hello/*2*/world",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            6
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            26
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": " /*1*/ hello /*2*/ world /*3*/ rule ",
+      "expectedTokens": [
+        {
+          "text": "hello /*2*/ world",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            8
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            32
+          ]
+        }
+      ],
+      "expectedRemaining": " "
+    },
+    {
+      "text": " /*1*/ hello /*2*/ world /*3*/ rule /*4*/ ",
+      "expectedTokens": [
+        {
+          "text": "hello /*2*/ world",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            8
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            32
+          ]
+        }
+      ],
+      "expectedRemaining": " /*4*/ "
+    },
+    {
+      "text": "hello world // comment\nendmodule",
+      "expectedTokens": [
+        {
+          "text": "hello world",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "endmodule",
+          "type": "KW_ENDMODULE",
+          "loc": [
+            2,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a //1\n/*2*/ rule",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            2,
+            7
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a //1\n/* rule */ rule",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            2,
+            12
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a/",
+      "expectedTokens": [
+        {
+          "text": "a/",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            2
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a/rule",
+      "expectedTokens": [
+        {
+          "text": "a/rule",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "abc",
+      "expectedTokens": [
+        {
+          "text": "abc",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            3
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "abc //",
+      "expectedTokens": [
+        {
+          "text": "abc",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "abc /* 1 */ //",
+      "expectedTokens": [
+        {
+          "text": "abc",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            14
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "rule",
+      "expectedTokens": [
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "rule/",
+      "expectedTokens": [
+        {
+          "text": "rule/",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "rule//comment",
+      "expectedTokens": [
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "rule/*1*/",
+      "expectedTokens": [
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a rule",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            3
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "arule",
+      "expectedTokens": [
+        {
+          "text": "arule",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a/**/rule",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "a/* comment */rule",
+      "expectedTokens": [
+        {
+          "text": "a",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            15
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "an other rule",
+      "expectedTokens": [
+        {
+          "text": "an other",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            10
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "cash rules everything around me",
+      "expectedTokens": [
+        {
+          "text": "cash rules everything around me",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            31
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "cash rule/**/s everything around me",
+      "expectedTokens": [
+        {
+          "text": "cash",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "rule",
+          "type": "KW_RULE",
+          "loc": [
+            1,
+            6
+          ]
+        }
+      ],
+      "expectedRemaining": "s everything around me"
+    },
+    {
+      "text": "alias",
+      "expectedTokens": [
+        {
+          "text": "alias",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "bubble alias",
+      "expectedTokens": [
+        {
+          "text": "bubble alias",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            12
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "[",
+      "expectedTokens": [
+        {
+          "text": "[",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/**/[",
+      "expectedTokens": [
+        {
+          "text": "[",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            5
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "[]",
+      "expectedTokens": [
+        {
+          "text": "[]",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            2
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "[a]:",
+      "expectedTokens": [
+        {
+          "text": "[",
+          "type": "LBRACK",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "a",
+          "type": "RULE_LABEL",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ":",
+          "type": "COLON",
+          "loc": [
+            1,
+            4
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            4
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "[a]:b",
+      "expectedTokens": [
+        {
+          "text": "[",
+          "type": "LBRACK",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "a",
+          "type": "RULE_LABEL",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            3
+          ]
+        },
+        {
+          "text": ":",
+          "type": "COLON",
+          "loc": [
+            1,
+            4
+          ]
+        },
+        {
+          "text": "b",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            5
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            5
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "[klabel",
+      "expectedTokens": [
+        {
+          "text": "[klabel",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            7
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "[klabel]",
+      "expectedTokens": [
+        {
+          "text": "[",
+          "type": "LBRACK",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "klabel",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            8
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            8
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "[klabel(hello)]",
+      "expectedTokens": [
+        {
+          "text": "[",
+          "type": "LBRACK",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "klabel",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            2
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            8
+          ]
+        },
+        {
+          "text": "hello",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            9
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            14
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            15
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            15
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "bubble [klabel(hello)]",
+      "expectedTokens": [
+        {
+          "text": "bubble",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "[",
+          "type": "LBRACK",
+          "loc": [
+            1,
+            8
+          ]
+        },
+        {
+          "text": "klabel",
+          "type": "ATTR_KEY",
+          "loc": [
+            1,
+            9
+          ]
+        },
+        {
+          "text": "(",
+          "type": "LPAREN",
+          "loc": [
+            1,
+            15
+          ]
+        },
+        {
+          "text": "hello",
+          "type": "ATTR_CONTENT",
+          "loc": [
+            1,
+            16
+          ]
+        },
+        {
+          "text": ")",
+          "type": "RPAREN",
+          "loc": [
+            1,
+            21
+          ]
+        },
+        {
+          "text": "]",
+          "type": "RBRACK",
+          "loc": [
+            1,
+            22
+          ]
+        },
+        {
+          "text": "",
+          "type": "EOF",
+          "loc": [
+            1,
+            22
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+# Pinned pyk KCFG fixture provenance
+
+`pinned-pyk-kcfg.json` is a small structural KCFG document written from
+`pyk`'s own `KCFG.to_dict()` result. It is an oracle for this package's
+dictionary reader and writer, not a Kontrol proof artifact. The graph has five
+disconnected components, one each for `Edge`, `MergedEdge`, `Cover`, `Split`,
+and `NDBranch`; it also covers node attributes, aliases, positive non-unit
+depths, multi-rule edges, and substitutions with constraints.
+
+The KCFG JSON format has no version field. Its runtime identity is therefore
+recorded here and enforced by the fixture checksum, rather than inferred from
+the document itself.
+
+## Authority
+
+| field | value |
+| --- | --- |
+| repository | `runtimeverification/k` |
+| tag | `v7.1.337` |
+| K commit | `4a46d1231473b599c699160132fd6e76a5c46406` |
+| pyk source | `pyk/src/pyk/kcfg/kcfg.py` |
+| fixture generator | `generators/generate-pinned-pyk-kcfg.py` |
+| generated | 2026-08-06 |
+| fixture SHA-256 | `7353446368d1c16ca67631afdf57f4749e207d103b92e1e8257ff2cc51d11daa` |
+
+The generator uses `pyk`'s public `KCFG`/`CTerm` API and checks a pyk
+`from_dict(...).to_dict()` round trip before writing. It is not a TypeScript
+serializer producing a lookalike fixture.
+
+## Pinned source hashes
+
+These commands were run against `v7.1.337`:
+
+```text
+$ git show v7.1.337:pyk/src/pyk/kcfg/kcfg.py | sha256sum
+8fcf78a39f34a807c28c5376517b5cca5f9833faacbd0a11714134e84764978a  -  (1363 lines)
+
+$ git show v7.1.337:pyk/src/pyk/cterm/cterm.py | sha256sum
+a31ddc31151e398f098a42694bb9541f9f8489e0b82b2409c26f22080966e7be  -  (474 lines)
+
+$ git show v7.1.337:pyk/src/tests/unit/test_kcfg.py | sha256sum
+72d7c29dbd456353ec8b881b3f89dedc45a5c9a0dfd2191cedcd03fb2645c678  -  (965 lines)
+```
+
+`test_kcfg.py` supplies the upstream helper/test vocabulary that informed the
+small generator; it is not imported by the package test at runtime.
+
+## Reproduction
+
+Use the virtual environment belonging to a source checkout at the exact K
+commit above. From this repository's root:
+
+```sh
+/path/to/k/pyk/.venv/bin/python packages/kcfg/fixtures/generators/generate-pinned-pyk-kcfg.py
+sha256sum packages/kcfg/fixtures/pinned-pyk-kcfg.json
+```
+
+To generate this copy from the pinned checkout, run:
+
+```sh
+/home/sebdev20/Documents/git/workspaces/starstream-fv/inspirations/runtimeverification/k/pyk/.venv/bin/python packages/kcfg/fixtures/generators/generate-pinned-pyk-kcfg.py
+```
+
+The expected checksum is the one in the authority table. The ordinary Bun
+test reads only the committed JSON in this directory; it neither imports nor
+depends on the adjacent K checkout.
+
+## Vendored Kontrol split store
+
+`upstream/kontrol/assert-test-setup/kcfg/` is an unmodified, deliberately
+small real Kontrol KCFG split store. It contains only the nested `kcfg/`
+artifact—not the enclosing Kontrol `proof.json`. The store has three nodes, an
+edge from 1 to 3 at depth 182, and a cover from 3 to 2 with an 83-variable
+substitution. Its index records no `vacuous` or `stuck` nodes. This makes it a
+modest real-world oracle for split-store topology, status handling, and a
+read → write → read structural-dictionary round trip without requiring
+Python, K, or Kontrol during ordinary tests.
+
+The copied bytes are hash-pinned below. The fixture test verifies every hash
+before reading the store, so it will not silently become a hand-normalized
+lookalike.
+
+| field | value |
+| --- | --- |
+| source repository | `https://github.com/runtimeverification/kontrol` |
+| source commit | `0fe0cc40da2cd2dbd8675ccde68db10f3f6631be` |
+| copied | 2026-08-06 |
+| source directory | `src/tests/unit/test-data/foundry-list/apr_proofs/test%AssertTest.setUp():0/kcfg/` |
+| vendored directory | `upstream/kontrol/assert-test-setup/kcfg/` |
+| omitted source artifact | sibling `proof.json` (outside the KCFG store scope) |
+
+| source path and vendored path | SHA-256 |
+| --- | --- |
+| `kcfg/kcfg.json` | `e52af7869c2a624d40209c217a83d58cf87a7881b084da7b2edd4da9eb8d6e9b` |
+| `kcfg/nodes/1.json` | `5a05a732f83ecd3bd284426163dea56d8422765b4163396299349dfa8c5c3b2d` |
+| `kcfg/nodes/2.json` | `9222bea2754a354d401b1e9fe1d6da753dd85e2911f84b45cea83ba6f98c4482` |
+| `kcfg/nodes/3.json` | `c57b0dfeaab99dce9d08509d6d419ea54e342a3fec26adf9993fbf5b2127b5b5` |
+
+The ordinary Bun test reads exclusively from the committed vendored directory
+and writes its round-trip output under the operating system temporary
+directory. It does not access the adjacent Kontrol checkout at runtime.
+
+## `show/` — self-generated display goldens
+
+**These files have no upstream oracle.** pyk never asserts on `KCFGShow`
+output: `test_kcfg.py` does not touch `pretty_segments`, `show`, `to_module`
+or `dot`, and `pyk/__main__.py` only prints them. There is therefore nothing
+upstream to compare against, and unlike every other fixture in this directory
+these were produced by *this* implementation.
+
+| field | value |
+| --- | --- |
+| origin | generated by `@kframework-ts/kcfg`'s own `./show` subpath |
+| generated | 2026-08-06 |
+| pyk source reviewed against | `pyk/src/pyk/kcfg/show.py` at `v7.1.337` (`fe01f120639ca75414c8a157dc7b70fee422714da3098dabec2261a81898b811`) |
+| graph under test | `test/show-support.ts`'s `wideGraph()` and `chainGraph()` |
+| printer | `stubPrint`, a structural stand-in for `PrettyPrinter.print` |
+
+| file | what it freezes |
+| --- | --- |
+| `wide-segments.json` | `prettySegments` over a graph with every successor kind, ids included |
+| `wide-pretty.txt` | the same graph as text, `minimize: false` |
+| `wide-pretty-rules.txt` | the same again with `showRules: true` — **beyond pyk**, see below |
+| `wide-graph.dot` | the DOT document for that graph |
+| `chain-show.txt` | `show(..., { toModule: true })` over a two-node chain |
+
+`wide-pretty-rules.txt` is self-generated in a second sense: `showRules` is
+this package's own addition, so there is no upstream rendering it *could*
+correspond to. It exists to keep the new `rules:` blocks stable, and it is
+paired with `wide-pretty.txt` — the same graph with the option off — which is
+what pins that the addition costs pyk parity nothing when it is not asked for.
+
+What they are good for: catching a regression in the layout, the segment ids,
+the edge labels, or the module shape. What they are **not**: evidence that pyk
+would print the same bytes. Establishing that would need pyk run against the
+same graph, which is follow-up work, not a claim this repository makes today.

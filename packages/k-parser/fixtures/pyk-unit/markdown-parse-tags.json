@@ -1,0 +1,29 @@
+{
+  "table": "PARSE_TAGS_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_markdown.py",
+  "fields": [
+    "text",
+    "expected"
+  ],
+  "note": "`parse_tags(text)`; the expected set is emitted sorted.",
+  "cases": [
+    {
+      "text": "",
+      "expected": []
+    },
+    {
+      "text": "k",
+      "expected": [
+        "k"
+      ]
+    },
+    {
+      "text": "{.foo .bar .baz}",
+      "expected": [
+        "bar",
+        "baz",
+        "foo"
+      ]
+    }
+  ]
+}

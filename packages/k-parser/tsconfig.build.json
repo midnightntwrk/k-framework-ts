@@ -1,0 +1,37 @@
+{
+  // Emit config, used only by `bun run build`.  The sibling `tsconfig.json` is
+  // the development one: it type-checks `src` *and* `test` with `noEmit`, and
+  // it pulls in Bun's types.  Neither belongs in what a consumer installs.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    // The base config allows `.ts` import specifiers so `test/` can import
+    // `../src/index.ts` directly.  `src/` itself uses `.js` specifiers — the
+    // ESM convention — so nothing here needs it, and emit forbids it.
+    //
+    // Do not "simplify" src back to `.ts` specifiers plus
+    // `rewriteRelativeImportExtensions`: tsgo 7.0.2 applies that rewrite to
+    // the `.js` emit but NOT to the `.d.ts` emit, shipping declaration files
+    // that import from `./foo.ts` — a path that does not exist in the
+    // tarball.  `.js` specifiers need no rewriting, so the bug cannot bite.
+    "allowImportingTsExtensions": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    // The tarball ships `dist` only, so a map pointing at `../src/*.ts` would
+    // dangle.  Embedding the source text in the maps keeps step-through
+    // debugging and go-to-definition working without shipping `src` twice.
+    "inlineSources": true,
+    // Like `kompiled`, this package cannot set `types: []`: `src/slurp.ts` —
+    // the one filesystem-touching module, behind the `./slurp` subpath — imports
+    // `node:fs` and `node:path`, and the compiler needs `@types/node` to resolve
+    // them.  `@types/bun` is still excluded, which is what the siblings'
+    // `types: []` is really for.  Nothing node-shaped reaches a public
+    // signature: paths are `string` everywhere, so a consumer who imports only
+    // the package root never sees any of this.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

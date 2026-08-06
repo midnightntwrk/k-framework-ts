@@ -1,0 +1,1 @@
+{"format":"KAST","version":4,"term":{"node":"KApply","label":{"node":"KLabel","name":"#Ceil","params":[{"node":"KSort","name":"Int","params":[]},{"node":"KSort","name":"GeneratedTopCell","params":[]}]},"arity":1,"args":[{"node":"KApply","label":{"node":"KLabel","name":".Pgm_POLY-UNPARSING-SYNTAX_Pgm","params":[]},"arity":0,"args":[]}]}}

@@ -1,0 +1,278 @@
+# The WASM soaks, which no other lane runs.
+#
+# `packages/wasm-fixtures` vendors a deliberately *partial* KWasm kompiled
+# directory: `compiled.json` and the markers, but not `definition.kore` (5.3 MB)
+# or `syntaxDefinition.kore` (0.78 MB).  Every suite that needs the complete
+# directory is therefore opt-in — `wasmSoakDir()` returns `undefined` and the
+# suite `describe.skip`s itself — so ci.yml keeps its promise (no K install, no
+# network, nothing outside the repository) by skipping all of them, and until
+# this file existed that meant the soaks ran on developers' machines and nowhere
+# else.  This lane builds the missing 6 MB and runs them.
+name: WASM soak
+
+on:
+  schedule:
+    # Tuesdays, 09:00 UTC — deliberately not Monday 06:00, which is k-drift's
+    # slot.  The two are unrelated questions and a shared start time only makes
+    # a bad morning out of two notifications.
+    - cron: "0 9 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wasm-soak-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  wasm-soak:
+    name: KWasm soak suites against K 7.1.337
+    # The pinned K artifact is specifically an Ubuntu Noble package.  Do not
+    # change this to ubuntu-latest: a runner-image transition must be paired
+    # with selecting and verifying a new K package.  The standard runner is
+    # sized for this — `kompile` peaks at 3.1 GB RSS against 16 GB.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    # Both checkouts sit side by side under the workspace, and neither is inside
+    # the other: `actions/checkout` cannot place a repository above
+    # `$GITHUB_WORKSPACE`, and `wasm-semantics` must not land in this
+    # repository's working tree, where a 400 MB checkout would show up as an
+    # untracked directory and `bun test`'s file scan would walk it.
+    defaults:
+      run:
+        working-directory: k-framework-ts
+
+    env:
+      # Identical to k-conformance.yml's pin, and that is a requirement rather
+      # than a coincidence: `WASM_PIN.kBuiltWith` says which K produced the
+      # vendored bytes, `WASM_DEFINITION_HASH` is what both soaks assert, and a
+      # directory built by any other release fails that assertion.  The "Read
+      # the KWasm pin" step below fails the job if the two ever disagree.
+      K_RELEASE: v7.1.337
+      K_DEB: kframework_7.1.337_amd64_ubuntu_noble.deb
+      K_DEB_SHA256: 3692997e6bfa4be490d24bd9201289d4a05872889c9da725dda21e99d03d6990
+      # The Debian release package installs K's executables under /usr/bin.
+      # Unlike k-conformance.yml this is *not* exported as
+      # `KFRAMEWORK_TS_K_BIN` for the whole job — see the full-suite step.
+      K_BIN: /usr/bin
+      # `kompile-soak` owns this directory.  It is deliberately outside the
+      # checkout — which is `$GITHUB_WORKSPACE/k-framework-ts`, not the
+      # workspace root — so no generated K definition can appear as a
+      # working-tree edit.  Exported for every step, because it is also how the
+      # *test* run finds the build: `wasmSoakDir()` looks here with no other
+      # variable set.
+      #
+      # `${{ github.workspace }}` and not k-conformance.yml's
+      # `${{ runner.temp }}`: the `runner` context is not available in a
+      # job-level `env`, so that expression evaluates to the empty string and
+      # names `/kframework-ts-kompile-cache`, at the root of a filesystem the
+      # job cannot write to.  `actionlint` reports it there too.
+      KFRAMEWORK_TS_KOMPILE_CACHE: ${{ github.workspace }}/kframework-ts-kompile-cache
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: k-framework-ts
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # Matches `engines.bun`.
+          bun-version: 1.3.14
+
+      # The pin is a fact about `packages/wasm-fixtures`, so it is read from
+      # there rather than transcribed here — a second copy of a commit sha is a
+      # copy that goes stale silently, and this workflow would then build the
+      # wrong semantics and watch every soak reject it with a hash mismatch.
+      # `src/index.ts` imports nothing but node builtins, so this runs before
+      # `bun install`.
+      - name: Read the KWasm pin
+        id: pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The single-quoted block below is JavaScript for `bun -e`; its `${}`
+          # are template literals and must not reach the shell.
+          # shellcheck disable=SC2016
+          pin=$(bun -e '
+            import { WASM_PIN } from "./packages/wasm-fixtures/src/index.ts";
+            console.log(`commit=${WASM_PIN.commit}`);
+            console.log(`k=${WASM_PIN.kBuiltWith}`);
+          ')
+          echo "$pin"
+          echo "$pin" >> "$GITHUB_OUTPUT"
+
+      - name: Check the pinned K is the one this workflow installs
+        shell: bash
+        env:
+          PIN_K: ${{ steps.pin.outputs.k }}
+        run: |
+          set -euo pipefail
+          # `K_DEB_SHA256` cannot be derived, so the K release is written out
+          # above; this is the guard that keeps it equal to the package's pin.
+          # If this fails, `packages/wasm-fixtures` moved to another K and the
+          # three `K_*` variables above have to move with it.
+          test "v$PIN_K" = "$K_RELEASE"
+
+      # A bare 40-character sha is a valid `ref`: checkout treats it as a commit
+      # and fetches exactly it, which `--depth 1` against github.com supports.
+      # No submodules — the only one is `tests/wasm-tests` (the WebAssembly spec
+      # suite), which the `kompile` recipe never reads.
+      - name: Check out wasm-semantics at the pinned commit
+        uses: actions/checkout@v4
+        with:
+          repository: runtimeverification/wasm-semantics
+          ref: ${{ steps.pin.outputs.commit }}
+          path: wasm-semantics
+          fetch-depth: 1
+
+      - name: Install the pinned K Framework distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$RUNNER_TEMP/$K_DEB"
+          curl --fail --location --retry 3 --output "$package" \
+            "https://github.com/runtimeverification/k/releases/download/$K_RELEASE/$K_DEB"
+          printf '%s  %s\n' "$K_DEB_SHA256" "$package" | sha256sum --check --strict
+          sudo apt-get update
+          sudo apt-get install --yes "$package"
+
+      - name: Verify the selected K tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x "$K_BIN/kompile"
+          actual=$("$K_BIN/kompile" --version | sed -n 's/^K version:[[:space:]]*//p' | head -n 1)
+          test "$actual" = "$K_RELEASE"
+
+      - run: bun install --frozen-lockfile
+
+      # The soak suites import `@kframework-ts/wasm-fixtures` through its public
+      # entry point, which points at gitignored `dist/` output, so a fresh
+      # checkout must build before Bun can resolve it.
+      - run: bun run build
+
+      # `kompile-soak` keys its entry by schema, K release, pin commit and the
+      # canonical argv — all four of which live in `src/index.ts`, so hashing
+      # that file is what makes a recipe change miss.  The commit is named
+      # separately because it is the input a human bumps, and a key that shows
+      # it is a key that can be read in the Actions UI.  No `restore-keys`: a
+      # near-miss restore would only carry a build this job cannot use.
+      - name: Restore the cached KWasm build
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.KFRAMEWORK_TS_KOMPILE_CACHE }}
+          key: >-
+            wasm-soak-${{ runner.os }}-${{ env.K_RELEASE }}-${{
+            steps.pin.outputs.commit }}-${{
+            hashFiles('k-framework-ts/packages/wasm-fixtures/src/index.ts') }}
+
+      # 21 s and 3.1 GB of peak RSS on a cold cache; a no-op on a warm one.  It
+      # re-checks the K release and the checkout's commit itself and refuses to
+      # build against either mismatch, so the two guards above are belt and
+      # braces — they just fail earlier and say more.
+      #
+      # `--checkout` rather than `KFRAMEWORK_TS_RV_CHECKOUTS`, deliberately:
+      # that variable also arms `packages/k-parser`'s corpus soak, which wants
+      # five RV checkouts and would fail on a directory holding one.
+      - name: Build the complete KWasm kompiled directory
+        shell: bash
+        env:
+          KFRAMEWORK_TS_K_BIN: ${{ env.K_BIN }}
+        run: |
+          set -euo pipefail
+          bun run --cwd packages/wasm-fixtures kompile-soak \
+            --checkout "$GITHUB_WORKSPACE/wasm-semantics"
+
+      # The contract the README states: after one `kompile-soak`, discovery is
+      # synchronous and needs no variable but the cache root.  Checked on its
+      # own so that a discovery failure reads as "the cache is not visible"
+      # here, rather than as two dozen quietly skipped tests two steps later.
+      - name: Confirm the build is discoverable with no variable set
+        shell: bash
+        run: |
+          set -euo pipefail
+          # As above: JavaScript, and the variable it names in its error message
+          # is one the reader should go and look at, not one to interpolate.
+          # shellcheck disable=SC2016
+          bun -e '
+            import { wasmSoakDir } from "./packages/wasm-fixtures/src/index.ts";
+            const dir = wasmSoakDir();
+            if (dir === undefined) {
+              console.error("wasmSoakDir() found nothing under $KFRAMEWORK_TS_KOMPILE_CACHE.");
+              process.exit(1);
+            }
+            console.log(dir);
+          '
+
+      # The whole suite, not a list of soak files.  Soak suites self-activate
+      # off `wasmSoakDir()`, so enumerating them here would mean this workflow
+      # had to be edited every time a package grew one.  `packages/klean`'s
+      # arrived while this file was being written and needed no edit here.
+      #
+      # `KFRAMEWORK_TS_K_BIN` is **not** set for this step, and that is the
+      # difference between this lane and k-conformance.yml: exporting it would
+      # also arm every `describeKompiled` suite in cterm, kcfg, proof,
+      # prooftrace, kfuzz and ktool — the live-K conformance lane, which is
+      # workflow_dispatch-only on purpose and would then be running weekly here
+      # under a name that does not mention it.
+      - name: Run the full test suite with the soak build visible
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun test --reporter=junit --reporter-outfile="$RUNNER_TEMP/bun-test.xml"
+
+      # A soak lane in which every soak skipped is worse than no soak lane: it
+      # is a green check for work that did not happen.  `bun test` reports a
+      # skip as a pass, so the only place the difference survives is the JUnit
+      # report's per-file `skipped=` count.
+      #
+      # The files to check are discovered rather than listed, on the same
+      # grounds as the step above: a soak-gated suite is exactly a test file
+      # that asks `@kframework-ts/wasm-fixtures` for `wasmSoakDir()`.  That
+      # deliberately excludes the fixture package's own `test/soak.test.ts`,
+      # which imports from `../src/` and is a hermetic unit test of the
+      # discovery function — it passes with or without a build, so counting it
+      # would weaken the floor below.
+      - name: Assert the soaks actually ran
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/bun-test.xml"
+          mapfile -t files < <(
+            grep -rl --include='*.test.ts' --exclude-dir=node_modules 'wasmSoakDir' packages \
+              | xargs --no-run-if-empty grep -l '@kframework-ts/wasm-fixtures' \
+              | sort
+          )
+          # kompiled, konvert and klean as of writing.  A floor rather than an
+          # equality, so a new soak joins by existing and a lost one is still
+          # caught — two is the number this repository had before klean's.
+          if [ "${#files[@]}" -lt 2 ]; then
+            echo "::error::found ${#files[@]} soak-gated test files, expected at least 2"
+            exit 1
+          fi
+          status=0
+          for file in "${files[@]}"; do
+            row=$(grep -o "<testsuite name=\"$file\"[^>]*>" "$report" | head -n 1 || true)
+            if [ -z "$row" ]; then
+              echo "::error file=$file::no testsuite in the JUnit report; did the file run at all?"
+              status=1
+              continue
+            fi
+            case "$row" in
+              *'tests="0"'*)
+                echo "::error file=$file::ran zero tests"
+                status=1
+                ;;
+              *' skipped="0"'*)
+                echo "ok: $row"
+                ;;
+              *)
+                echo "::error file=$file::soak tests were skipped — the build was not visible"
+                echo "$row"
+                status=1
+                ;;
+            esac
+          done
+          exit "$status"

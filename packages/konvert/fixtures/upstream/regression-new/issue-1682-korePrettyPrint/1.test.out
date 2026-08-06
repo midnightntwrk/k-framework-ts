@@ -1,0 +1,9 @@
+Lbl'-LT-'generatedTop'-GT-'{}(
+    Lbl'-LT-'k'-GT-'{}(
+        kseq{}(
+            /* Inj: */ inj{SortInt{}, SortKItem{}}(Var'QuesUnds'Gen0:SortInt{}),
+            dotk{}()
+        )
+    ),
+    Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))
+)

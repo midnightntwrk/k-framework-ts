@@ -1,0 +1,67 @@
+{
+  "table": "COMMENT_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_lexer.py",
+  "fields": [
+    "text",
+    "expectedSuccess",
+    "expectedConsumedText",
+    "expectedRemaining"
+  ],
+  "note": "`_maybe_comment(la, it)`; `expectedConsumedText` is the joined `consumed` list.",
+  "cases": [
+    {
+      "text": "/",
+      "expectedSuccess": false,
+      "expectedConsumedText": "/",
+      "expectedRemaining": ""
+    },
+    {
+      "text": "//",
+      "expectedSuccess": true,
+      "expectedConsumedText": "//",
+      "expectedRemaining": ""
+    },
+    {
+      "text": "///",
+      "expectedSuccess": true,
+      "expectedConsumedText": "///",
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/*",
+      "expectedSuccess": false,
+      "expectedConsumedText": "/*",
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/**",
+      "expectedSuccess": false,
+      "expectedConsumedText": "/**",
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/**/",
+      "expectedSuccess": true,
+      "expectedConsumedText": "/**/",
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/* comment */",
+      "expectedSuccess": true,
+      "expectedConsumedText": "/* comment */",
+      "expectedRemaining": ""
+    },
+    {
+      "text": "/**/ //",
+      "expectedSuccess": true,
+      "expectedConsumedText": "/**/",
+      "expectedRemaining": " //"
+    },
+    {
+      "text": "// /**/",
+      "expectedSuccess": true,
+      "expectedConsumedText": "// /**/",
+      "expectedRemaining": ""
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+[
+  {
+    "id": "unknown",
+    "lines": [
+      ""
+    ]
+  },
+  {
+    "id": "node_1",
+    "lines": [
+      "┌─ 1 (root, @start)"
+    ]
+  },
+  {
+    "id": "unknown_0",
+    "lines": [
+      "│"
+    ]
+  },
+  {
+    "id": "edge_1_2",
+    "lines": [
+      "│  (2 steps)"
+    ]
+  },
+  {
+    "id": "node_2",
+    "lines": [
+      "├─ 2 (split, @apex)"
+    ]
+  },
+  {
+    "id": "unknown_1",
+    "lines": [
+      "┃"
+    ]
+  },
+  {
+    "id": "unknown_2",
+    "lines": [
+      "┃ (branch)"
+    ]
+  },
+  {
+    "id": "split_2_3",
+    "lines": [
+      "┣━━┓ subst: .Subst",
+      "┃  ┃ constraint:",
+      "┃  ┃     _>Int_(Y, 10)",
+      "┃  │"
+    ]
+  },
+  {
+    "id": "node_3",
+    "lines": [
+      "┃  ├─ 3"
+    ]
+  },
+  {
+    "id": "unknown_3",
+    "lines": [
+      "┃  │"
+    ]
+  },
+  {
+    "id": "edge_3_6",
+    "lines": [
+      "┃  │  (1 step)"
+    ]
+  },
+  {
+    "id": "node_6",
+    "lines": [
+      "┃  ├─ 6"
+    ]
+  },
+  {
+    "id": "unknown_4",
+    "lines": [
+      "┃  │"
+    ]
+  },
+  {
+    "id": "cover_6_2",
+    "lines": [
+      "┃  ┊  constraint:",
+      "┃  ┊      _>Int_(Y, 1)",
+      "┃  ┊  subst: ..."
+    ]
+  },
+  {
+    "id": "node_2_0",
+    "lines": [
+      "┃  └─ 2 (split, @apex)",
+      "┃     (looped back)",
+      "┃"
+    ]
+  },
+  {
+    "id": "split_2_4",
+    "lines": [
+      "┣━━┓ subst: .Subst",
+      "┃  ┃ constraint:",
+      "┃  ┃     _>Int_(Y, 20)",
+      "┃  │"
+    ]
+  },
+  {
+    "id": "node_4",
+    "lines": [
+      "┃  ├─ 4"
+    ]
+  },
+  {
+    "id": "unknown_5",
+    "lines": [
+      "┃  ┃"
+    ]
+  },
+  {
+    "id": "unknown_6",
+    "lines": [
+      "┃  ┃ (1 step)"
+    ]
+  },
+  {
+    "id": "ndbranch_4_7",
+    "lines": [
+      "┃  ┣━━┓",
+      "┃  ┃  │"
+    ]
+  },
+  {
+    "id": "node_7",
+    "lines": [
+      "┃  ┃  └─ 7 (leaf)",
+      "┃  ┃"
+    ]
+  },
+  {
+    "id": "ndbranch_4_8",
+    "lines": [
+      "┃  ┗━━┓",
+      "┃     │"
+    ]
+  },
+  {
+    "id": "node_8",
+    "lines": [
+      "┃     └─ 8 (leaf)",
+      "┃"
+    ]
+  },
+  {
+    "id": "split_2_5",
+    "lines": [
+      "┗━━┓ subst: .Subst",
+      "   ┃ constraint:",
+      "   ┃     _>Int_(Y, 30)",
+      "   │"
+    ]
+  },
+  {
+    "id": "node_5",
+    "lines": [
+      "   └─ 5 (stuck, leaf)",
+      ""
+    ]
+  },
+  {
+    "id": "unknown_7",
+    "lines": [
+      ""
+    ]
+  },
+  {
+    "id": "node_9",
+    "lines": [
+      "┌─ 9 (root)"
+    ]
+  },
+  {
+    "id": "unknown_8",
+    "lines": [
+      "│"
+    ]
+  },
+  {
+    "id": "merged_edge_9_10",
+    "lines": [
+      "│  (3|5 steps)"
+    ]
+  },
+  {
+    "id": "node_10",
+    "lines": [
+      "└─ 10 (leaf)",
+      ""
+    ]
+  },
+  {
+    "id": "unknown_9",
+    "lines": [
+      ""
+    ]
+  },
+  {
+    "id": "node_11",
+    "lines": [
+      "┌─ 11 (root, leaf)"
+    ]
+  }
+]

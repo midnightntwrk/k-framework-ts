@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "warn",
+    "perf": "warn"
+  },
+  "env": {
+    "es2024": true
+  },
+  // `packages/*/ci/` holds scripts that CI copies into a scratch project and
+  // runs against a packed tarball. They import their package by its *published*
+  // name, which only resolves there — inside the workspace every one of those
+  // imports is an unresolvable `error` type, so type-aware linting has nothing
+  // true to say about them. `bun run build` plus the CI smoke job is what
+  // checks these.
+  "ignorePatterns": ["node_modules", "fixtures", "dist", "packages/*/ci"],
+  "rules": {
+    "no-console": "error",
+    "typescript/no-explicit-any": "error",
+
+    // These four pedantic rules are off because they fight this codebase's
+    // heavy inline documentation rather than finding defects: the first two
+    // punish thoroughly-commented files for their length, the third bans the
+    // comment style the documentation uses, and the last demands `readonly`
+    // noise on every parameter type. Everything in `correctness` and
+    // `suspicious` stays an error.
+    "max-lines": "off",
+    "max-lines-per-function": "off",
+    "no-inline-comments": "off",
+    "typescript/prefer-readonly-parameter-types": "off"
+  },
+  "overrides": [
+    {
+      "files": ["packages/*/test/**/*.ts"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off"
+      }
+    }
+  ]
+}

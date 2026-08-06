@@ -1,0 +1,52 @@
+
+┌─ 1 (root, @start)
+│
+│  (2 steps)
+├─ 2 (split, @apex)
+┃
+┃ (branch)
+┣━━┓ subst: .Subst
+┃  ┃ constraint:
+┃  ┃     _>Int_(Y, 10)
+┃  │
+┃  ├─ 3
+┃  │
+┃  │  (1 step)
+┃  ├─ 6
+┃  │
+┃  ┊  constraint:
+┃  ┊      _>Int_(Y, 1)
+┃  ┊  subst:
+┃  ┊      Y <- 6
+┃  └─ 2 (split, @apex)
+┃     (looped back)
+┃
+┣━━┓ subst: .Subst
+┃  ┃ constraint:
+┃  ┃     _>Int_(Y, 20)
+┃  │
+┃  ├─ 4
+┃  ┃
+┃  ┃ (1 step)
+┃  ┣━━┓
+┃  ┃  │
+┃  ┃  └─ 7 (leaf)
+┃  ┃
+┃  ┗━━┓
+┃     │
+┃     └─ 8 (leaf)
+┃
+┗━━┓ subst: .Subst
+   ┃ constraint:
+   ┃     _>Int_(Y, 30)
+   │
+   └─ 5 (stuck, leaf)
+
+
+┌─ 9 (root)
+│
+│  (3|5 steps)
+└─ 10 (leaf)
+
+
+┌─ 11 (root, leaf)

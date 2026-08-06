@@ -1,0 +1,35 @@
+{
+  "table": "IMPORT_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_parser.py",
+  "fields": [
+    "kText",
+    "expected"
+  ],
+  "note": "`OuterParser(kText).importt()`.",
+  "cases": [
+    {
+      "kText": "imports TEST",
+      "expected": {
+        "node": "Import",
+        "module_name": "TEST",
+        "public": true
+      }
+    },
+    {
+      "kText": "imports public TEST",
+      "expected": {
+        "node": "Import",
+        "module_name": "TEST",
+        "public": true
+      }
+    },
+    {
+      "kText": "imports private TEST",
+      "expected": {
+        "node": "Import",
+        "module_name": "TEST",
+        "public": false
+      }
+    }
+  ]
+}

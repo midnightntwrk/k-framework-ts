@@ -1,0 +1,365 @@
+
+<coverage line-rate="0.224" branch-rate="0.23809523809523808" version="1.9" timestamp="0">
+  <sources>
+    <source>/fix</source>
+  </sources>
+  <packages>
+    <package name="" line-rate="0.224" branch-rate="0.23809523809523808" complexity="168.0">
+      <classes>
+        
+<class name="k/include/kframework/builtin/domains.md" filename="k/include/kframework/builtin/domains.md" line-rate="0.015873015873015872" branch-rate="0.015873015873015872" complexity="63.0">
+  <lines>
+    
+<line number="749" hits="0" branch="false"/>
+
+<line number="955" hits="0" branch="false"/>
+
+<line number="1138" hits="0" branch="false"/>
+
+<line number="1139" hits="0" branch="false"/>
+
+<line number="1141" hits="0" branch="false"/>
+
+<line number="1142" hits="0" branch="false"/>
+
+<line number="1143" hits="0" branch="false"/>
+
+<line number="1144" hits="0" branch="false"/>
+
+<line number="1146" hits="0" branch="false"/>
+
+<line number="1147" hits="0" branch="false"/>
+
+<line number="1148" hits="0" branch="false"/>
+
+<line number="1149" hits="0" branch="false"/>
+
+<line number="1151" hits="0" branch="false"/>
+
+<line number="1152" hits="0" branch="false"/>
+
+<line number="1153" hits="0" branch="false"/>
+
+<line number="1155" hits="0" branch="false"/>
+
+<line number="1156" hits="0" branch="false"/>
+
+<line number="1157" hits="0" branch="false"/>
+
+<line number="1158" hits="0" branch="false"/>
+
+<line number="1160" hits="0" branch="false"/>
+
+<line number="1161" hits="0" branch="false"/>
+
+<line number="1162" hits="0" branch="false"/>
+
+<line number="1163" hits="0" branch="false"/>
+
+<line number="1165" hits="0" branch="false"/>
+
+<line number="1166" hits="0" branch="false"/>
+
+<line number="1167" hits="0" branch="false"/>
+
+<line number="1168" hits="0" branch="false"/>
+
+<line number="1170" hits="0" branch="false"/>
+
+<line number="1438" hits="0" branch="false"/>
+
+<line number="1440" hits="0" branch="false"/>
+
+<line number="1442" hits="0" branch="false"/>
+
+<line number="1445" hits="0" branch="false"/>
+
+<line number="1450" hits="0" branch="false"/>
+
+<line number="1451" hits="0" branch="false"/>
+
+<line number="1453" hits="0" branch="false"/>
+
+<line number="1454" hits="0" branch="false"/>
+
+<line number="1457" hits="14" branch="false"/>
+
+<line number="1787" hits="0" branch="false"/>
+
+<line number="1788" hits="0" branch="false"/>
+
+<line number="1793" hits="0" branch="false"/>
+
+<line number="1794" hits="0" branch="false"/>
+
+<line number="1867" hits="0" branch="false"/>
+
+<line number="1887" hits="0" branch="false"/>
+
+<line number="1888" hits="0" branch="false"/>
+
+<line number="1889" hits="0" branch="false"/>
+
+<line number="1891" hits="0" branch="false"/>
+
+<line number="1892" hits="0" branch="false"/>
+
+<line number="1893" hits="0" branch="false"/>
+
+<line number="1894" hits="0" branch="false"/>
+
+<line number="1896" hits="0" branch="false"/>
+
+<line number="1898" hits="0" branch="false"/>
+
+<line number="1901" hits="0" branch="false"/>
+
+<line number="1904" hits="0" branch="false"/>
+
+<line number="1911" hits="0" branch="false"/>
+
+<line number="1915" hits="0" branch="false"/>
+
+<line number="1917" hits="0" branch="false"/>
+
+<line number="2355" hits="0" branch="false"/>
+
+<line number="2357" hits="0" branch="false"/>
+
+<line number="2358" hits="0" branch="false"/>
+
+<line number="2526" hits="0" branch="false"/>
+
+<line number="2621" hits="0" branch="false"/>
+
+<line number="2622" hits="0" branch="false"/>
+
+<line number="2623" hits="0" branch="false"/>
+
+  </lines>
+</class>
+
+<class name="sem/panopticon-semantics.md" filename="sem/panopticon-semantics.md" line-rate="0.4634146341463415" branch-rate="0.4634146341463415" complexity="41.0">
+  <lines>
+    
+<line number="76" hits="1" branch="false"/>
+
+<line number="81" hits="2" branch="false"/>
+
+<line number="97" hits="72" branch="false"/>
+
+<line number="101" hits="0" branch="false"/>
+
+<line number="102" hits="0" branch="false"/>
+
+<line number="104" hits="3" branch="false"/>
+
+<line number="105" hits="25" branch="false"/>
+
+<line number="106" hits="0" branch="false"/>
+
+<line number="112" hits="0" branch="false"/>
+
+<line number="116" hits="0" branch="false"/>
+
+<line number="123" hits="0" branch="false"/>
+
+<line number="124" hits="0" branch="false"/>
+
+<line number="125" hits="12" branch="false"/>
+
+<line number="126" hits="4" branch="false"/>
+
+<line number="134" hits="0" branch="false"/>
+
+<line number="135" hits="0" branch="false"/>
+
+<line number="144" hits="0" branch="false"/>
+
+<line number="145" hits="0" branch="false"/>
+
+<line number="146" hits="0" branch="false"/>
+
+<line number="147" hits="0" branch="false"/>
+
+<line number="157" hits="7" branch="false"/>
+
+<line number="164" hits="25" branch="false"/>
+
+<line number="169" hits="0" branch="false"/>
+
+<line number="178" hits="2" branch="false"/>
+
+<line number="183" hits="5" branch="false"/>
+
+<line number="189" hits="5" branch="false"/>
+
+<line number="196" hits="25" branch="false"/>
+
+<line number="197" hits="0" branch="false"/>
+
+<line number="202" hits="0" branch="false"/>
+
+<line number="223" hits="14" branch="false"/>
+
+<line number="238" hits="0" branch="false"/>
+
+<line number="242" hits="14" branch="false"/>
+
+<line number="247" hits="0" branch="false"/>
+
+<line number="252" hits="14" branch="false"/>
+
+<line number="263" hits="0" branch="false"/>
+
+<line number="264" hits="0" branch="false"/>
+
+<line number="266" hits="0" branch="false"/>
+
+<line number="267" hits="0" branch="false"/>
+
+<line number="277" hits="16" branch="false"/>
+
+<line number="278" hits="14" branch="false"/>
+
+<line number="279" hits="2" branch="false"/>
+
+  </lines>
+</class>
+
+<class name="sem/panopticon-syntax.md" filename="sem/panopticon-syntax.md" line-rate="0.38095238095238093" branch-rate="0.3125" complexity="64.0">
+  <lines>
+    
+<line number="72" hits="0" branch="true" condition-coverage="0% (0/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="73" hits="0" branch="true" condition-coverage="0% (0/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="75" hits="6" branch="true" condition-coverage="50% (2/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="50%"/>
+  </conditions>
+</line>
+
+<line number="76" hits="0" branch="true" condition-coverage="0% (0/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="78" hits="72" branch="true" condition-coverage="100% (4/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="100%"/>
+  </conditions>
+</line>
+
+<line number="79" hits="0" branch="true" condition-coverage="0% (0/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="81" hits="0" branch="true" condition-coverage="0% (0/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="82" hits="0" branch="true" condition-coverage="0% (0/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="83" hits="48" branch="true" condition-coverage="100% (4/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="100%"/>
+  </conditions>
+</line>
+
+<line number="84" hits="8" branch="true" condition-coverage="50% (2/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="50%"/>
+  </conditions>
+</line>
+
+<line number="86" hits="0" branch="true" condition-coverage="0% (0/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="87" hits="0" branch="true" condition-coverage="0% (0/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="89" hits="0" branch="true" condition-coverage="0% (0/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="91" hits="0" branch="true" condition-coverage="0% (0/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="101" hits="10" branch="true" condition-coverage="50% (2/4)">
+  <conditions>
+    <condition number="0" type="jump" coverage="50%"/>
+  </conditions>
+</line>
+
+<line number="115" hits="0" branch="true" condition-coverage="0% (0/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="116" hits="0" branch="true" condition-coverage="0% (0/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+<line number="128" hits="10" branch="true" condition-coverage="100% (2/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="100%"/>
+  </conditions>
+</line>
+
+<line number="130" hits="6" branch="true" condition-coverage="100% (2/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="100%"/>
+  </conditions>
+</line>
+
+<line number="131" hits="50" branch="true" condition-coverage="100% (2/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="100%"/>
+  </conditions>
+</line>
+
+<line number="133" hits="0" branch="true" condition-coverage="0% (0/2)">
+  <conditions>
+    <condition number="0" type="jump" coverage="0%"/>
+  </conditions>
+</line>
+
+  </lines>
+</class>
+
+      </classes>
+    </package>
+  </packages>
+</coverage>

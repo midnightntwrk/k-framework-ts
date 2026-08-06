@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+
+  // These are oxfmt's key names, which are prettier's — `printWidth`, not
+  // `lineWidth`; `semi`, not `semicolons`. The first version of this file used
+  // biome's spellings, and oxfmt ignores keys it does not recognise rather than
+  // rejecting them, so every setting here was silently doing nothing and the
+  // package was formatted at the default width of 80 instead.
+  //
+  // 120 is the width of the harness this package was extracted from.
+  "printWidth": 120,
+  "tabWidth": 2,
+  "semi": true,
+  "singleQuote": false,
+  "trailingComma": "all",
+
+  // The fixtures are real `kompile`/`krun` output. Reformatting them would
+  // destroy the only thing they are for: being the bytes K actually emitted.
+  // `dist` is compiler output; it is not ours to format.
+  "ignorePatterns": ["node_modules", "fixtures", "dist"]
+}

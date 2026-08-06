@@ -1,0 +1,72 @@
+{
+  "name": "@kframework-ts/prooftrace",
+  "version": "0.1.0",
+  "description": "Reader for the K LLVM backend's proof-hint stream — per-step rule ordinals and substitutions, decoded from binary KORE 2.0 (written from the llvm-backend spec at v0.1.140 / K v7.1.337)",
+  "keywords": [
+    "binary-kore",
+    "formal-verification",
+    "k-framework",
+    "kllvm",
+    "kore",
+    "llvm-backend",
+    "proof-hints",
+    "prooftrace",
+    "pyk",
+    "trace"
+  ],
+  "homepage": "https://github.com/SebastienGllmt/k-framework-ts/tree/main/packages/prooftrace#readme",
+  "bugs": {
+    "url": "https://github.com/SebastienGllmt/k-framework-ts/issues"
+  },
+  "license": "MIT OR Apache-2.0",
+  "author": "Sebastien Guillemot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastienGllmt/k-framework-ts.git",
+    "directory": "packages/prooftrace"
+  },
+  "bin": {
+    "prooftrace": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "ROADMAP.md",
+    "THIRD-PARTY-NOTICES.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "test": "bun test",
+    "check:types": "tsc --noEmit",
+    "check": "bun run check:types && bun test",
+    "prepublishOnly": "bun run --cwd ../.. check && bun run build"
+  },
+  "dependencies": {
+    "@kframework-ts/kast": "workspace:*",
+    "@kframework-ts/konvert": "workspace:*",
+    "@kframework-ts/kore": "workspace:*",
+    "@kframework-ts/ktool": "workspace:*"
+  },
+  "devDependencies": {
+    "@kframework-ts/cterm": "workspace:*",
+    "@types/node": "^26.1.2"
+  },
+  "engines": {
+    "bun": ">=1.3.14",
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,2352 @@
+{
+  "table": "SENTENCE_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_parser.py",
+  "fields": [
+    "kText",
+    "expected"
+  ],
+  "note": "`OuterParser(kText).sentence()`.",
+  "cases": [
+    {
+      "kText": "rule x",
+      "expected": {
+        "node": "Rule",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "rule [label]: x",
+      "expected": {
+        "node": "Rule",
+        "bubble": "x",
+        "label": "label",
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "rule x [key1, key2(value)]",
+      "expected": {
+        "node": "Rule",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "key1",
+              ""
+            ],
+            [
+              "key2",
+              "value"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "rule x [key(\"value\")]",
+      "expected": {
+        "node": "Rule",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "key",
+              "value"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "rule x [key(\"value\\n\")]",
+      "expected": {
+        "node": "Rule",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "key",
+              "value\n"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "rule [label]: x [key1, key2(value)]",
+      "expected": {
+        "node": "Rule",
+        "bubble": "x",
+        "label": "label",
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "key1",
+              ""
+            ],
+            [
+              "key2",
+              "value"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "rule [label]: X => Y [key1, key2(value)]",
+      "expected": {
+        "node": "Rule",
+        "bubble": "X => Y",
+        "label": "label",
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "key1",
+              ""
+            ],
+            [
+              "key2",
+              "value"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "claim x",
+      "expected": {
+        "node": "Claim",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "configuration x",
+      "expected": {
+        "node": "Config",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "context x",
+      "expected": {
+        "node": "Context",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "context alias x",
+      "expected": {
+        "node": "Alias",
+        "bubble": "x",
+        "label": "",
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax lexical Digit = r\"[0-9]\"",
+      "expected": {
+        "node": "SyntaxLexical",
+        "name": "Digit",
+        "regex": "[0-9]"
+      }
+    },
+    {
+      "kText": "syntax left foo",
+      "expected": {
+        "node": "SyntaxAssoc",
+        "assoc": "LEFT",
+        "klabels": [
+          "foo"
+        ]
+      }
+    },
+    {
+      "kText": "syntax right foo bar",
+      "expected": {
+        "node": "SyntaxAssoc",
+        "assoc": "RIGHT",
+        "klabels": [
+          "foo",
+          "bar"
+        ]
+      }
+    },
+    {
+      "kText": "syntax non-assoc foo bar baz",
+      "expected": {
+        "node": "SyntaxAssoc",
+        "assoc": "NON_ASSOC",
+        "klabels": [
+          "foo",
+          "bar",
+          "baz"
+        ]
+      }
+    },
+    {
+      "kText": "syntax priority foo",
+      "expected": {
+        "node": "SyntaxPriority",
+        "groups": [
+          [
+            "foo"
+          ]
+        ]
+      }
+    },
+    {
+      "kText": "syntax priority foo bar",
+      "expected": {
+        "node": "SyntaxPriority",
+        "groups": [
+          [
+            "foo",
+            "bar"
+          ]
+        ]
+      }
+    },
+    {
+      "kText": "syntax priority foo bar baz",
+      "expected": {
+        "node": "SyntaxPriority",
+        "groups": [
+          [
+            "foo",
+            "bar",
+            "baz"
+          ]
+        ]
+      }
+    },
+    {
+      "kText": "syntax priority foo > bar",
+      "expected": {
+        "node": "SyntaxPriority",
+        "groups": [
+          [
+            "foo"
+          ],
+          [
+            "bar"
+          ]
+        ]
+      }
+    },
+    {
+      "kText": "syntax priority foo > bar baz",
+      "expected": {
+        "node": "SyntaxPriority",
+        "groups": [
+          [
+            "foo"
+          ],
+          [
+            "bar",
+            "baz"
+          ]
+        ]
+      }
+    },
+    {
+      "kText": "syntax priority foo > bar > baz",
+      "expected": {
+        "node": "SyntaxPriority",
+        "groups": [
+          [
+            "foo"
+          ],
+          [
+            "bar"
+          ],
+          [
+            "baz"
+          ]
+        ]
+      }
+    },
+    {
+      "kText": "syntax priority foo bar > baz",
+      "expected": {
+        "node": "SyntaxPriority",
+        "groups": [
+          [
+            "foo",
+            "bar"
+          ],
+          [
+            "baz"
+          ]
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax {Bar} Foo",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [
+            "Bar"
+          ],
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax {Bar, Baz} Foo",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [
+            "Bar",
+            "Baz"
+          ],
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax Foo{Bar}",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": [
+            "Bar"
+          ]
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax Foo{Bar, Baz}",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": [
+            "Bar",
+            "Baz"
+          ]
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax {Bar} Foo{Baz}",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [
+            "Bar"
+          ],
+          "args": [
+            "Baz"
+          ]
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax MInt{8}",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "MInt",
+          "params": [],
+          "args": [
+            "8"
+          ]
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax MInt{8, 16}",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "MInt",
+          "params": [],
+          "args": [
+            "8",
+            "16"
+          ]
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax Foo [bar]",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "bar",
+              ""
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "syntax Foo [bar, baz]",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "bar",
+              ""
+            ],
+            [
+              "baz",
+              ""
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "syntax {Bar, Baz} Foo [bar, baz]",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [
+            "Bar",
+            "Baz"
+          ],
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "bar",
+              ""
+            ],
+            [
+              "baz",
+              ""
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "syntax Foo = Bar",
+      "expected": {
+        "node": "SyntaxSynonym",
+        "new": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "old": {
+          "node": "Sort",
+          "name": "Bar",
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": []
+        }
+      }
+    },
+    {
+      "kText": "syntax {N} Vector{N} = Matrix{N, 1} [foo]",
+      "expected": {
+        "node": "SyntaxSynonym",
+        "new": {
+          "node": "SortDecl",
+          "name": "Vector",
+          "params": [
+            "N"
+          ],
+          "args": [
+            "N"
+          ]
+        },
+        "old": {
+          "node": "Sort",
+          "name": "Matrix",
+          "args": [
+            "N",
+            1
+          ]
+        },
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "foo",
+              ""
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "syntax Foo ::= r\"foo\" [token]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Lexical",
+                    "regex": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "token",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax FooBar ::= r\"foo\" \"bar\" [token]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "FooBar",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Lexical",
+                    "regex": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "token",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foos ::= List{Foo, \",\"}",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foos",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "UserList",
+                "sort": "Foo",
+                "sep": ",",
+                "non_empty": false,
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foos ::= NeList{Foo, \",\"}",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foos",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "UserList",
+                "sort": "Foo",
+                "sep": ",",
+                "non_empty": true,
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"foo\"",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"foo\" [symbol]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "symbol",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"foo\" [symbol()]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "symbol",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"foo\" [symbol(\"\")]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "symbol",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"foo\" [symbol(foo)]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "symbol",
+                      "foo"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"foo\" [symbol(\"foo\")]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "symbol",
+                      "foo"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= Bar",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= Bar [bar]",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "bar",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= bar: Bar",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= left: bar: Bar",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "LEFT"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= Bar: Baz",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Baz",
+                      "args": []
+                    },
+                    "name": "Bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax {N} Foo ::= Bar",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [
+            "N"
+          ],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax {Baz} Foo{Baz} ::= Bar{1, Baz}",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [
+            "Baz"
+          ],
+          "args": [
+            "Baz"
+          ]
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": [
+                        1,
+                        "Baz"
+                      ]
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= left: \"foo\"",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "LEFT"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= right: \"foo\"",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "RIGHT"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= non-assoc: \"foo\"",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "NON_ASSOC"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"bar\" Bar",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"bar\" | Bar",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"bar\" > \"baz\"",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          },
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "baz"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"bar\" Bar > \"baz\" Baz",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          },
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "baz"
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Baz",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= \"bar\" | Bar > \"baz\" | Baz",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          },
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "baz"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Baz",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= left: \"bar\" | Bar > right: \"baz\" | Baz",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "LEFT"
+          },
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "baz"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Baz",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "RIGHT"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foos ::= left: \"bar\" | Bar > right: r\"baz\" [token] > non-assoc: List{Foo, \",\"}",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foos",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "LEFT"
+          },
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Lexical",
+                    "regex": "baz"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": [
+                    [
+                      "token",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "assoc": "RIGHT"
+          },
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "UserList",
+                "sort": "Foo",
+                "sep": ",",
+                "non_empty": false,
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": "NON_ASSOC"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= foo()",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= foo() | bar()",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= foo() | bar() | baz()",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "bar"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              },
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "baz"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= foo(Bar)",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= foo(bar: Bar)",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": "bar"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= foo(Bar, Baz)",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": ""
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ","
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Baz",
+                      "args": []
+                    },
+                    "name": ""
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax Foo ::= foo(bar: Bar, baz: Baz)",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "Foo",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "Terminal",
+                    "value": "foo"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "("
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Bar",
+                      "args": []
+                    },
+                    "name": "bar"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ","
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Baz",
+                      "args": []
+                    },
+                    "name": "baz"
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": ")"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax List [hook(LIST.List)]",
+      "expected": {
+        "node": "SyntaxDecl",
+        "decl": {
+          "node": "SortDecl",
+          "name": "List",
+          "params": [],
+          "args": []
+        },
+        "att": {
+          "node": "Att",
+          "items": [
+            [
+              "hook",
+              "LIST.List"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "kText": "syntax List ::= List List",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "List",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "List",
+                      "args": []
+                    },
+                    "name": ""
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "List",
+                      "args": []
+                    },
+                    "name": ""
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    },
+    {
+      "kText": "syntax KItem ::= List \"[\" Int \"]\"",
+      "expected": {
+        "node": "SyntaxDefn",
+        "decl": {
+          "node": "SortDecl",
+          "name": "KItem",
+          "params": [],
+          "args": []
+        },
+        "blocks": [
+          {
+            "node": "PriorityBlock",
+            "productions": [
+              {
+                "node": "Production",
+                "items": [
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "List",
+                      "args": []
+                    },
+                    "name": ""
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "["
+                  },
+                  {
+                    "node": "NonTerminal",
+                    "sort": {
+                      "node": "Sort",
+                      "name": "Int",
+                      "args": []
+                    },
+                    "name": ""
+                  },
+                  {
+                    "node": "Terminal",
+                    "value": "]"
+                  }
+                ],
+                "att": {
+                  "node": "Att",
+                  "items": []
+                }
+              }
+            ],
+            "assoc": null
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "table": "MODNAME_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_lexer.py",
+  "fields": [
+    "text",
+    "expectedToken",
+    "expectedRemaining"
+  ],
+  "note": "`_modname(la, it)`.",
+  "cases": [
+    {
+      "text": "private",
+      "expectedToken": {
+        "text": "private",
+        "type": "KW_PRIVATE",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "private MODULE",
+      "expectedToken": {
+        "text": "private",
+        "type": "KW_PRIVATE",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": " MODULE"
+    },
+    {
+      "text": "public",
+      "expectedToken": {
+        "text": "public",
+        "type": "KW_PUBLIC",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "module",
+      "expectedToken": {
+        "text": "module",
+        "type": "MODNAME",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "MODULE",
+      "expectedToken": {
+        "text": "MODULE",
+        "type": "MODNAME",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "module#module",
+      "expectedToken": {
+        "text": "module",
+        "type": "MODNAME",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": "#module"
+    },
+    {
+      "text": "mo-du-le",
+      "expectedToken": {
+        "text": "mo-du-le",
+        "type": "MODNAME",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "m0-DU_l3",
+      "expectedToken": {
+        "text": "m0-DU_l3",
+        "type": "MODNAME",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "TEST-MODULE",
+      "expectedToken": {
+        "text": "TEST-MODULE",
+        "type": "MODNAME",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    },
+    {
+      "text": "TEST_MODULE",
+      "expectedToken": {
+        "text": "TEST_MODULE",
+        "type": "MODNAME",
+        "loc": [
+          1,
+          1
+        ]
+      },
+      "expectedRemaining": ""
+    }
+  ]
+}

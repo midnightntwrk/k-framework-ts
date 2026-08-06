@@ -1,0 +1,10 @@
+{
+  // Development config: type-checks `src` *and* `test` with `noEmit`, and pulls
+  // in Bun's types for the test runner.  Everything not specific to this
+  // package lives in the workspace-root base config.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

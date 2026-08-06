@@ -1,0 +1,69 @@
+APRProof: test%AssertTest.checkFail_assert_false():0
+    status: ProofStatus.PASSED
+    admitted: False
+    nodes: 5
+    pending: 0
+    failing: 0
+    vacuous: 0
+    stuck: 0
+    terminal: 3
+    refuted: 0
+    bounded: 0
+    execution time: 0s
+Subproofs: 0
+
+APRProof: test%AssertTest.setUp():0
+    status: ProofStatus.PASSED
+    admitted: False
+    nodes: 3
+    pending: 0
+    failing: 0
+    vacuous: 0
+    stuck: 0
+    terminal: 2
+    refuted: 0
+    bounded: 0
+    execution time: 0s
+Subproofs: 0
+
+APRProof: test%AssertTest.testFail_assert_true():0
+    status: ProofStatus.FAILED
+    admitted: False
+    nodes: 5
+    pending: 0
+    failing: 1
+    vacuous: 0
+    stuck: 0
+    terminal: 3
+    refuted: 0
+    bounded: 0
+    execution time: 0s
+Subproofs: 0
+
+APRProof: test%AssertTest.test_assert_false():0
+    status: ProofStatus.FAILED
+    admitted: False
+    nodes: 5
+    pending: 0
+    failing: 1
+    vacuous: 0
+    stuck: 0
+    terminal: 3
+    refuted: 0
+    bounded: 0
+    execution time: 0s
+Subproofs: 0
+
+APRProof: test%AssertTest.test_assert_true():0
+    status: ProofStatus.PASSED
+    admitted: False
+    nodes: 5
+    pending: 0
+    failing: 0
+    vacuous: 0
+    stuck: 0
+    terminal: 3
+    refuted: 0
+    bounded: 0
+    execution time: 0s
+Subproofs: 0

@@ -1,0 +1,1894 @@
+{
+  "node": "Definition",
+  "modules": [
+    {
+      "node": "Module",
+      "location": [
+        15,
+        1,
+        79,
+        10
+      ],
+      "name": "RAT-SYNTAX",
+      "sentences": [
+        {
+          "node": "SyntaxDecl",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Rat",
+            "params": [],
+            "args": []
+          },
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Rat",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Rat",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "^Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_^Rat_"
+                      ],
+                      [
+                        "smtlib",
+                        "ratpow"
+                      ],
+                      [
+                        "hook",
+                        "RAT.pow"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": "LEFT"
+            },
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "*Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_*Rat_"
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "smtlib",
+                        "ratmul"
+                      ],
+                      [
+                        "hook",
+                        "RAT.mul"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "/Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_/Rat_"
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "smtlib",
+                        "ratdiv"
+                      ],
+                      [
+                        "hook",
+                        "RAT.div"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": "LEFT"
+            },
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "+Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_+Rat_"
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "smtlib",
+                        "ratadd"
+                      ],
+                      [
+                        "hook",
+                        "RAT.add"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "-Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_-Rat_"
+                      ],
+                      [
+                        "left",
+                        ""
+                      ],
+                      [
+                        "smtlib",
+                        "ratsub"
+                      ],
+                      [
+                        "hook",
+                        "RAT.sub"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": "LEFT"
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Bool",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "==Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_==Rat_"
+                      ],
+                      [
+                        "smtlib",
+                        "rateq"
+                      ],
+                      [
+                        "hook",
+                        "RAT.eq"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "=/=Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_=/=Rat_"
+                      ],
+                      [
+                        "smtlib",
+                        "ratne"
+                      ],
+                      [
+                        "hook",
+                        "RAT.ne"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ">Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_>Rat_"
+                      ],
+                      [
+                        "smtlib",
+                        "ratgt"
+                      ],
+                      [
+                        "hook",
+                        "RAT.gt"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ">=Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_>=Rat_"
+                      ],
+                      [
+                        "smtlib",
+                        "ratge"
+                      ],
+                      [
+                        "hook",
+                        "RAT.ge"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "<Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_<Rat_"
+                      ],
+                      [
+                        "smtlib",
+                        "ratlt"
+                      ],
+                      [
+                        "hook",
+                        "RAT.lt"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "<=Rat"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "_<=Rat_"
+                      ],
+                      [
+                        "smtlib",
+                        "ratle"
+                      ],
+                      [
+                        "hook",
+                        "RAT.le"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Rat",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "minRat"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "minRat"
+                      ],
+                      [
+                        "smtlib",
+                        "ratmin"
+                      ],
+                      [
+                        "hook",
+                        "RAT.min"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "maxRat"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "total",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "maxRat"
+                      ],
+                      [
+                        "smtlib",
+                        "ratmax"
+                      ],
+                      [
+                        "hook",
+                        "RAT.max"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Float",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "Rat2Float"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": "precision"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": "exponentBits"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "INT-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "BOOL",
+          "public": false
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        96,
+        1,
+        101,
+        10
+      ],
+      "name": "RAT-COMMON",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Rat",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "<"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ">Rat"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "format",
+                        "%2 /Rat %4"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "RAT-SYNTAX",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        103,
+        1,
+        113,
+        10
+      ],
+      "name": "RAT-SYMBOLIC",
+      "sentences": [
+        {
+          "node": "Rule",
+          "bubble": "#Ceil(@R1:Rat /Rat @R2:Rat)\n  =>\n    {(@R2 =/=Rat 0) #Equals true} #And #Ceil(@R1) #And #Ceil(@R2)",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": [
+              [
+                "simplification",
+                ""
+              ]
+            ]
+          }
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "RAT-COMMON",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "ML-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "BOOL",
+          "public": false
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": [
+          [
+            "symbolic",
+            ""
+          ]
+        ]
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        115,
+        1,
+        128,
+        10
+      ],
+      "name": "RAT-KORE",
+      "sentences": [
+        {
+          "node": "Rule",
+          "bubble": "R ==Rat S => R ==K S",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "R =/=Rat S => R =/=K S",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "RAT-COMMON",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "K-EQUAL",
+          "public": false
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        130,
+        1,
+        230,
+        10
+      ],
+      "name": "RAT",
+      "sentences": [
+        {
+          "node": "Rule",
+          "bubble": "< I , I' >Rat +Rat < J , J' >Rat => ((I *Int J') +Int (I' *Int J)) /Rat (I' *Int J')",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "I:Int         +Rat < J , J' >Rat => ((I *Int J') +Int J) /Rat J'",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "< J , J' >Rat +Rat I:Int         => I +Rat < J , J' >Rat",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "I:Int         +Rat J:Int         => I +Int J",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "< I , I' >Rat *Rat < J , J' >Rat => (I *Int J) /Rat (I' *Int J')",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "I:Int         *Rat < J , J' >Rat => (I *Int J) /Rat J'",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "< J , J' >Rat *Rat I:Int         => I *Rat < J , J' >Rat",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "I:Int         *Rat J:Int         => I *Int J",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "< I , I' >Rat /Rat < J , J' >Rat => (I *Int J') /Rat (I' *Int J)",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "I:Int         /Rat < J , J' >Rat => (I *Int J') /Rat J",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "< I , I' >Rat /Rat J:Int         => I /Rat (I' *Int J) requires J =/=Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "I:Int         /Rat J:Int         => makeRat(I, J)      requires J =/=Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "R -Rat S => R +Rat (-1 *Rat S)",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Rat",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "makeRat"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "makeRat"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "Rule",
+          "bubble": "makeRat(0, J) => 0 requires J =/=Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "makeRat(I, J) => makeRat(I, J, gcdInt(I,J)) requires I =/=Int 0 andBool J =/=Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "makeRat(I, J, D) => I /Int D                       requires J ==Int D",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "makeRat(I, J, D) => < I /Int D , J /Int D >Rat     requires J >Int 0 andBool J =/=Int D",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "makeRat(I, J, D) => makeRat(0 -Int I, 0 -Int J, D) requires J <Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Int",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "gcdInt"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "public",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "Rule",
+          "bubble": "gcdInt(A, 0) => A        requires A >Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "gcdInt(A, 0) => 0 -Int A requires A <Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "gcdInt(A, B) => gcdInt(B, A %Int B) requires B =/=Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "_ ^Rat 0 => 1",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "0 ^Rat N => 0 requires N =/=Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "< I , J >Rat ^Rat N => powRat(< I , J >Rat, N) requires N >Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "X:Int        ^Rat N => X ^Int N                requires N >Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "X ^Rat N => (1 /Rat X) ^Rat (0 -Int N) requires X =/=Rat 0 andBool N <Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Rat",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "powRat"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Rat",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "Rule",
+          "bubble": "powRat(X, 1) => X",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "powRat(X, N) => powRat(X *Rat X, N /Int 2) requires N >Int 1 andBool N %Int 2  ==Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "powRat(X, N) => powRat(X, N -Int 1) *Rat X requires N >Int 1 andBool N %Int 2 =/=Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "R >Rat S => R -Rat S >Rat 0 requires S =/=Rat 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "< I , _ >Rat >Rat 0 => I >Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "I:Int        >Rat 0 => I >Int 0",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "R >=Rat S => notBool R <Rat S",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "R <Rat S => S >Rat R",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "R <=Rat S => S >=Rat R",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "minRat(R, S) => R requires R <=Rat S",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "minRat(R, S) => S requires S <=Rat R",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "maxRat(R, S) => R requires R >=Rat S",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "maxRat(R, S) => S requires S >=Rat R",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "Float",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "#Rat2Float"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ","
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "hook",
+                        "FLOAT.rat2float"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "Rule",
+          "bubble": "Rat2Float(Num:Int, Prec:Int, Exp:Int) => #Rat2Float(Num, 1, Prec, Exp)",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        },
+        {
+          "node": "Rule",
+          "bubble": "Rat2Float(< Num, Dem >Rat, Prec, Exp) => #Rat2Float(Num, Dem, Prec, Exp)",
+          "label": "",
+          "att": {
+            "node": "Att",
+            "items": []
+          }
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "RAT-COMMON",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "RAT-SYMBOLIC",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "RAT-KORE",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "RAT-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "INT",
+          "public": false
+        },
+        {
+          "node": "Import",
+          "module_name": "BOOL",
+          "public": false
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": [
+          [
+            "private",
+            ""
+          ]
+        ]
+      }
+    }
+  ],
+  "requires": []
+}

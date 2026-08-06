@@ -1,0 +1,30 @@
+{
+  // Emit config, used only by `bun run build`.  The sibling `tsconfig.json` is
+  // the development one: it type-checks `src` *and* `test` with `noEmit`, and
+  // it pulls in Bun's types.  Neither belongs in what a consumer installs.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    // The base config allows `.ts` import specifiers so `test/` can import
+    // `../src/index.ts` directly.  `src/` itself uses `.js` specifiers — the
+    // ESM convention — so nothing here needs it, and emit forbids it.  See
+    // `packages/kfuzz/tsconfig.build.json` for the tsgo 7.0.2 declaration-emit
+    // bug that makes the alternative unusable.
+    "allowImportingTsExtensions": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    // The tarball ships `dist` only, so a map pointing at `../src/*.ts` would
+    // dangle.  Embedding the source text keeps step-through debugging working
+    // without shipping `src` twice.
+    "inlineSources": true,
+    // `generate.ts` and `bin.ts` reach Node's `crypto`, `fs/promises`, `os` and
+    // `path`, and `cli.ts` reaches `fs`, so `@types/node` has to be resolvable.
+    // `@types/bun` stays excluded, which is what a bare `types: []` is really
+    // for — nothing Bun-shaped may reach a public signature.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,0 +1,35 @@
+{
+  "_comment": "HAND-AUTHORED, not vendored. See test/data/README.md.",
+  "cases": [
+    {
+      "name": "empty-line",
+      "bytes": "\n",
+      "provokes": "A bare terminator with no document. pyk rpc.py:379-380 treats it as fatal; so does TcpTransport, which additionally poisons the connection."
+    },
+    {
+      "name": "blank-then-response",
+      "bytes": "   \n{\"jsonrpc\":\"2.0\",\"id\":\"x-001\",\"result\":{}}\n",
+      "provokes": "A whitespace-only line ahead of a valid one. Still fatal: the emptiness check is on the line after a trailing-\\r strip, mirroring pyk's rstrip, so whitespace does not smuggle a line past it."
+    },
+    {
+      "name": "unterminated",
+      "bytes": "{\"jsonrpc\":\"2.0\",\"id\":\"x-001\",\"result\":{\"state\":\"trunca",
+      "provokes": "A document with no terminator, followed by EOF. Never becomes a line; the pending request settles on the close, not on a parse failure."
+    },
+    {
+      "name": "two-lines-one-write",
+      "bytes": "{\"jsonrpc\":\"2.0\",\"id\":\"x-001\",\"result\":1}\n{\"jsonrpc\":\"2.0\",\"id\":\"x-002\",\"result\":2}\n",
+      "provokes": "Two responses to one request. The first is delivered; the second has no request to belong to on a single-flight connection, and poisons the transport."
+    },
+    {
+      "name": "not-json",
+      "bytes": "kore-rpc-booster: internal error\n",
+      "provokes": "A well-framed line that is not a JSON document — what a backend writing a crash message to its socket would produce. The transport delivers it (framing is its only concern); decodeResponse is what rejects it."
+    },
+    {
+      "name": "wrong-id",
+      "bytes": "{\"jsonrpc\":\"2.0\",\"id\":\"someone-elses-001\",\"result\":{\"state\":{\"format\":\"KORE\",\"version\":1,\"term\":{\"tag\":\"Top\",\"sort\":{\"tag\":\"SortApp\",\"name\":\"SortK\",\"args\":[]}}}}}\n",
+      "provokes": "A well-formed response echoing an id that was never sent. pyk asserts (rpc.py:389); KoreClient throws ResponseIdMismatchError."
+    }
+  ]
+}

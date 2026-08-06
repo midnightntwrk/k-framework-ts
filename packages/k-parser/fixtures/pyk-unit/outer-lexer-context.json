@@ -1,0 +1,48 @@
+{
+  "table": "CONTEXT_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_lexer.py",
+  "fields": [
+    "text",
+    "expectedTokens",
+    "expectedRemaining"
+  ],
+  "note": "`_bubble_or_context(la, it, context=True)` \u2014 the state where `alias` terminates a bubble.",
+  "cases": [
+    {
+      "text": "alias",
+      "expectedTokens": [
+        {
+          "text": "alias",
+          "type": "KW_ALIAS",
+          "loc": [
+            1,
+            1
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    },
+    {
+      "text": "bubble alias",
+      "expectedTokens": [
+        {
+          "text": "bubble",
+          "type": "BUBBLE",
+          "loc": [
+            1,
+            1
+          ]
+        },
+        {
+          "text": "alias",
+          "type": "KW_ALIAS",
+          "loc": [
+            1,
+            8
+          ]
+        }
+      ],
+      "expectedRemaining": ""
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+/* T Fn D Sfa Cl */
+Lbl'-LT-'generatedTop'-GT-'{}(
+    /* T Fn D Sfa Cl */
+    Lbl'-LT-'k'-GT-'{}(
+        /* T Fn D Sfa Cl */
+        kseq{}(
+            /* T Fn D Sfa Cli */
+            /* Inj: */ inj{SortStmt{}, SortKItem{}}(
+                /* T Fn D Sfa Cl */
+                Lbl'UndsUndsUnds'TEST-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(
+                    /* T Fn D Sfa Cl */
+                    Lbl'UndsEqlsUndsSClnUnds'TEST-SYNTAX'Unds'Stmt'Unds'Id'Unds'IExp{}(
+                        /* T Fn D Sfa Cl */
+                        \dv{SortId{}}(/* T Fn D Sfa Cl */ "a"),
+                        /* T Fn D Sfa Cl */
+                        Lbl'UndsPlusUndsUnds'TEST-SYNTAX'Unds'IExp'Unds'IExp'Unds'IExp{}(
+                            /* T Fn D Sfa Cli */
+                            /* Inj: */ inj{SortInt{}, SortIExp{}}(
+                                /* T Fn D Sfa Cl */ \dv{SortInt{}}("3")
+                            ),
+                            /* T Fn D Sfa Cli */
+                            /* Inj: */ inj{SortInt{}, SortIExp{}}(
+                                /* T Fn D Sfa Cl */ \dv{SortInt{}}("3")
+                            )
+                        )
+                    ),
+                    /* T Fn D Sfa Cl */
+                    Lbl'UndsEqlsUndsSClnUnds'TEST-SYNTAX'Unds'Stmt'Unds'Id'Unds'IExp{}(
+                        /* T Fn D Sfa Cl */
+                        \dv{SortId{}}(/* T Fn D Sfa Cl */ "b"),
+                        /* T Fn D Sfa Cl */
+                        Lbl'UndsStarUndsUnds'TEST-SYNTAX'Unds'IExp'Unds'IExp'Unds'IExp{}(
+                            /* T Fn D Sfa Cli */
+                            /* Inj: */ inj{SortInt{}, SortIExp{}}(
+                                /* T Fn D Sfa Cl */ \dv{SortInt{}}("5")
+                            ),
+                            /* T Fn D Sfa Cli */
+                            /* Inj: */ inj{SortInt{}, SortIExp{}}(
+                                /* T Fn D Sfa Cl */ \dv{SortInt{}}("7")
+                            )
+                        )
+                    )
+                )
+            ),
+            /* T Fn D Sfa Cl */
+            kseq{}(
+                /* T Fn D Sfa Cli */
+                /* Inj: */ inj{SortStmt{}, SortKItem{}}(
+                    /* T Fn D Sfa Cl */
+                    Lblif'LParUndsRParUnds'else'UndsUnds'TEST-SYNTAX'Unds'Stmt'Unds'BExp'Unds'Stmt'Unds'Stmt{}(
+                        /* T Fn D Sfa Cl */
+                        Lbl'Unds-LT-UndsUnds'TEST-SYNTAX'Unds'BExp'Unds'IExp'Unds'IExp{}(
+                            /* T Fn D Sfa Cli */
+                            /* Inj: */ inj{SortId{}, SortIExp{}}(
+                                /* T Fn D Sfa Cl */
+                                \dv{SortId{}}(/* T Fn D Sfa Cl */ "a")
+                            ),
+                            /* T Fn D Sfa Cli */
+                            /* Inj: */ inj{SortId{}, SortIExp{}}(
+                                /* T Fn D Sfa Cl */
+                                \dv{SortId{}}(/* T Fn D Sfa Cl */ "b")
+                            )
+                        ),
+                        /* T Fn D Sfa Cl */
+                        Lbl'LBraUndsRBraUnds'TEST-SYNTAX'Unds'Stmt'Unds'Stmt{}(
+                            /* T Fn D Sfa Cl */
+                            Lbl'UndsEqlsUndsSClnUnds'TEST-SYNTAX'Unds'Stmt'Unds'Id'Unds'IExp{}(
+                                /* T Fn D Sfa Cl */
+                                \dv{SortId{}}(/* T Fn D Sfa Cl */ "c"),
+                                /* T Fn D Sfa Cli */
+                                /* Inj: */ inj{SortInt{}, SortIExp{}}(
+                                    /* T Fn D Sfa Cl */ \dv{SortInt{}}("1")
+                                )
+                            )
+                        ),
+                        /* T Fn D Sfa Cl */
+                        Lbl'LBraUndsRBraUnds'TEST-SYNTAX'Unds'Stmt'Unds'Stmt{}(
+                            /* T Fn D Sfa Cl */
+                            Lbl'UndsEqlsUndsSClnUnds'TEST-SYNTAX'Unds'Stmt'Unds'Id'Unds'IExp{}(
+                                /* T Fn D Sfa Cl */
+                                \dv{SortId{}}(/* T Fn D Sfa Cl */ "c"),
+                                /* T Fn D Sfa Cl */
+                                Lbl'Unds'-'UndsUnds'TEST-SYNTAX'Unds'IExp'Unds'IExp'Unds'IExp{}(
+                                    /* T Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortInt{}, SortIExp{}}(
+                                        /* T Fn D Sfa Cl */ \dv{SortInt{}}("0")
+                                    ),
+                                    /* T Fn D Sfa Cli */
+                                    /* Inj: */ inj{SortInt{}, SortIExp{}}(
+                                        /* T Fn D Sfa Cl */ \dv{SortInt{}}("1")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                /* T Fn D Sfa Cl */ dotk{}()
+            )
+        )
+    ),
+    /* T Fn D Sfa Cl */
+    Lbl'-LT-'generatedCounter'-GT-'{}(/* T Fn D Sfa Cl */ \dv{SortInt{}}("0")),
+    /* T Fn D Sfa Cl */
+    Lbl'-LT-'store'-GT-'{}(
+        /* T Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
+    )
+)

@@ -1,0 +1,145 @@
+{
+  "table": "DEFINITION_TEST_DATA",
+  "source": "pyk/src/tests/unit/kast/test_outer_parser.py",
+  "fields": [
+    "kText",
+    "expected"
+  ],
+  "note": "`OuterParser(kText).definition()`.",
+  "cases": [
+    {
+      "kText": "",
+      "expected": {
+        "node": "Definition",
+        "modules": [],
+        "requires": []
+      }
+    },
+    {
+      "kText": "requires \"foo.k\"",
+      "expected": {
+        "node": "Definition",
+        "modules": [],
+        "requires": [
+          {
+            "node": "Require",
+            "path": "foo.k"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "requires \"foo.k\" requires \"bar.k\"",
+      "expected": {
+        "node": "Definition",
+        "modules": [],
+        "requires": [
+          {
+            "node": "Require",
+            "path": "foo.k"
+          },
+          {
+            "node": "Require",
+            "path": "bar.k"
+          }
+        ]
+      }
+    },
+    {
+      "kText": "module FOO endmodule",
+      "expected": {
+        "node": "Definition",
+        "modules": [
+          {
+            "node": "Module",
+            "location": [
+              1,
+              1,
+              1,
+              21
+            ],
+            "name": "FOO",
+            "sentences": [],
+            "imports": [],
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          }
+        ],
+        "requires": []
+      }
+    },
+    {
+      "kText": "module FOO endmodule module BAR endmodule",
+      "expected": {
+        "node": "Definition",
+        "modules": [
+          {
+            "node": "Module",
+            "location": [
+              1,
+              1,
+              1,
+              21
+            ],
+            "name": "FOO",
+            "sentences": [],
+            "imports": [],
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          },
+          {
+            "node": "Module",
+            "location": [
+              1,
+              22,
+              1,
+              42
+            ],
+            "name": "BAR",
+            "sentences": [],
+            "imports": [],
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          }
+        ],
+        "requires": []
+      }
+    },
+    {
+      "kText": "requires \"foo.k\" module FOO endmodule",
+      "expected": {
+        "node": "Definition",
+        "modules": [
+          {
+            "node": "Module",
+            "location": [
+              1,
+              18,
+              1,
+              38
+            ],
+            "name": "FOO",
+            "sentences": [],
+            "imports": [],
+            "att": {
+              "node": "Att",
+              "items": []
+            }
+          }
+        ],
+        "requires": [
+          {
+            "node": "Require",
+            "path": "foo.k"
+          }
+        ]
+      }
+    }
+  ]
+}

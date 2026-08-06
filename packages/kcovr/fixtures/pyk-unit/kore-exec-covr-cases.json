@@ -1,0 +1,83 @@
+{
+  "_comment": [
+    "Hand-transcribed from pyk/src/tests/unit/test_kore_exec_covr.py at K v7.1.337",
+    "(sha256 776d9cc14c402f796446a1710d8a588c14285a5681e6b9d29e555bcf565844e0, 100 lines).",
+    "This is the ONLY test upstream has for any of K's coverage tooling, and because",
+    "the current haskell-backend no longer prints source locations in oneline format",
+    "(DebugAppliedRewriteRules.hs:69-73 now prints 'applied N rewrite rules'), it is",
+    "not a sample of a live format — it IS the specification. Nothing can regenerate it.",
+    "",
+    "The upstream literals are Python raw strings (r'...'), so every backslash below is",
+    "a literal backslash in the input, JSON-escaped as \\\\. The escaped-space paths are",
+    "the point of those cases: do not normalise them.",
+    "",
+    "See ../PROVENANCE.md for the transcription procedure and its verification."
+  ],
+
+  "parseHaskellOnelineLog": {
+    "_source": "test_kore_exec_covr.py:13-42 (PARSE_HASKELL_ONELINE_LOG_TEST_DATA)",
+    "_shape": "id -> { line, entry, payload } ; entry is the HaskellLogEntry enum VALUE (kore_exec_covr.py:24-26)",
+    "cases": [
+      {
+        "id": "DebugApplyEquation-empty",
+        "line": "kore-exec: [1] Debug (DebugApplyEquation):",
+        "entry": "DebugApplyEquation",
+        "payload": ""
+      },
+      {
+        "id": "DebugApplyEquation-location",
+        "line": "kore-exec: [2] Debug (DebugApplyEquation): /some/path\\ with \\ spaces/domains.md:1:2-3:4",
+        "entry": "DebugApplyEquation",
+        "payload": "/some/path\\ with \\ spaces/domains.md:1:2-3:4"
+      },
+      {
+        "id": "DebugAppliedRewriteRules-empty",
+        "line": "kore-exec: [3] Debug (DebugAppliedRewriteRules):",
+        "entry": "DebugAppliedRewriteRules",
+        "payload": ""
+      },
+      {
+        "id": "DebugAppliedRewriteRules-location",
+        "line": "kore-exec: [4] Debug (DebugAppliedRewriteRules): /some/path\\ with \\ spaces/domains.md:1:2-3:4",
+        "entry": "DebugAppliedRewriteRules",
+        "payload": "/some/path\\ with \\ spaces/domains.md:1:2-3:4"
+      },
+      {
+        "id": "DebugAppliedRewriteRules-multilocation",
+        "line": "kore-exec: [5] Debug (DebugAppliedRewriteRules): /some/path\\ with \\ spaces/domains.md:1:2-3:4 /some/other/path\\ with \\ spaces/domains.md:5:6-7:8",
+        "entry": "DebugAppliedRewriteRules",
+        "payload": "/some/path\\ with \\ spaces/domains.md:1:2-3:4 /some/other/path\\ with \\ spaces/domains.md:5:6-7:8"
+      }
+    ]
+  },
+
+  "parseRuleApplications": {
+    "_source": "test_kore_exec_covr.py:58-77 (PARSE_RULE_APPLICATIONS_TEST_DATA)",
+    "_shape": "id -> { log, expected: { <HaskellLogEntry value>: { <locationKey>: count } } }",
+    "_note": "The multilocation line stays ONE composite space-joined key (kore_exec_covr.py:53-54 keys on the stripped payload verbatim); an empty payload becomes the literal key 'UNKNOWN'. Neither is a bug to fix.",
+    "cases": [
+      {
+        "id": "empty",
+        "log": "",
+        "expected": {
+          "DebugApplyEquation": {},
+          "DebugAppliedRewriteRules": {}
+        }
+      },
+      {
+        "id": "rewrites-and-simplifications",
+        "log": "kore-exec: [3] Debug (DebugAppliedRewriteRules):\nkore-exec: [2] Debug (DebugAppliedRewriteRules): /some/path\\ with \\ spaces/domains.md:1:2-3:4\nkore-exec: [2] Debug (DebugApplyEquation): /some/path\\ with \\ spaces/domains.md:1:2-3:4\nkore-exec: [1] Debug (DebugApplyEquation):",
+        "expected": {
+          "DebugApplyEquation": {
+            "UNKNOWN": 1,
+            "/some/path\\ with \\ spaces/domains.md:1:2-3:4": 1
+          },
+          "DebugAppliedRewriteRules": {
+            "UNKNOWN": 1,
+            "/some/path\\ with \\ spaces/domains.md:1:2-3:4": 1
+          }
+        }
+      }
+    ]
+  }
+}

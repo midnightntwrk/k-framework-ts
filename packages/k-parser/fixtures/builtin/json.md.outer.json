@@ -1,0 +1,459 @@
+{
+  "node": "Definition",
+  "modules": [
+    {
+      "node": "Module",
+      "location": [
+        15,
+        1,
+        28,
+        10
+      ],
+      "name": "JSON-SYNTAX",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "JSONs",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "UserList",
+                  "sort": "JSON",
+                  "sep": ",",
+                  "non_empty": false,
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "JSONs"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "JSONKey",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "String",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "JSON",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "null"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "JSONnull"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "String",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Int",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Float",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "Bool",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": []
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "JSONKey",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ":"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "JSON",
+                        "args": []
+                      },
+                      "name": ""
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "JSONEntry"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "{"
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "JSONs",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "}"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "JSONObject"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "["
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "JSONs",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "]"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "symbol",
+                        "JSONList"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "INT-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "STRING-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "BOOL-SYNTAX",
+          "public": true
+        },
+        {
+          "node": "Import",
+          "module_name": "FLOAT-SYNTAX",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    },
+    {
+      "node": "Module",
+      "location": [
+        40,
+        1,
+        46,
+        10
+      ],
+      "name": "JSON",
+      "sentences": [
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "String",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "JSON2String"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "JSON",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "JSON2String"
+                      ],
+                      [
+                        "hook",
+                        "JSON.json2string"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        },
+        {
+          "node": "SyntaxDefn",
+          "decl": {
+            "node": "SortDecl",
+            "name": "JSON",
+            "params": [],
+            "args": []
+          },
+          "blocks": [
+            {
+              "node": "PriorityBlock",
+              "productions": [
+                {
+                  "node": "Production",
+                  "items": [
+                    {
+                      "node": "Terminal",
+                      "value": "String2JSON"
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": "("
+                    },
+                    {
+                      "node": "NonTerminal",
+                      "sort": {
+                        "node": "Sort",
+                        "name": "String",
+                        "args": []
+                      },
+                      "name": ""
+                    },
+                    {
+                      "node": "Terminal",
+                      "value": ")"
+                    }
+                  ],
+                  "att": {
+                    "node": "Att",
+                    "items": [
+                      [
+                        "function",
+                        ""
+                      ],
+                      [
+                        "symbol",
+                        "String2JSON"
+                      ],
+                      [
+                        "hook",
+                        "JSON.string2json"
+                      ]
+                    ]
+                  }
+                }
+              ],
+              "assoc": null
+            }
+          ]
+        }
+      ],
+      "imports": [
+        {
+          "node": "Import",
+          "module_name": "JSON-SYNTAX",
+          "public": true
+        }
+      ],
+      "att": {
+        "node": "Att",
+        "items": []
+      }
+    }
+  ],
+  "requires": []
+}
