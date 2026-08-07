@@ -109,7 +109,7 @@ export const TRANSCRIBED_FROM: readonly KompiledTranscribedSource[] = [
     path: "k-frontend/src/main/java/org/kframework/kompile/Kompile.java",
     sha256: "a63e1a3cd3947af73da253a6808d5e09a6475f1ed55aec36faf06c77465c0c31",
     tier: "content",
-    why: "writes allRules.txt (:229, :363-381), compiled.json and parsed.json (:234-236)",
+    why: "writes allRules.txt (:229, :363-381), compiled.json and parsed.json (:234-236), and Bison parser names/aliases (:255-331)",
   },
   {
     repo: "runtimeverification/k",
@@ -159,25 +159,101 @@ export interface KompiledArtifactInfo {
 }
 
 export const OBSERVED_LAYOUT: readonly KompiledArtifactInfo[] = [
-  { file: "mainModule.txt", status: "read", note: "bare name, no trailing newline" },
-  { file: "mainSyntaxModule.txt", status: "read", note: "bare name, no trailing newline" },
-  { file: "backend.txt", status: "read", note: "llvm | haskell, no trailing newline" },
-  { file: "timestamp", status: "read", note: "mtime only — 7 bytes of Java serialization, never parsed" },
-  { file: "allRules.txt", status: "read", note: "<UNIQUE_ID> <file>:<line>:<col>, space-separated" },
-  { file: "configVars.sh", status: "read", note: "bash; parsed by regex, never executed" },
-  { file: "compiled.json", status: "read", note: "KAST-JSON v4 KDefinition; --emit-json only" },
-  { file: "definition.kore", status: "read", note: "textual KORE; read with lazy axiom bodies" },
-  { file: "syntaxDefinition.kore", status: "read", note: "textual KORE, syntax slice + printing attributes" },
-  { file: "macros.kore", status: "read", note: "textual KORE; literally `// macros\\n` when empty" },
-  { file: "README.md", status: "read", note: "the layout's only prose spec; hashed by check-k" },
-  { file: "parsed.json", status: "ignored", note: "pre-compilation KDefinition; --emit-json only" },
-  { file: "parsed.txt", status: "ignored", note: "Definition.toString() debug dump, no grammar guarantee" },
-  { file: "compiled.txt", status: "ignored", note: "Definition.toString() debug dump" },
-  { file: "post-processed.txt", status: "ignored", note: "Definition.toString() debug dump; --post-process only" },
-  { file: "compiled.bin", status: "refused", note: "Java ObjectOutputStream; everything in it is in compiled.json" },
-  { file: "cache.bin", status: "refused", note: "Java ObjectOutputStream of HashMap<String,ParseCache>" },
-  { file: "haskellDefinition.bin", status: "refused", note: "GHC COMPACT heap image, GHC-ABI-locked" },
+  {
+    file: "mainModule.txt",
+    status: "read",
+    note: "bare name, no trailing newline",
+  },
+  {
+    file: "mainSyntaxModule.txt",
+    status: "read",
+    note: "bare name, no trailing newline",
+  },
+  {
+    file: "backend.txt",
+    status: "read",
+    note: "llvm | haskell, no trailing newline",
+  },
+  {
+    file: "timestamp",
+    status: "read",
+    note: "mtime only — 7 bytes of Java serialization, never parsed",
+  },
+  {
+    file: "allRules.txt",
+    status: "read",
+    note: "<UNIQUE_ID> <file>:<line>:<col>, space-separated",
+  },
+  {
+    file: "configVars.sh",
+    status: "read",
+    note: "bash; parsed by regex, never executed",
+  },
+  {
+    file: "compiled.json",
+    status: "read",
+    note: "KAST-JSON v4 KDefinition; --emit-json only",
+  },
+  {
+    file: "definition.kore",
+    status: "read",
+    note: "textual KORE; read with lazy axiom bodies",
+  },
+  {
+    file: "syntaxDefinition.kore",
+    status: "read",
+    note: "textual KORE, syntax slice + printing attributes",
+  },
+  {
+    file: "macros.kore",
+    status: "read",
+    note: "textual KORE; literally `// macros\\n` when empty",
+  },
+  {
+    file: "README.md",
+    status: "read",
+    note: "the layout's only prose spec; hashed by check-k",
+  },
+  {
+    file: "parsed.json",
+    status: "read",
+    note: "optional pre-compilation KDefinition; --emit-json only, distinct from compiled.json",
+  },
+  {
+    file: "parsed.txt",
+    status: "ignored",
+    note: "Definition.toString() debug dump, no grammar guarantee",
+  },
+  {
+    file: "compiled.txt",
+    status: "ignored",
+    note: "Definition.toString() debug dump",
+  },
+  {
+    file: "post-processed.txt",
+    status: "ignored",
+    note: "Definition.toString() debug dump; --post-process only",
+  },
+  {
+    file: "compiled.bin",
+    status: "refused",
+    note: "Java ObjectOutputStream; everything in it is in compiled.json",
+  },
+  {
+    file: "cache.bin",
+    status: "refused",
+    note: "Java ObjectOutputStream of HashMap<String,ParseCache>",
+  },
+  {
+    file: "haskellDefinition.bin",
+    status: "refused",
+    note: "GHC COMPACT heap image, GHC-ABI-locked",
+  },
   { file: "interpreter", status: "refused", note: "native ELF/Mach-O" },
   { file: "scanner", status: "refused", note: "native tokenizer binary" },
-  { file: "dt", status: "refused", note: "LLVM decision-tree YAML; even pyk only existence-checks it" },
+  {
+    file: "dt",
+    status: "refused",
+    note: "LLVM decision-tree YAML; even pyk only existence-checks it",
+  },
 ];

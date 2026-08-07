@@ -59,8 +59,15 @@ export {
   parseTermDocument,
   type SortShape,
   type StructuredSort,
+  type TermCompareOptions,
+  type TermDifference,
   type TermDocument,
+  type TermPath,
   token,
+  termDifference,
+  termEq,
+  pathEq,
+  subtermAt,
   unflattenSort,
 } from "./term.js";
 

@@ -91,41 +91,41 @@ import { K_RELEASE, type KcovrSourceTier } from "./version.js";
 
 const RAW = "https://raw.githubusercontent.com";
 
-export const USAGE = `kcovr <command>
+export const USAGE = `kcovr-ts <command>
 
-  kcovr report <definition-dir>... ++ <source-file>... [--timestamp <seconds>]
+  kcovr-ts report <definition-dir>... ++ <source-file>... [--timestamp <seconds>]
       Cobertura 1.9 XML on stdout, over the hit logs in each definition
       directory. '--' is accepted in place of '++'. --timestamp pins the
       document's timestamp (default: now) so two runs produce the same bytes.
 
-  kcovr hits <definition-dir>
+  kcovr-ts hits <definition-dir>
       One line per rule that fired: UNIQUE_ID <TAB> applications <TAB>
-      file:line:col, sorted by id. Hit logs are append-only — delete
-      *_coverage.txt before a run to measure that run alone.
+      file:line:col, sorted by id. Hit logs are append-only — direct each run
+      to a fresh K_LOG_DIR to measure it alone.
 
-  kcovr rules <definition-dir> <coverage-file>
+  kcovr-ts rules <definition-dir> <coverage-file>
       Pretty-print the rule behind every id in a hit log, coverage
       instrumentation stripped, minimized to the cells the rule touches, and
       with source paths dropped ('pyk coverage' parity). A hit log is a log, so
       a rule prints once per application; 'kcovr hits' is the deduplicated
       view. Needs a definition kompiled with --emit-json.
 
-  kcovr translate <src-def-dir> <dst-def-dir> <coverage-file>
+  kcovr-ts translate <src-def-dir> <dst-def-dir> <coverage-file>
       Remap a hit log recorded against one build onto another build's rule ids,
       one per line, in log order. Rules are matched by basename:line:col, and
       only <generatedTop>-rooted rules survive — function and simplification
       rules are dropped. Needs dst kompiled with --emit-json.
 
-  kcovr kore-log <log-file> --definition <dir> [--quiet]
+  kcovr-ts kore-log <log-file> --definition <dir> [--quiet]
       LEGACY. Report applied rewrites and simplifications from a haskell-backend
       log ('kore-exec-covr' parity). The format it reads — a source location
       after 'Debug (DebugAppliedRewriteRules):' — is one current kore-exec no
       longer emits; --log-format json is its successor. --quiet drops warnings.
 
-  kcovr check-k <k-release>
+  kcovr-ts check-k <k-release>
       Check whether the upstream sources this package was transcribed from, and
       the two it is checked against, are unchanged at a given K release, e.g.
-      kcovr check-k ${K_RELEASE}. Unlike its siblings, BOTH tiers decide the
+      kcovr-ts check-k ${K_RELEASE}. Unlike its siblings, BOTH tiers decide the
       exit code; the report's footer says why.
 
 Commands exit 0 on success, 1 on unreadable or contradictory input, 2 on a
@@ -149,17 +149,45 @@ interface ResponseLike {
   arrayBuffer(): Promise<ArrayBuffer>;
 }
 
-/** Fetches from GitHub raw.  A 404 is "not at this tag"; anything else throws. */
-export const fetchFromGitHub: KcovrSourceFetcher = async (repo, path, release) => {
+/** Fetches raw file bytes from GitHub.  A 404 is "not at this revision". */
+async function fetchRawFile(repo: string, path: string, revision: string): Promise<Uint8Array | undefined> {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const { fetch } = globalThis as unknown as { fetch: (url: string) => Promise<ResponseLike> };
-  const response = await fetch(`${RAW}/${repo}/${encodeURIComponent(release)}/${path}`);
+  const response = await fetch(`${RAW}/${repo}/${encodeURIComponent(revision)}/${path}`);
   // Only a clean 404 means "not at this tag".  Anything else is a failure to
   // ask, which must not be reported as a fact about K.
   if (!response.ok && response.status !== 404) {
-    throw new Error(`GET ${repo}/${path} at ${release}: HTTP ${response.status} ${response.statusText}`);
+    throw new Error(`GET ${repo}/${path} at ${revision}: HTTP ${response.status} ${response.statusText}`);
   }
   return response.status === 404 ? undefined : new Uint8Array(await response.arrayBuffer());
+}
+
+/** Fetches K's llvm-backend submodule gitlink through GitHub's contents API. */
+async function fetchGitlink(revision: string): Promise<string | undefined> {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const { fetch } = globalThis as unknown as { fetch: (url: string) => Promise<ResponseLike> };
+  const response = await fetch(
+    `https://api.github.com/repos/runtimeverification/k/contents/llvm-backend/src/main/native/llvm-backend?ref=${encodeURIComponent(revision)}`,
+  );
+  if (!response.ok && response.status !== 404) {
+    throw new Error(
+      `GET runtimeverification/k/llvm-backend/src/main/native/llvm-backend gitlink at ${revision}: HTTP ${response.status} ${response.statusText}`,
+    );
+  }
+  if (response.status === 404) return undefined;
+  const json = JSON.parse(new TextDecoder().decode(await response.arrayBuffer())) as unknown;
+  if (typeof json !== "object" || json === null || !("sha" in json) || typeof json.sha !== "string") {
+    throw new Error(
+      `GET runtimeverification/k/llvm-backend/src/main/native/llvm-backend gitlink at ${revision}: malformed GitHub response`,
+    );
+  }
+  return json.sha;
+}
+
+/** Fetches direct files and K's exact llvm-backend gitlink from GitHub. */
+export const fetchFromGitHub: KcovrSourceFetcher = {
+  file: fetchRawFile,
+  gitlink: (_repo, _path, revision) => fetchGitlink(revision),
 };
 
 export function main(
@@ -505,7 +533,13 @@ export function render(report: KcovrSourcesReport): string {
             : file.status === "changed"
               ? `expected ${file.expected.slice(0, 12)}…, got ${(file.actual ?? "").slice(0, 12)}…`
               : `no such path at ${report.release}`;
-        return `  ${mark}  ${file.path}\n        ${detail}\n        ${file.why}`;
+        const identity = `${file.repo}@${file.revision || "unresolved"}`;
+        const resolved =
+          file.resolvedFrom === undefined
+            ? ""
+            : `\n        resolved through ${file.resolvedFrom.repo}@${file.resolvedFrom.release}:${file.resolvedFrom.path}` +
+              (file.resolvedFrom.commit === undefined ? " (missing gitlink)" : `@${file.resolvedFrom.commit}`);
+        return `  ${mark}  ${identity}/${file.path}\n        ${detail}${resolved}\n        ${file.why}`;
       })
       .join("\n");
 

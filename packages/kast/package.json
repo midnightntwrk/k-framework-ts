@@ -24,7 +24,7 @@
     "directory": "packages/kast"
   },
   "bin": {
-    "kast": "./dist/bin.js"
+    "kast-ts": "./dist/bin.js"
   },
   "files": [
     "dist",

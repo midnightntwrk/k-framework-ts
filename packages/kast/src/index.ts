@@ -5,6 +5,7 @@
 // qualified, so it is consumed via subpath imports mirroring pyk's layout —
 // `@kframework-ts/kast/prelude/kint` ↔ `pyk.kast.prelude.kint`.
 export * from "./att.js";
+export * from "./attribution.js";
 export * from "./color.js";
 export * from "./escape.js";
 export * from "./eq.js";
@@ -18,4 +19,6 @@ export * from "./outer.js";
 export * from "./parser.js";
 export * from "./pretty.js";
 export * from "./rewrite.js";
+export * from "./sort-facts.js";
+export * from "./user-list.js";
 export * from "./version.js";

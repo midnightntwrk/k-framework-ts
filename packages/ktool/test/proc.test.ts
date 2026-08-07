@@ -22,6 +22,8 @@ import {
   checkFilePath,
   formatCommand,
   ProcessError,
+  ProcessAbortError,
+  ProcessCancelledError,
   runProcess,
   signalNumber,
 } from "../src/proc.ts";
@@ -32,6 +34,29 @@ async function scratch(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), "ktool-proc-"));
   scratchDirs.push(dir);
   return dir;
+}
+
+async function processExists(pid: number): Promise<boolean> {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error: unknown) {
+    return !(
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: unknown }).code === "ESRCH"
+    );
+  }
+}
+
+async function eventuallyGone(pid: number, withinMs = 1_000): Promise<boolean> {
+  const until = Date.now() + withinMs;
+  while (Date.now() < until) {
+    if (!(await processExists(pid))) return true;
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  }
+  return !(await processExists(pid));
 }
 
 afterEach(async () => {
@@ -132,6 +157,240 @@ describe("runProcess", () => {
     expect(result.signal).toBe("SIGTERM");
     expect(result.returncode).toBe(-signalNumber("SIGTERM"));
     expect(result.returncode).toBeLessThan(0);
+  });
+
+  test("timeout is a distinct completed cancellation when check is false", async () => {
+    const result = await runProcess(sh("echo before; sleep 30"), { timeoutMs: 30, killGraceMs: 0, check: false });
+    expect(result.cancelledBy).toBe("timeout");
+    expect(result.stdout).toContain("before");
+  });
+
+  test("timeout kills a wrapper's process group and cannot wait on a pipe-holding descendant", async () => {
+    const started = Date.now();
+    const result = await runProcess(sh("sleep 30 & echo child:$!; wait"), {
+      timeoutMs: 30,
+      killGraceMs: 0,
+      check: false,
+    });
+    expect(result.cancelledBy).toBe("timeout");
+    expect(result.stdout).toMatch(/^child:\d+\n/u);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  test("a deadline after the leader exited releases pipe-holding descendants without rewriting its success", async () => {
+    const dir = await scratch();
+    const childFile = join(dir, "pipe-holder");
+    const started = Date.now();
+    try {
+      const result = await runProcess(sh(`sleep 30 & echo $! > ${childFile}; exit 0`), {
+        timeoutMs: 30,
+        check: false,
+      });
+      expect(Date.now() - started).toBeLessThan(1_000);
+      expect(result).toMatchObject({ returncode: 0, signal: undefined, cancelledBy: undefined });
+    } finally {
+      try {
+        const child = Number((await (await import("node:fs/promises")).readFile(childFile, "utf8")).trim());
+        if (Number.isInteger(child)) process.kill(child, "SIGKILL");
+      } catch {
+        // The leader may be interrupted before it records the descendant PID.
+      }
+    }
+  });
+
+  test("TERM reaches a child and grandchild in the detached group", async () => {
+    const dir = await scratch();
+    const pids = join(dir, "pids");
+    const result = await runProcess(sh(`(sleep 30 & echo $! >> ${pids}; wait) & echo $! >> ${pids}; wait`), {
+      timeoutMs: 30,
+      killGraceMs: 20,
+      check: false,
+    });
+    expect(result.cancelledBy).toBe("timeout");
+    const [child, grandchild] = (await (await import("node:fs/promises")).readFile(pids, "utf8"))
+      .trim()
+      .split("\n")
+      .map(Number);
+    expect(await eventuallyGone(child!)).toBe(true);
+    expect(await eventuallyGone(grandchild!)).toBe(true);
+  });
+
+  test("cancellation retains partial output from both pipes", async () => {
+    const result = await runProcess(sh("printf out; printf err >&2; sleep 30"), {
+      timeoutMs: 30,
+      killGraceMs: 0,
+      check: false,
+    });
+    expect(result).toMatchObject({ cancelledBy: "timeout", stdout: "out", stderr: "err" });
+    // A leader exit is observable on this host; the important invariant is
+    // that a forced settlement *may* omit it, never that it must omit it.
+    expect(result.returncode === undefined || result.returncode < 0).toBe(true);
+  });
+
+  test("a clean exit during TERM grace is observed rather than fabricated", async () => {
+    const result = await runProcess(sh("trap 'exit 0' TERM; while :; do sleep 1; done"), {
+      timeoutMs: 30,
+      killGraceMs: 200,
+      check: false,
+    });
+    expect(result.cancelledBy).toBe("timeout");
+    expect(result.returncode).toBe(0);
+    expect(result.signal).toBeUndefined();
+  });
+
+  test("never reuses a departed leader's process-group id for KILL", async () => {
+    const dir = await scratch();
+    const childFile = join(dir, "term-ignoring-child");
+    const originalKill = process.kill.bind(process);
+    let groupSignals = 0;
+    process.kill = (pid: number, signal?: NodeJS.Signals | number) => {
+      if (pid < 0) groupSignals += 1;
+      return originalKill(pid, signal);
+    };
+    try {
+      const result = await runProcess(sh(`trap '' TERM; sleep 30 & echo $! > ${childFile}; trap 'exit 0' TERM; wait`), {
+        timeoutMs: 30,
+        killGraceMs: 100,
+        check: false,
+      });
+      expect(result.returncode).toBe(0);
+      // TERM was delivered while the leader lived. Its clean exit cancels the
+      // KILL timer: `-pid` must never be used after that pid may be reused.
+      expect(groupSignals).toBe(1);
+    } finally {
+      process.kill = originalKill;
+      try {
+        const child = Number((await (await import("node:fs/promises")).readFile(childFile, "utf8")).trim());
+        if (Number.isInteger(child)) originalKill(child, "SIGKILL");
+      } catch {
+        // The test child may have died before it wrote its PID.
+      }
+    }
+  });
+
+  test("a failed POSIX group signal degrades to the direct child", async () => {
+    const originalKill = process.kill.bind(process);
+    const logs: string[] = [];
+    process.kill = (pid: number, signal?: NodeJS.Signals | number) => {
+      if (pid < 0) {
+        const error = Object.assign(new Error("denied"), { code: "EPERM" });
+        throw error;
+      }
+      return originalKill(pid, signal);
+    };
+    try {
+      const result = await runProcess(sh("sleep 30"), {
+        timeoutMs: 30,
+        killGraceMs: 0,
+        check: false,
+        logger: (line) => logs.push(line),
+      });
+      expect(result.cancelledBy).toBe("timeout");
+      expect(logs.some((line) => line.includes("group SIGTERM failed (EPERM); falling back to child"))).toBe(true);
+    } finally {
+      process.kill = originalKill;
+    }
+  });
+
+  test("zero grace escalates without waiting through the default two seconds", async () => {
+    const started = Date.now();
+    const result = await runProcess(sh("trap '' TERM; sleep 30"), { timeoutMs: 30, killGraceMs: 0, check: false });
+    expect(result.cancelledBy).toBe("timeout");
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+
+  test("zero grace delivers group TERM and KILL in the aborting turn", async () => {
+    const controller = new AbortController();
+    const originalKill = process.kill.bind(process);
+    const signals: NodeJS.Signals[] = [];
+    process.kill = (pid: number, signal?: NodeJS.Signals | number) => {
+      if (pid < 0 && typeof signal === "string") signals.push(signal);
+      return originalKill(pid, signal);
+    };
+    try {
+      const pending = runProcess(sh("trap '' TERM; sleep 30"), {
+        signal: controller.signal,
+        killGraceMs: 0,
+        check: false,
+      });
+      controller.abort();
+      expect(signals).toEqual(["SIGTERM", "SIGKILL"]);
+      await pending;
+    } finally {
+      process.kill = originalKill;
+    }
+  });
+
+  test("abort and timeout remain distinct typed errors", async () => {
+    const controller = new AbortController();
+    const pending = runProcess(sh("sleep 30"), { signal: controller.signal, killGraceMs: 0 });
+    controller.abort();
+    const error = await caughtAsync(pending, ProcessCancelledError);
+    expect(error.cancelledBy).toBe("abort");
+  });
+
+  test("check chooses a typed cancellation throw or the same returned result", async () => {
+    const returned = await runProcess(sh("sleep 30"), { timeoutMs: 30, killGraceMs: 0, check: false });
+    expect(returned.cancelledBy).toBe("timeout");
+    const error = await caughtAsync(
+      runProcess(sh("sleep 30"), { timeoutMs: 30, killGraceMs: 0 }),
+      ProcessCancelledError,
+    );
+    expect(error.cancelledBy).toBe("timeout");
+    expect(error.returncode === undefined || error.returncode < 0).toBe(true);
+  });
+
+  test("an abort raced immediately after spawn is still cancellation, never a normal result", async () => {
+    const controller = new AbortController();
+    const pending = runProcess(sh("echo spawned; sleep 30"), {
+      signal: controller.signal,
+      killGraceMs: 0,
+      check: false,
+    });
+    controller.abort();
+    const result = await pending;
+    expect(result.cancelledBy).toBe("abort");
+  });
+
+  test("a normal settlement removes the abort listener and deadline", async () => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const add = signal.addEventListener.bind(signal);
+    const remove = signal.removeEventListener.bind(signal);
+    let added = 0;
+    let removed = 0;
+    signal.addEventListener = (...args: Parameters<typeof add>) => {
+      added += 1;
+      add(...args);
+    };
+    signal.removeEventListener = (...args: Parameters<typeof remove>) => {
+      removed += 1;
+      remove(...args);
+    };
+    try {
+      const result = await runProcess(sh("exit 0"), { signal, timeoutMs: 50, check: false });
+      expect(result).toMatchObject({ returncode: 0, cancelledBy: undefined });
+      expect(added).toBe(1);
+      expect(removed).toBe(1);
+      await new Promise<void>((resolve) => setTimeout(resolve, 70));
+      expect(result.cancelledBy).toBeUndefined();
+    } finally {
+      signal.addEventListener = add;
+      signal.removeEventListener = remove;
+    }
+  });
+
+  test("a pre-aborted signal rejects before spawning", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    expect(runProcess(sh("touch should-not-exist"), { signal: controller.signal })).rejects.toBeInstanceOf(
+      ProcessAbortError,
+    );
+  });
+
+  test("invalid control durations are rejected", async () => {
+    expect(runProcess(sh("true"), { timeoutMs: 0 })).rejects.toThrow("timeoutMs");
+    expect(runProcess(sh("true"), { killGraceMs: -1 })).rejects.toThrow("killGraceMs");
   });
 });
 

@@ -27,7 +27,7 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
-import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,7 +40,10 @@ import {
   bisonParserName,
   bisonParserPath,
   DEFAULT_PARSE_SORT,
+  discoverBisonParser,
   findBisonParser,
+  findBisonParserSync,
+  listBisonParserArtifacts,
   kparse,
   resolveKparseTarget,
 } from "../src/kparse.ts";
@@ -103,12 +106,52 @@ describe("bisonParserName — `parser_<Sort>_<Module>` (`kparse:194`)", () => {
   test("joins with underscores and escapes nothing", () => {
     expect(bisonParserName("Exp", "TINY-SYNTAX")).toBe("parser_Exp_TINY-SYNTAX");
     expect(bisonParserName("Pgm", "IMP-SYNTAX")).toBe("parser_Pgm_IMP-SYNTAX");
-    // Dotted module names are legal K and survive unchanged.
-    expect(bisonParserName("KItem", "A.B-C")).toBe("parser_KItem_A.B-C");
+    // Sort names are underscore-free; module names may use `_` and `-`, never `.`.
+    expect(bisonParserName("#Exp", "A_B-C")).toBe("parser_#Exp_A_B-C");
   });
 
   test("bisonParserPath joins it onto the directory", () => {
     expect(bisonParserPath("/d", "Exp", "M")).toBe(join("/d", "parser_Exp_M"));
+  });
+});
+
+describe("parser discovery outcomes", () => {
+  test("distinguishes no syntax definition, an absent parser, and a non-executable parser", async () => {
+    const directory = await scratch();
+    const layout = layoutOf("M", "Exp");
+    expect(await discoverBisonParser(directory, layout)).toEqual({
+      kind: "backend-no-concrete-parser",
+      backend: "llvm",
+    });
+    await writeFile(join(directory, "syntaxDefinition.kore"), "");
+    expect(await discoverBisonParser(directory, layout)).toEqual({ kind: "not-generated", reason: "absent" });
+    await writeFile(join(directory, "parser_Exp_M"), "#!/bin/sh\n");
+    expect(await discoverBisonParser(directory, layout)).toEqual({ kind: "not-generated", reason: "not-executable" });
+  });
+
+  test("reports an executable and exposes the synchronous forward lookup", async () => {
+    const directory = await scratch();
+    const layout = layoutOf("M", "Exp");
+    await writeFile(join(directory, "syntaxDefinition.kore"), "");
+    const path = join(directory, "parser_Exp_M");
+    await writeFile(path, "#!/bin/sh\n");
+    await chmod(path, 0o755);
+    expect(await discoverBisonParser(directory, layout)).toEqual({
+      kind: "executable",
+      parser: { sort: "Exp", module: "M", path },
+    });
+    expect(findBisonParserSync(directory, layout)).toEqual({ sort: "Exp", module: "M", path });
+  });
+
+  test("reports forward-derived aliases and readlink agreement without scanning names", async () => {
+    const directory = await scratch();
+    const layout = layoutOf("M", "Exp");
+    await writeFile(join(directory, "syntaxDefinition.kore"), "");
+    await symlink("parser_Exp_M", join(directory, "parser_PGM"));
+    const aliases = await listBisonParserArtifacts(directory, layout);
+    expect(aliases).toContainEqual(
+      expect.objectContaining({ kind: "alias", configVar: "PGM", target: "parser_Exp_M", agreement: "match" }),
+    );
   });
 });
 
@@ -294,10 +337,12 @@ describe("kparse — the dispatcher (`kparse:192-208`)", () => {
       layout: layoutOf("M", "Exp"),
       text: "1",
       native: false,
+      noExcWrap: true,
       runner: runner.run,
     });
     expect(result.parser).toBeUndefined();
     expect(runner.calls[0]?.[0]).toBe("kast");
+    expect(runner.calls[0]).toContain("--no-exc-wrap");
   });
 
   test("only `--input program` gets the fast path (`:192-200`)", async () => {

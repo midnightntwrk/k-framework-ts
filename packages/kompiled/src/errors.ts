@@ -84,20 +84,23 @@ export class MissingCompiledJsonError extends KompiledError {
  * cannot re-kompile, `@kframework-ts/kast-json` reads both.
  */
 export class UnsupportedKastVersionError extends KompiledError {
+  /** The KAST artifact that carried the unsupported envelope. */
+  readonly file: "compiled.json" | "parsed.json";
   /** The version found in the document — `undefined` when the field was absent or not a number. */
   readonly found: number | undefined;
   /** The version this package requires: {@link KAST_VERSION}. */
   readonly required: number = KAST_VERSION;
 
-  constructor(dir: string, found: number | undefined) {
+  constructor(dir: string, found: number | undefined, file: "compiled.json" | "parsed.json" = "compiled.json") {
     super(
       dir,
-      `Unsupported KAST format version in ${dir}/compiled.json: found ${found ?? "none"}, ` +
+      `Unsupported KAST format version in ${dir}/${file}: found ${found ?? "none"}, ` +
         `version ${KAST_VERSION} required.\n` +
         `K emits version ${KAST_VERSION} since ${KAST_VERSION_4_SINCE} (ToJson.java:56); re-kompile with a newer K, ` +
         "or read the document with @kframework-ts/kast-json, which supports versions 3 and 4.",
     );
     this.name = "UnsupportedKastVersionError";
+    this.file = file;
     this.found = found;
   }
 }

@@ -464,6 +464,40 @@ export const COLOR_TYPE: AttType<Color> = Object.freeze({
   },
 });
 
+/** The only `userList` values that survive in K's persisted definitions. */
+export type UserListType = "*" | "+";
+
+/** Whether a string is one of K's two persisted user-list multiplicities. */
+export function isUserListType(value: string): value is UserListType {
+  return value === "*" || value === "+";
+}
+
+/**
+ * The kept-artifact spelling of `userList`.
+ *
+ * K also uses this key internally while generating bison parsers, where it
+ * temporarily carries a label.  That value never reaches `parsed.json` or
+ * `compiled.json`, so accepting it here would make a persisted artifact look
+ * valid when it is not.
+ */
+export const USER_LIST_TYPE: AttType<UserListType> = Object.freeze({
+  fromDict(obj: unknown, path = "att"): UserListType {
+    const value = asString(obj, path);
+    if (!isUserListType(value)) throw attError(`Not a user-list multiplicity: ${describe(value)}`, path);
+    return value;
+  },
+  toDict(value: UserListType): JsonValue {
+    return value;
+  },
+  unparse(value: UserListType): string {
+    return value;
+  },
+  parse(text: string): UserListType {
+    if (!isUserListType(text)) throw new TypeError(`Not a user-list multiplicity: ${describe(text)}`);
+    return text;
+  },
+});
+
 /**
  * `ColorsType` (`att.py:246-257`) — a comma-separated list in a single string.
  *
@@ -629,7 +663,7 @@ export const Atts = {
   UNPARSE_AVOID: attKey("unparseAvoid", NONE_TYPE),
   UNUSED: attKey("unused", NONE_TYPE),
   UPDATE: attKey("update", ANY_TYPE),
-  USER_LIST: attKey("userList", ANY_TYPE),
+  USER_LIST: attKey("userList", USER_LIST_TYPE),
   WRAP_ELEMENT: attKey("wrapElement", ANY_TYPE),
 } as const;
 

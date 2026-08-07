@@ -20,7 +20,7 @@
  * which is the whole of `pyk-covr` — rule lookup and de-instrumentation
  * (`rules.ts`), cross-build remapping (`translate.ts`), the legacy haskell
  * one-line log analyzer (`koreExecLog.ts`), and the drift check
- * (`ksources.ts`, `kcovr check-k`).
+ * (`ksources.ts`, `kcovr-ts check-k`).
  *
  * ```ts
  * import { createCoverMap, renderCoverageXml } from "@kframework-ts/kcovr";
@@ -49,6 +49,7 @@ export {
 } from "./cobertura.js";
 
 export {
+  CoverageLogDirError,
   DuplicateRuleIdError,
   KcovrError,
   MissingCoverageFileError,
@@ -56,6 +57,16 @@ export {
   UnknownSourceRuleError,
   UnknownTargetLocationError,
 } from "./errors.js";
+
+export {
+  COVERAGE_LOG_SUFFIX,
+  coverageLogEnv,
+  coverageLogName,
+  K_LOG_DIR_ENV,
+  K_LOG_PREFIX_ENV,
+  parseCoverageLogName,
+  type ParsedCoverageLogName,
+} from "./log.js";
 
 export { type CoverMap, createCoverMap, type RuleId, totalHits } from "./hits.js";
 
@@ -107,6 +118,7 @@ export {
 
 export {
   checkKcovrSources,
+  InvalidKcovrGitlinkError,
   type KcovrSourceFetcher,
   type KcovrSourceOutcome,
   type KcovrSourcesReport,

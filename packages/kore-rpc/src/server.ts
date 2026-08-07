@@ -153,7 +153,11 @@ export const FALLBACK_REASONS: readonly FallbackReason[] = ["Branching", "Stuck"
 /** How long {@link KoreServerHandle.close} waits before `SIGKILL` — see deviation (2). */
 export const DEFAULT_KILL_GRACE_MS = 10_000;
 
-/** The default executable, when {@link KoreServerArgs.command} is omitted (`rpc.py:1268-1269`). */
+/**
+ * The default executable, when {@link KoreServerArgs.command} is omitted
+ * (`rpc.py:1268-1269`). It is a bare name resolved through `PATH`; callers
+ * requiring a pinned K installation should pass an absolute `command`.
+ */
 export const DEFAULT_KORE_COMMAND = "kore-rpc";
 
 /** The default executable for {@link boosterServer} (`rpc.py:1496-1497`). */

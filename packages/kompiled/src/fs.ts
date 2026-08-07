@@ -35,11 +35,16 @@
  */
 
 import { readFileSync } from "node:fs";
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, readFile, readlink as readLink, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { KompiledDirNotFoundError, MissingKompiledFileError } from "./errors.js";
 import { KompiledDefinition, type KompiledArtifact, type KompiledDefinitionOptions } from "./kompiled.js";
 import { parseKompiledLayout, type KompiledLayout } from "./layout.js";
+import {
+  expectedBisonParserArtifacts,
+  type ExpectedBisonParser,
+  type ExpectedBisonParserAlias,
+} from "./parser-artifacts.js";
 
 /**
  * The nested directory a **booster** kompilation puts its LLVM half in.
@@ -179,6 +184,103 @@ export async function findKompiledDir(cwd: string): Promise<string> {
   return join(cwd, candidates[0] ?? "");
 }
 
+/** A passive observation of one expected Bison parser artifact. */
+export type BisonParserArtifactInspection =
+  | {
+      readonly artifact: ExpectedBisonParser;
+      /** The concrete filename exists; this deliberately makes no executability claim. */
+      readonly status: "present" | "missing" | "unsafe-path";
+      readonly executablePath: string | undefined;
+      readonly libraryPath: string | undefined;
+    }
+  | {
+      readonly artifact: ExpectedBisonParserAlias;
+      /** `target` means only that `readlink` succeeded, not that the target exists. */
+      readonly status: "target" | "missing" | "not-symlink" | "unsafe-path";
+      readonly target: string | undefined;
+      /** Present only when a link target disagrees with the forward-derived names. */
+      readonly diagnostic:
+        | {
+            readonly kind: "unexpected-alias-target";
+            readonly expected: readonly [string, string];
+            readonly actual: string;
+          }
+        | undefined;
+    };
+
+/**
+ * Stat and `readlink` the parser artifacts expected by a layout.
+ *
+ * This function is intentionally passive: a present native file is not called
+ * executable, and no path is spawned.  Absence is normal because parser
+ * generation is opt-in.  Unsafe names from a malformed external layout are
+ * refused before joining them to `dir`.
+ */
+export async function inspectBisonParserArtifacts(
+  dir: string,
+  layout: KompiledLayout,
+): Promise<readonly BisonParserArtifactInspection[]> {
+  return Promise.all(
+    expectedBisonParserArtifacts(layout).map(async (artifact): Promise<BisonParserArtifactInspection> => {
+      if (artifact.kind === "concrete") {
+        if (!isSafeArtifactName(artifact.executable) || !isSafeArtifactName(artifact.library)) {
+          return {
+            artifact,
+            status: "unsafe-path",
+            executablePath: undefined,
+            libraryPath: undefined,
+          };
+        }
+        const [executable, library] = await Promise.all([
+          exists(join(dir, artifact.executable)),
+          exists(join(dir, artifact.library)),
+        ]);
+        return {
+          artifact,
+          status: executable || library ? "present" : "missing",
+          executablePath: executable ? join(dir, artifact.executable) : undefined,
+          libraryPath: library ? join(dir, artifact.library) : undefined,
+        };
+      }
+
+      if (!isSafeArtifactName(artifact.file))
+        return {
+          artifact,
+          status: "unsafe-path",
+          target: undefined,
+          diagnostic: undefined,
+        };
+      try {
+        const target = await readLink(join(dir, artifact.file));
+        const diagnostic = artifact.expectedTargets.includes(target)
+          ? undefined
+          : {
+              kind: "unexpected-alias-target" as const,
+              expected: artifact.expectedTargets,
+              actual: target,
+            };
+        return { artifact, status: "target", target, diagnostic };
+      } catch (error) {
+        if (isNotFound(error))
+          return {
+            artifact,
+            status: "missing",
+            target: undefined,
+            diagnostic: undefined,
+          };
+        if (isNotSymlink(error))
+          return {
+            artifact,
+            status: "not-symlink",
+            target: undefined,
+            diagnostic: undefined,
+          };
+        throw error;
+      }
+    }),
+  );
+}
+
 /** Whether a path is a directory **after** following symlinks.  `false` if it is not there. */
 async function isDirectory(path: string): Promise<boolean> {
   try {
@@ -187,6 +289,22 @@ async function isDirectory(path: string): Promise<boolean> {
     if (isNotFound(error)) return false;
     throw error;
   }
+}
+
+/** `stat` follows symlinks, which is exactly the passive existence question here. */
+async function exists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch (error) {
+    if (isNotFound(error)) return false;
+    throw error;
+  }
+}
+
+/** Keep an externally supplied `parser(...)` value inside the kompiled directory. */
+function isSafeArtifactName(file: string): boolean {
+  return file !== "" && !file.includes("/") && !file.includes("\\");
 }
 
 //////////////////////////////
@@ -253,4 +371,10 @@ function isNotFound(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const code: unknown = (error as { code?: unknown }).code;
   return code === "ENOENT" || code === "ENOTDIR";
+}
+
+/** Node reports EINVAL when `readlink` is asked to read a regular file. */
+function isNotSymlink(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  return (error as { code?: unknown }).code === "EINVAL";
 }

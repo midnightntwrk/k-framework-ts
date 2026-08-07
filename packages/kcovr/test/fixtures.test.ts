@@ -324,10 +324,11 @@ describe("the transcription manifest", () => {
     );
   });
 
-  test("io.cpp is recorded outside the manifest and says it is unchecked", () => {
+  test("io.cpp records the llvm-backend commit and is checked through K's gitlink", () => {
     expect(IO_CPP_IDENTITY.sha256).toMatch(/^[0-9a-f]{64}$/u);
     expect(IO_CPP_IDENTITY.repo).toBe("runtimeverification/llvm-backend");
-    expect(IO_CPP_IDENTITY.checkedBy).toStartWith("nothing");
+    expect(IO_CPP_IDENTITY.commit).toMatch(/^[0-9a-f]{40}$/u);
+    expect(IO_CPP_IDENTITY.checkedBy).toStartWith("checkKcovrSources");
     expect(TRANSCRIBED_FROM.map((s) => s.path)).not.toContain(IO_CPP_IDENTITY.path);
   });
 });

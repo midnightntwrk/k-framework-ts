@@ -108,7 +108,7 @@ import { loadKompiledDefinitionCached } from "./definition-cache.js";
 import { expressionKast, type KastTempOptions, type RunKastOptions } from "./kast-cli.js";
 import { korePrint, type ProcessRunner } from "./kore-print.js";
 import { findBisonParser, kparse, type BisonParser, type KparseResult, type KparseTargetQuery } from "./kparse.js";
-import { checkDirPath, type ProcessLogger } from "./proc.js";
+import { checkDirPath, type ProcessControlOptions, type ProcessLogger } from "./proc.js";
 
 //////////////////////////////
 // Options                  //
@@ -175,7 +175,7 @@ export interface KPrintPrettyOptions {
 }
 
 /** {@link KPrint.kastToKore}'s options — `KPrint.kast_to_kore` (`ktool/kprint.py:274`). */
-export interface KastToKoreOptions {
+export interface KastToKoreOptions extends ProcessControlOptions {
   /** The sort the whole term is injected to.  Defaults to `K`, as `konvert` does. */
   readonly sort?: KSort;
   /**
@@ -189,7 +189,7 @@ export interface KastToKoreOptions {
 }
 
 /** {@link KPrint.parseToken}'s options — `KPrint.parse_token` (`ktool/kprint.py:242`) plus one. */
-export interface ParseTokenOptions {
+export interface ParseTokenOptions extends ProcessControlOptions {
   /** `--input rule` instead of `--input program`, so variables parse.  Upstream's. */
   readonly asRule?: boolean;
   /**
@@ -203,7 +203,7 @@ export interface ParseTokenOptions {
 }
 
 /** {@link KPrint.kparse}'s options. */
-export interface KPrintKparseOptions extends KparseTargetQuery {
+export interface KPrintKparseOptions extends KparseTargetQuery, ProcessControlOptions {
   /** See {@link ParseTokenOptions.native}. */
   readonly native?: boolean;
   /** The filename locations are reported against — `kparse.ts`'s `locationFile`. */
@@ -451,7 +451,13 @@ export class KPrint {
     if (options.asRule !== true && options.native !== false && this.conversionStrategy !== "binary") {
       const parser = await this.bisonParser({ sort: token.sort.name });
       if (parser !== undefined) {
-        const { kore } = await this.kparse(token.token, { sort: token.sort.name, parser });
+        const { kore } = await this.kparse(token.token, {
+          sort: token.sort.name,
+          parser,
+          ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+          ...(options.signal === undefined ? {} : { signal: options.signal }),
+          ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
+        });
         try {
           return konvertKoreToKast(this.definition, new KoreParser(kore).pattern());
         } catch (error) {
@@ -464,6 +470,9 @@ export class KPrint {
       input: options.asRule === true ? "rule" : "program",
       output: "json",
       sort: token.sort.name,
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     });
     return fromDict(kastTerm(JSON.parse(result.stdout)));
   }
@@ -480,9 +489,18 @@ export class KPrint {
    * The child's stdout is returned **untrimmed**, as pyk returns it — note the
    * contrast with {@link korePrint}, which trims.  Both are upstream's.
    */
-  async koreToPretty(pattern: Pattern, options: { readonly pykPrint?: boolean } = {}): Promise<string> {
-    if (options.pykPrint === true) return this.prettyPrint(await this.koreToKast(pattern));
-    const result = await this.#expression(koreText(pattern), { input: "kore", output: "pretty" });
+  async koreToPretty(
+    pattern: Pattern,
+    options: { readonly pykPrint?: boolean } & ProcessControlOptions = {},
+  ): Promise<string> {
+    if (options.pykPrint === true) return this.prettyPrint(await this.koreToKast(pattern, options));
+    const result = await this.#expression(koreText(pattern), {
+      input: "kore",
+      output: "pretty",
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
+    });
     return result.stdout;
   }
 
@@ -497,7 +515,7 @@ export class KPrint {
    * @throws {Error} when the strategy is `pure` and `konvert` cannot do it, or
    *   when the binary route also fails.
    */
-  async koreToKast(kore: Pattern): Promise<KInner> {
+  async koreToKast(kore: Pattern, options: ProcessControlOptions = {}): Promise<KInner> {
     if (this.conversionStrategy !== "binary") {
       try {
         return konvertKoreToKast(this.definition, kore);
@@ -508,6 +526,9 @@ export class KPrint {
     const json = await korePrint(kore, {
       definitionDir: this.definitionDir,
       output: "json",
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
       ...this.#childOptions(this.#options.korePrintCommand ?? ["kore-print"]),
     });
     return fromDict(kastTerm(JSON.parse(json)));
@@ -537,6 +558,9 @@ export class KPrint {
       input: "json",
       output: "kore",
       ...(options.sort === undefined ? {} : { sort: options.sort.name }),
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     });
     const parser = new KoreParser(result.stdout);
     const pattern = parser.pattern();
@@ -550,7 +574,7 @@ export class KPrint {
    */
   #expression(
     expression: string,
-    args: Pick<RunKastOptions, "input" | "output" | "module" | "sort">,
+    args: Pick<RunKastOptions, "input" | "output" | "module" | "sort"> & ProcessControlOptions,
   ): ReturnType<typeof expressionKast> {
     return expressionKast(expression, {
       ...args,

@@ -29,7 +29,32 @@ export const K_RELEASE = "v7.1.337" as const;
 export const K_COMMIT = "4a46d1231473b599c699160132fd6e76a5c46406" as const;
 
 /** The repository a transcription source lives in. */
-export type KtoolSourceRepo = "runtimeverification/k";
+export type KtoolSourceRepo =
+  | "runtimeverification/k"
+  | "runtimeverification/llvm-backend"
+  | "runtimeverification/haskell-backend";
+
+/** Search rendering authorities live in K submodules, never in K's raw tree. */
+export const SEARCH_SOURCE_IDENTITIES = [
+  {
+    repo: "runtimeverification/llvm-backend",
+    gitlinkPath: "llvm-backend/src/main/native/llvm-backend",
+    commit: "f02284f09858cd2b9f310ad0142b3e04054295ec",
+    path: "runtime/util/ConfigurationPrinter.cpp",
+    sha256: "4e20182ea8fbcc5eb82cf79380f1f69a423ef9754597a546a9eabcabcc0da619",
+    lines: 323,
+    why: "advisory LLVM search disjunction rendering pin",
+  },
+  {
+    repo: "runtimeverification/haskell-backend",
+    gitlinkPath: "haskell-backend/src/main/native/haskell-backend",
+    commit: "38afc81fc9414f1e11e609b01a43a436b613bd2d",
+    path: "kore/src/Kore/Exec.hs",
+    sha256: "33781b4634669dbfb720fa86249cab350458f69ee0ea7b35e5d060419e1c07bc",
+    lines: 1100,
+    why: "advisory Haskell search/disjunction rendering pin",
+  },
+] as const;
 
 /**
  * The two drift tiers, hashed separately because they mean different things:
@@ -252,6 +277,209 @@ export const TRANSCRIBED_FROM: readonly KtoolTranscribedSource[] = [
     lines: 720,
     tier: "content",
     why: "the option table src/krun.ts's argv is built against — --depth, --parser, --term, --search-final, --no-pattern, --proof-hint, --debugger and the rest",
+  },
+  // K v7.1.337's frontend diagnostic surface, consumed as measured text by
+  // src/diagnostics.ts. These are content authorities, never a promise that K
+  // will retain a particular prose message.
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/utils/errorsystem/KException.java",
+    sha256: "b023266464bbb841540828300a6b5346229ca4c94b500ead41517a70e59e3569",
+    lines: 332,
+    tier: "content",
+    why: "JVM diagnostic envelope, groups, source/location and snippets — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/utils/errorsystem/KEMException.java",
+    sha256: "a43d6a0517e8924376107bee841b5a07e916b5f978be220781c6053c2e1fc50e",
+    lines: 267,
+    tier: "content",
+    why: "KEMException exit status 113 and frontend message factories — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/utils/errorsystem/KExceptionManager.java",
+    sha256: "046aed3031412729e062a9da28428292237532480e698e03a1ac9690fb5a47fa",
+    lines: 197,
+    tier: "content",
+    why: "stderr rendering and diagnostic ordering — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/main/FrontEnd.java",
+    sha256: "4d62c28e5fd40f6203ea1857bf1c576391350a1accb7f24303e02cb8ebb060c8",
+    lines: 80,
+    tier: "content",
+    why: "frontend exit-code taxonomy — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/utils/StringUtil.java",
+    sha256: "2071fb1d3324df4227a42560b769e0b515eeefdcef4f1fde7af2cde3d1df200b",
+    lines: 598,
+    tier: "content",
+    why: "fixed-width exception wrapping — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/kernel/Scanner.java",
+    sha256: "32451e633f48e573813e94726e7e9695dffd455aceb9b4665540cd20508fb142",
+    lines: 523,
+    tier: "content",
+    why: "generated native scanner diagnostic shape — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/kernel/KSyntax2Bison.java",
+    sha256: "dbcb208941d6a4c778c10ced5279073b86ee065e82831f21434897280da95e21",
+    lines: 637,
+    tier: "content",
+    why: "generated native parser diagnostic shape — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/kernel/EarleyParser.java",
+    sha256: "fc2bf149b323d5914665622318fe11cd1868909ed325cc9096a2f693942ba7a3",
+    lines: 1135,
+    tier: "content",
+    why: "inner-parser message vocabulary — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/PriorityVisitor.java",
+    sha256: "c20265569757daea1f430696b642809e9b1c698042e1c59e0f6b4e8f1ace818f",
+    lines: 279,
+    tier: "content",
+    why: "post-parse priority and scope failures — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/AmbFilterError.java",
+    sha256: "38e124fad78b63d7ee43a3e79972e1f183fc183be112d9d9d93cf990eca21aeb",
+    lines: 68,
+    tier: "content",
+    why: "ambiguity alternatives — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/ParseInModule.java",
+    sha256: "ba956229705c68b563a9aab5bbd535f22792735bd332c4a4aeb0e01bfcccdea5",
+    lines: 539,
+    tier: "content",
+    why: "unknown-start-symbol inner-parser diagnostic — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/TypeInferenceVisitor.java",
+    sha256: "8545d7a2df38cb8eb04c62bf2c5bc3a856d526a8bca92b7bef7d763367f2961e",
+    lines: 312,
+    tier: "content",
+    why: "Z3 sort diagnostics — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/AddEmptyLists.java",
+    sha256: "444e878306bd7ba3461095a06dfe99ea62240b254a4040fdad46d02cff9adc57",
+    lines: 213,
+    tier: "content",
+    why: "empty-list overload diagnostics — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/CollapseRecordProdsVisitor.java",
+    sha256: "87ad56fe9be5ab65388d426027ecd4ec8ddcb049a47929ecc56c59e216be4a39",
+    lines: 114,
+    tier: "content",
+    why: "duplicate-record-key diagnostic — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/ResolveOverloadedTerminators.java",
+    sha256: "c415c1fb669efe6b11a1365f0b0fbd264d4f3b6daec00546c51e39a3af7a41a5",
+    lines: 49,
+    tier: "content",
+    why: "overloaded-terminator diagnostic — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/KAppToTermConsVisitor.java",
+    sha256: "ea4f93ff5b144478f9c46f5db6559f62563e3ea79f469eba2cfa30c85006c70f",
+    lines: 133,
+    tier: "content",
+    why: "no-suitable-production diagnostic — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/inference/SortInferenceError.java",
+    sha256: "7df524db41dac98161520989225624ad8160123b9c4fd5fddc4279b3efa6311f",
+    lines: 84,
+    tier: "content",
+    why: "SimpleSub sort-inference diagnostics — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/TypeInferencer.java",
+    sha256: "64ab4933ffeff6790cbadfbaccd31df569e0aaba457475f846dd1665e82042bc",
+    lines: 1072,
+    tier: "content",
+    why: "Z3 localized sort diagnostics — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/unparser/KPrint.java",
+    sha256: "48ea5a40e2111c49cd7de2934962f170ab66d4b6da6aefe429b8c3a1edadfd76",
+    lines: 427,
+    tier: "content",
+    why: "advisory KAST search re-binarisation and dedup pin",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/parser/inner/RuleGrammarGenerator.java",
+    sha256: "8ff76f1530c16cc660fd4ed4993a3f4bf1655280ce63acdeefe7e04b430402c6",
+    lines: 823,
+    tier: "content",
+    why: "bison-list and parametric parser-generation caveats documented by ktool",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/kompile/Kompile.java",
+    sha256: "a63e1a3cd3947af73da253a6808d5e09a6475f1ed55aec36faf06c77465c0c31",
+    lines: 872,
+    tier: "content",
+    why: "official pretty/program compilation output-route authority",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/java/org/kframework/kast/KastFrontEnd.java",
+    sha256: "1eee80a1c242754333f6cad6b83aa1e76f322bbfc3a3d58c627abc81e7621f7c",
+    lines: 290,
+    tier: "content",
+    why: "official kast input/output frontend route authority",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/scala/org/kframework/unparser/KOREToTreeNodes.scala",
+    sha256: "1f7ae8fd7e1e7f0f935fd3aef29751662a063df95aad294aef24d4b6deead39f",
+    lines: 66,
+    tier: "content",
+    why: "KORE-to-tree output route boundary documented by ktool",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-frontend/src/main/scala/org/kframework/definition/outer-to-string.scala",
+    sha256: "4d3640d533290ed9201f661132752f2c453568345b7b515fa972c623c3c7c599",
+    lines: 116,
+    tier: "content",
+    why: "Production.toString text used in ambiguity alternatives — src/diagnostics.ts",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-distribution/src/main/scripts/lib/k-util.sh",
+    sha256: "d657fac9c74fa54d30f4802bc59d00fa56fe4aa68eeb33b32c18a034a54b2761",
+    lines: 132,
+    tier: "content",
+    why: "wrapper-attributed diagnostic envelope and --no-exc-wrap consumption — src/diagnostics.ts",
   },
   {
     repo: "runtimeverification/k",

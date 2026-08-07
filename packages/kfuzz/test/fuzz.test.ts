@@ -36,6 +36,9 @@ const STRATEGY: readonly (readonly [EVar, ReturnType<typeof kintegers>])[] = [
   [VAR_Y, kintegers({ minValue: 0, maxValue: 20 })],
 ];
 
+/** A deliberately non-settling interpreter for the fast-check deadline seam. */
+const never: Interpret = () => new Promise<InterpretResult>(() => {});
+
 function completed(fields: Partial<InterpretResult> = {}): InterpretResult {
   return { returncode: 0, stdout: "Lblok{}()", stderr: "", ...fields };
 }
@@ -425,6 +428,14 @@ describe("determinism and replay", () => {
 
   test("the deadline default is upstream's five seconds", () => {
     expect(DEFAULT_DEADLINE_MS).toBe(5000);
+  });
+
+  test("a custom interpret seam is bounded by fast-check, while the default path owns its process deadline", async () => {
+    const failure = await caughtAsync(
+      fuzz(DIR, TEMPLATE, STRATEGY, { checkExitCode: true, interpret: never, run: { timeout: 20, numRuns: 1 } }),
+      KFuzzError,
+    );
+    expect(failure.cause).toBeDefined();
   });
 });
 

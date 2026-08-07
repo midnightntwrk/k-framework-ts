@@ -44,13 +44,10 @@
  *
  * Every log is opened `"a+"` and flushed at `atexit` (`io.cpp:552,566`), so a
  * second run against the same directory **doubles every count** rather than
- * replacing it.  That is not a bug to route around, it is the format: a hit log
- * accumulates every application until the file is deleted. Resetting
- * is the caller's job and is one line — remove everything matching
- * {@link COVERAGE_LOG_GLOB} before the run whose coverage you want, which is
- * exactly what panopticon's harness does before its corpus scan
- * (`K/harness/commands/coverage.ts:99-107`).  Nothing in this package deletes a
- * file; see {@link HIT_LOGS_ARE_APPEND_ONLY}.
+ * replacing it.  Give each run or scan a fresh `K_LOG_DIR` through
+ * `coverageLogEnv`; lifecycle and deletion remain caller-owned, and this
+ * package deliberately provides no reset helper.  See
+ * {@link HIT_LOGS_ARE_APPEND_ONLY}.
  *
  * # What is *not* here: source-file reads
  *
@@ -65,14 +62,16 @@
  * this machine (which is how `fixtures/PROVENANCE.md` mints the golden).
  */
 
-import { readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile, stat } from "node:fs/promises";
+import { constants } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
 import { type KDefinition, readKastDefinitionFromJson } from "@kframework-ts/kast";
 
 import type { CoverageDefinition } from "./cobertura.js";
-import { MissingCoverageFileError } from "./errors.js";
+import { CoverageLogDirError, MissingCoverageFileError } from "./errors.js";
 import type { RuleId } from "./hits.js";
+import { COVERAGE_LOG_SUFFIX, parseCoverageLogName } from "./log.js";
 import { translateCoverage } from "./translate.js";
 
 /**
@@ -118,14 +117,118 @@ export const COMPILED_JSON_NAME = "compiled.json";
 /**
  * Hit logs are opened in **append** mode and flushed at `atexit`
  * (`io.cpp:526-572`), so they accumulate across every run against the same
- * definition directory.  Resetting is the caller's job: delete everything
- * matching {@link COVERAGE_LOG_GLOB} before the run whose coverage you want.
+ * directory.  Use a fresh directory for each run or scan with
+ * `coverageLogEnv`; lifecycle remains caller-owned and this package does not
+ * delete logs or provide a reset helper.
  *
  * Named rather than inlined because this is the single most surprising property
  * of the format, and callers that get it wrong get plausible-looking wrong
  * numbers rather than an error.
  */
 export const HIT_LOGS_ARE_APPEND_ONLY = true;
+
+/** A coverage-log file discovered in a directory. */
+export type CoverageLogEntry =
+  | {
+      readonly name: string;
+      /** `coverage.txt`, a macro log rather than output from one runtime process. */
+      readonly isMacroLog: true;
+      readonly attribution: "macro";
+    }
+  | {
+      readonly name: string;
+      readonly isMacroLog: false;
+      /** Coverage-shaped, but not attributable to a valid PID under the selected mode. */
+      readonly attribution: "unattributed";
+    }
+  | {
+      readonly name: string;
+      readonly isMacroLog: false;
+      readonly attribution: "exact";
+      readonly ambiguous: false;
+      readonly pid: number;
+      readonly prefix: string;
+    }
+  | {
+      readonly name: string;
+      readonly isMacroLog: false;
+      readonly attribution: "heuristic";
+      readonly ambiguous: boolean;
+      readonly pid: number;
+      readonly prefix: string;
+    };
+
+/**
+ * Check the directory LLVM will write logs to before spawning its runtime.
+ *
+ * This is a TOCTOU preflight, not a guarantee: the directory may change before
+ * LLVM flushes at process exit.  Skipping it risks a completed run silently
+ * losing its accumulated coverage at exit; an unwritable directory can also
+ * make the runtime dereference a null `fopen` result.  No output is not a
+ * configuration diagnosis: timeout, abort, or a program with no logged rules
+ * can also leave no per-process file.
+ */
+export async function checkCoverageLogDir(dir: string): Promise<void> {
+  let info: Awaited<ReturnType<typeof stat>>;
+  try {
+    info = await stat(dir);
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+    throw new CoverageLogDirError(
+      dir,
+      code === "ENOENT" ? "missing" : code === "ENOTDIR" ? "not-directory" : "unwritable",
+      error,
+    );
+  }
+  if (!info.isDirectory()) throw new CoverageLogDirError(dir, "not-directory");
+  try {
+    await access(dir, constants.W_OK);
+  } catch (error) {
+    throw new CoverageLogDirError(dir, "unwritable", error);
+  }
+}
+
+/**
+ * Enumerate macro, attributable, and foreign coverage-shaped files by name.
+ *
+ * Entries are sorted by filename.  The macro log is identified explicitly and
+ * foreign `*_coverage.txt` names are retained as `unattributed`.
+ *
+ * With `expectedPrefix`, runtime names receive exact attribution and prefix
+ * mismatches stay unattributed. Without it, parsed names are explicitly
+ * heuristic and carry the digit-ending-prefix ambiguity reported by
+ * {@link parseCoverageLogName}.
+ */
+export async function coverageLogEntries(dir: string, expectedPrefix?: string): Promise<CoverageLogEntry[]> {
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+  const names = entries
+    .filter((entry) => entry.isFile() && (entry.name === MACRO_LOG_NAME || entry.name.endsWith(COVERAGE_LOG_SUFFIX)))
+    .map((entry) => entry.name)
+    .toSorted();
+  return names.map((name): CoverageLogEntry => {
+    if (name === MACRO_LOG_NAME) return { name, isMacroLog: true, attribution: "macro" };
+    const parsed = parseCoverageLogName(name, expectedPrefix);
+    if (parsed === undefined) return { name, isMacroLog: false, attribution: "unattributed" };
+    if (parsed.attribution === "exact") {
+      return {
+        name,
+        isMacroLog: false,
+        attribution: "exact",
+        ambiguous: false,
+        pid: parsed.pid,
+        prefix: parsed.prefix,
+      };
+    }
+    return {
+      name,
+      isMacroLog: false,
+      attribution: "heuristic",
+      ambiguous: parsed.ambiguous,
+      pid: parsed.pid,
+      prefix: parsed.prefix,
+    };
+  });
+}
 
 /**
  * Read one definition directory's coverage artifacts into the pure API's

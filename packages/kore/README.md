@@ -120,6 +120,27 @@ the same objects. Two TypeScript names differ from their tags to dodge
 globals: the `"String"` node's interface is `KoreString`, and the symbol head
 of a declaration is `KoreSymbol`.
 
+### Frontend GLR ambiguity projection
+
+The bison GLR parser may emit `Lblamb` applications, although ambiguity is an
+ordinary K frontend symbol rather than a KORE grammar node. `findAmbiguities`
+projects those applications from any parsed `Pattern`; it keeps raw KORE sorts
+and heads alongside demangled K names, removes only outer injection wrappers
+when reporting heads, and flattens directly nested ambiguity applications.
+Malformed external `Lblamb` shapes are returned as typed refusals carrying the
+raw application. Traversal is iterative and result order is document order.
+
+```ts
+import { findAmbiguities, parsePattern } from "@kframework-ts/kore";
+
+const results = findAmbiguities(parsePattern(koreText));
+```
+
+`AMB` (`"amb"`) and `LBL_AMB` (`"Lblamb"`) are available from
+`@kframework-ts/kore/prelude`. The behavior is measured at K `v7.1.337`; see
+`fixtures/PROVENANCE.md` and `check-k`'s advisory content tier for its source
+pins.
+
 ### Both are strict; errors carry positions or paths
 
 A KORE document is one artifact that either is or is not the thing you
@@ -176,7 +197,7 @@ codec, and unlike kast-json — **rejects unknown fields** on pattern objects.
 | `lexer.py`      | ✅  | `src/lexer.ts`                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `parser.py`     | ✅  | `src/parser.ts`, plus a `lazyAxioms` mode pyk has no equivalent of                                                                                                                                                                                                                                                                                                                                                              |
 | `../dequote.py` | ✅  | `src/escape.ts`                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `manip.py`      | ✅  | `src/manip.ts` — all five functions                                                                                                                                                                                                                                                                                                                                                                                             |
+| `manip.py`      | ✅  | `src/manip.ts` — all five pyk functions, plus iterative `disjuncts`                                                                                                                                                                                                                                                                                                                                                             |
 | `match.py`      | ✅  | `src/match.ts` — all matchers, decoders and combinators (see the `>>` note above)                                                                                                                                                                                                                                                                                                                                               |
 | `prelude.py`    | ⚠️  | `src/prelude.ts` — everything but the JSON bridge (above)                                                                                                                                                                                                                                                                                                                                                                       |
 | `kompiled.py`   | ⚠️  | the two tables are `indexDefinition`'s output (`src/definition.ts`), sort resolution is `src/symbols.ts`, `add_injections` is `src/inject.ts`. The `pyk-definition.kore.json` **cache** (`KompiledKore.load`/`write`/`to_dict`/`from_dict`) is not ported: it is a pickling optimisation for a slow Python parser, and it is `KompiledKore.load`'s mtime comparison that decides staleness — a policy a caller here should own. |

@@ -78,10 +78,46 @@
  * A source span — `(startLine, startCol, endLine, endCol)`, all 1-based
  * (`outer_syntax.py:18`).
  *
- * Only {@link Module} and the {@link StringSentence}s ever carry one, and the
- * latter only when the parser was given a source path (`outer_parser.py:373`).
+ * Lines and columns are 1-based UTF-16 code-unit positions, with no tab
+ * expansion; the end is exclusive.  `location` retains pyk's narrower legacy
+ * use while {@link AstBase.span} is the lexical extent of a parsed construct.
  */
 export type Location = readonly [number, number, number, number];
+
+/** Converts a half-open {@link Location} to half-open UTF-16 offsets in `text`. */
+export function locationToOffsets(text: string, location: Location): readonly [number, number] {
+  const offsetAt = (line: number, col: number): number => {
+    if (!Number.isInteger(line) || !Number.isInteger(col) || line < 1 || col < 1) {
+      throw new RangeError(`invalid source location: ${line}:${col}`);
+    }
+    let currentLine = 1;
+    let lineStart = 0;
+    for (let offset = 0; offset < text.length && currentLine < line; offset++) {
+      if (text[offset] === "\n") {
+        currentLine++;
+        lineStart = offset + 1;
+      }
+    }
+    if (currentLine !== line) throw new RangeError(`line ${line} is outside the source text`);
+    const offset = lineStart + col - 1;
+    const lineEnd = text.indexOf("\n", lineStart);
+    if (offset > (lineEnd === -1 ? text.length : lineEnd)) {
+      throw new RangeError(`column ${col} is outside line ${line}`);
+    }
+    return offset;
+  };
+
+  const start = offsetAt(location[0], location[1]);
+  const end = offsetAt(location[2], location[3]);
+  if (end < start) throw new RangeError("source location ends before it starts");
+  return [start, end];
+}
+
+/** Returns the UTF-16 slice denoted by a half-open {@link Location}. */
+export function sliceLocation(text: string, location: Location): string {
+  const [start, end] = locationToOffsets(text, location);
+  return text.slice(start, end);
+}
 
 /**
  * The two keyword-only fields on pyk's `AST` base (`outer_syntax.py:15-18`).
@@ -95,17 +131,20 @@ export interface AstBase {
   readonly source?: string | undefined;
   /** Where in that file, when the parser records it. */
   readonly location?: Location | undefined;
+  /** The full lexical extent of this construct, when it came from the parser. */
+  readonly span?: Location | undefined;
 }
 
 /** What every factory accepts on top of its own fields. */
 export interface AstOptions {
   readonly source?: string | undefined;
   readonly location?: Location | undefined;
+  readonly span?: Location | undefined;
 }
 
-/** The `source`/`location` pair, normalised so every node has both keys. */
+/** The common source metadata, normalised so every node has the same keys. */
 function baseOf(options: AstOptions): Required<AstBase> {
-  return { source: options.source, location: options.location };
+  return { source: options.source, location: options.location, span: options.span };
 }
 
 /** Shared frozen empties, so a default-constructed node allocates nothing. */
@@ -143,6 +182,13 @@ export type AttItem = readonly [key: string, value: string];
 export interface Att extends AstBase {
   readonly node: "Att";
   readonly items: readonly AttItem[];
+  /** Source spans aligned with {@link items}, when parsed from source. */
+  readonly itemSpans?: readonly Location[] | undefined;
+}
+
+/** Optional source metadata for an attribute list. */
+export interface AttOptions extends AstOptions {
+  readonly itemSpans?: Iterable<Location> | undefined;
 }
 
 /**
@@ -157,13 +203,24 @@ export const EMPTY_ATT: Att = Object.freeze({
   items: NO_ATT_ITEMS,
   source: undefined,
   location: undefined,
+  span: undefined,
+  itemSpans: undefined,
 });
 
 /** `Att(items)` (`outer_syntax.py:26-27`). */
-export function att(items: Iterable<AttItem> = NO_ATT_ITEMS, options: AstOptions = {}): Att {
+export function att(items: Iterable<AttItem> = NO_ATT_ITEMS, options: AttOptions = {}): Att {
   const list = [...items].map((item) => Object.freeze([item[0], item[1]] as const));
-  if (list.length === 0 && options.source === undefined && options.location === undefined) return EMPTY_ATT;
-  return Object.freeze({ node: "Att" as const, items: Object.freeze(list), ...baseOf(options) });
+  if (
+    list.length === 0 &&
+    options.source === undefined &&
+    options.location === undefined &&
+    options.span === undefined &&
+    options.itemSpans === undefined
+  ) {
+    return EMPTY_ATT;
+  }
+  const itemSpans = options.itemSpans === undefined ? undefined : Object.freeze([...options.itemSpans]);
+  return Object.freeze({ node: "Att" as const, items: Object.freeze(list), ...baseOf(options), itemSpans });
 }
 
 //////////////////////////////

@@ -303,19 +303,23 @@ describe("kastToKore / koreToKast — the in-process strategy", () => {
   });
 
   test("pure-then-binary falls back to `kast` when konvert raises", async () => {
-    const calls: (readonly string[])[] = [];
+    const calls: {
+      readonly args: readonly string[];
+      readonly timeoutMs: number | undefined;
+      readonly killGraceMs: number | undefined;
+    }[] = [];
     const kprint = await KPrint.load(IMP_LLVM, {
-      runner: async (args) => {
-        calls.push([...args]);
+      runner: async (args, options) => {
+        calls.push({ args: [...args], timeoutMs: options.timeoutMs, killGraceMs: options.killGraceMs });
         return { args, returncode: 0, stdout: "Lblfoo{}()", stderr: "", signal: undefined };
       },
     });
 
-    const result = await kprint.kastToKore(kapply("<nope>", [ktoken("1", "Int")]));
+    const result = await kprint.kastToKore(kapply("<nope>", [ktoken("1", "Int")]), { timeoutMs: 17, killGraceMs: 3 });
 
     expect(koreText(result)).toBe("Lblfoo{}()");
     // The envelope, on the `--expression` path: the term is small.
-    expect(calls[0]?.slice(0, 8)).toEqual([
+    expect(calls[0]?.args.slice(0, 8)).toEqual([
       "kast",
       "--definition",
       IMP_LLVM,
@@ -325,7 +329,8 @@ describe("kastToKore / koreToKast — the in-process strategy", () => {
       "kore",
       "--expression",
     ]);
-    expect(JSON.parse(calls[0]?.[8] ?? "")).toMatchObject({ format: "KAST", version: 4 });
+    expect(JSON.parse(calls[0]?.args[8] ?? "")).toMatchObject({ format: "KAST", version: 4 });
+    expect(calls[0]).toMatchObject({ timeoutMs: 17, killGraceMs: 3 });
   });
 
   test("forceKast skips the in-process attempt for one call (`kprint.py:274-276`)", async () => {
@@ -344,14 +349,18 @@ describe("kastToKore / koreToKast — the in-process strategy", () => {
   });
 
   test("the binary strategy uses kore-print, not kast, for KORE → KAST (`:271`)", async () => {
-    const calls: (readonly string[])[] = [];
+    const calls: {
+      readonly args: readonly string[];
+      readonly timeoutMs: number | undefined;
+      readonly killGraceMs: number | undefined;
+    }[] = [];
     const kprint = await KPrint.load(IMP_LLVM, { conversionStrategy: "pure" });
     const kore = await kprint.kastToKore(readTerm("sum.imp.json"), { sort: TOP });
 
     const binary = await KPrint.load(IMP_LLVM, {
       conversionStrategy: "binary",
-      runner: async (args) => {
-        calls.push([...args]);
+      runner: async (args, options) => {
+        calls.push({ args: [...args], timeoutMs: options.timeoutMs, killGraceMs: options.killGraceMs });
         const stdout = JSON.stringify({
           format: "KAST",
           version: 4,
@@ -361,9 +370,9 @@ describe("kastToKore / koreToKast — the in-process strategy", () => {
       },
     });
 
-    expect(await binary.koreToKast(kore)).toEqual(ktoken("1", "Int"));
+    expect(await binary.koreToKast(kore, { timeoutMs: 19, killGraceMs: 4 })).toEqual(ktoken("1", "Int"));
     // The positional is a temp file, not `/dev/stdin` — see `src/stdio.ts`.
-    const argv = calls[0] ?? [];
+    const argv = calls[0]?.args ?? [];
     expect([argv[0], argv[2], argv[3], argv[4], argv[5]]).toEqual([
       "kore-print",
       "--definition",
@@ -372,6 +381,7 @@ describe("kastToKore / koreToKast — the in-process strategy", () => {
       "json",
     ]);
     expect(argv[1]).toMatch(/kore-print-.*\.kore$/u);
+    expect(calls[0]).toMatchObject({ timeoutMs: 19, killGraceMs: 4 });
   });
 
   test("trailing garbage from the binary is an error, not a truncated parse", async () => {

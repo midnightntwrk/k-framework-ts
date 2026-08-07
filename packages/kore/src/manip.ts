@@ -18,6 +18,10 @@
 import { bottomUp, collect, koreText, patterns } from "./syntax.js";
 import type { EVar, Pattern } from "./syntax.js";
 
+function disjunctionSortText(pattern: Pattern): string | undefined {
+  return pattern.tag === "Or" || pattern.tag === "MultiOr" ? koreText(pattern.sort) : undefined;
+}
+
 /**
  * Flatten a conjunction into its non-`\top` conjuncts — pyk `conjuncts`
  * (`manip.py:13-18`).
@@ -47,6 +51,37 @@ export function conjuncts(pattern: Pattern): readonly Pattern[] {
         if (q !== undefined) {
           stack.push(q);
         }
+      }
+      continue;
+    }
+    out.push(p);
+  }
+  return out;
+}
+
+/**
+ * Flatten a disjunction into its non-`\bottom` disjuncts.
+ *
+ * Like {@link conjuncts}, this preserves left-to-right document order and
+ * accepts unary, flat n-ary, and arbitrarily nested forms.  A nested `\or` is
+ * flattened only when it has the same sort as its enclosing disjunction:
+ * `\or{S}(p, \or{T}(q, r))` keeps the inner term whole when `S !== T`.
+ * `MultiOr` receives the same treatment because KORE-JSON can encode that
+ * sugar even though textual KORE cannot.  The walk is iterative.
+ */
+export function disjuncts(pattern: Pattern): readonly Pattern[] {
+  const out: Pattern[] = [];
+  const stack: Pattern[] = [pattern];
+  const rootSort = disjunctionSortText(pattern);
+
+  for (let p = stack.pop(); p !== undefined; p = stack.pop()) {
+    if (p.tag === "Bottom") continue;
+    const nestedSort = disjunctionSortText(p);
+    if (rootSort !== undefined && nestedSort === rootSort && (p.tag === "Or" || p.tag === "MultiOr")) {
+      const children = p.patterns;
+      for (let i = children.length - 1; i >= 0; i -= 1) {
+        const child = children[i];
+        if (child !== undefined) stack.push(child);
       }
       continue;
     }

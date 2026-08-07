@@ -1,0 +1,2 @@
+[Error] Compiler: The 1-argument form of the `symbol(_)` attribute cannot be
+combined with `klabel(_)`.

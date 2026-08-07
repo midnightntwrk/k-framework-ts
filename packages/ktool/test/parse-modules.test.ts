@@ -274,6 +274,38 @@ describe("decodeModuleList", () => {
 //////////////////////////////
 
 describe("parseModules preconditions", () => {
+  test("forwards all process controls to the runner", async () => {
+    const dir = await scratch();
+    const spec = join(dir, "spec.k");
+    await writeFile(spec, "module M endmodule\n", "utf8");
+    const calls: {
+      readonly timeoutMs: number | undefined;
+      readonly killGraceMs: number | undefined;
+      readonly signal: AbortSignal | undefined;
+    }[] = [];
+    const signal = new AbortController().signal;
+    await parseModules(
+      spec,
+      { definitionDir: dir },
+      {
+        timeoutMs: 17,
+        killGraceMs: 3,
+        signal,
+        runner: async (argv, options) => {
+          calls.push({ timeoutMs: options.timeoutMs, killGraceMs: options.killGraceMs, signal: options.signal });
+          const output = argv[argv.indexOf("--emit-json-spec") + 1];
+          if (output === undefined) throw new Error("missing --emit-json-spec output");
+          await writeFile(
+            output,
+            readFileSync(join(import.meta.dir, "../fixtures/generated/multi-claim-spec.modulelist.json"), "utf8"),
+          );
+          return { args: argv, returncode: 0, stdout: "", stderr: "", signal: undefined };
+        },
+      },
+    );
+    expect(calls).toEqual([{ timeoutMs: 17, killGraceMs: 3, signal }]);
+  });
+
   // `check_file_path` / `check_dir_path` before any spawn (`kprove.py:107-110`)
   // — a missing input must not be reported as a process failure.
   test("a missing spec file is reported before a process is created", async () => {

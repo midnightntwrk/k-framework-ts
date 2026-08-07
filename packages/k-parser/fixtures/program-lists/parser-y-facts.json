@@ -1,0 +1,66 @@
+{
+  "list.parser.y": {
+    "nterms": ["SortIds_Hash_Terminator__", "SortId__", "SortNe_Hash_Ids__", "SortIds__"],
+    "rules": [
+      { "lhs": "SortIds_Hash_Terminator__", "alternatives": [{ "items": [], "roles": ["terminator"] }] },
+      { "lhs": "SortNe_Hash_Ids__", "alternatives": [
+        { "items": ["SortId__", "TOK_2", "SortNe_Hash_Ids__"], "roles": ["cons"] },
+        { "items": ["SortId__", "SortIds_Hash_Terminator__"], "roles": ["cons"] }
+      ] },
+      { "lhs": "SortIds__", "alternatives": [
+        { "items": ["SortNe_Hash_Ids__"], "roles": [] },
+        { "items": ["SortIds_Hash_Terminator__"], "roles": [] }
+      ] }
+    ],
+    "generated": {
+      "productionCount": 5,
+      "syntaxSorts": ["terminator", "nonempty"],
+      "productions": [
+        { "sort": "terminator", "items": ["empty"], "origin": "terminator", "label": "terminator", "format": false, "userList": false, "bisonMarker": false },
+        { "sort": "nonempty", "items": ["element", "separator", "nonempty"], "origin": "cons", "label": "cons", "format": true, "userList": false, "bisonMarker": false },
+        { "sort": "nonempty", "items": ["element", "empty", "terminator"], "origin": "cons", "label": "cons", "format": true, "userList": false, "bisonMarker": false },
+        { "sort": "list", "items": ["nonempty"], "origin": "cons", "label": "none", "format": false, "userList": false, "bisonMarker": false },
+        { "sort": "list", "items": ["terminator"], "origin": "terminator", "label": "none", "format": false, "userList": false, "bisonMarker": false }
+      ]
+    }
+  },
+  "nelist.parser.y": {
+    "nterms": ["SortIds_Hash_Terminator__", "SortId__", "SortNe_Hash_Ids__", "SortIds__"],
+    "rules": [
+      { "lhs": "SortIds_Hash_Terminator__", "alternatives": [{ "items": [], "roles": ["terminator"] }] },
+      { "lhs": "SortNe_Hash_Ids__", "alternatives": [
+        { "items": ["SortId__", "TOK_2", "SortNe_Hash_Ids__"], "roles": ["cons"] },
+        { "items": ["SortId__", "SortIds_Hash_Terminator__"], "roles": ["cons"] }
+      ] },
+      { "lhs": "SortIds__", "alternatives": [{ "items": ["SortNe_Hash_Ids__"], "roles": [] }] }
+    ],
+    "generated": {
+      "productionCount": 4,
+      "syntaxSorts": ["terminator", "nonempty"],
+      "productions": [
+        { "sort": "terminator", "items": ["empty"], "origin": "terminator", "label": "terminator", "format": false, "userList": false, "bisonMarker": false },
+        { "sort": "nonempty", "items": ["element", "separator", "nonempty"], "origin": "cons", "label": "cons", "format": true, "userList": false, "bisonMarker": false },
+        { "sort": "nonempty", "items": ["element", "empty", "terminator"], "origin": "cons", "label": "cons", "format": true, "userList": false, "bisonMarker": false },
+        { "sort": "list", "items": ["nonempty"], "origin": "cons", "label": "none", "format": false, "userList": false, "bisonMarker": false }
+      ]
+    }
+  },
+  "nelist-bison.parser.y": {
+    "nterms": ["SortId__", "SortIds__"],
+    "rules": [
+      { "lhs": "SortIds__", "alternatives": [
+        { "items": ["SortId__"], "roles": ["terminator", "cons"] },
+        { "items": ["SortIds__", "TOK_2", "SortId__"], "roles": ["cons"] }
+      ] }
+    ],
+    "generated": {
+      "productionCount": 3,
+      "syntaxSorts": [],
+      "productions": [
+        { "sort": "list", "items": ["list", "separator", "element"], "origin": "cons", "label": "cons", "format": true, "userList": false, "bisonMarker": false },
+        { "sort": "list", "items": ["element"], "origin": "cons", "label": "cons", "format": true, "userList": false, "bisonMarker": false },
+        { "sort": "terminator", "items": ["empty"], "origin": "terminator", "label": "terminator", "format": false, "userList": false, "bisonMarker": false }
+      ]
+    }
+  }
+}

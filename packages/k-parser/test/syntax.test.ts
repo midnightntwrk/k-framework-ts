@@ -174,7 +174,7 @@ describe("string sentences", () => {
   });
 
   test("the prefix is a lookup, not a field — it must not affect equality", () => {
-    expect(Object.keys(rule("x"))).toEqual(["node", "bubble", "label", "att", "source", "location"]);
+    expect(Object.keys(rule("x"))).toEqual(["node", "bubble", "label", "att", "source", "location", "span"]);
     expect(STRING_SENTENCE_PREFIXES.Alias).toBe("context alias");
   });
 

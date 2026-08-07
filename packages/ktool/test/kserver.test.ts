@@ -10,19 +10,26 @@
  */
 
 import { afterEach, describe, expect, test } from "bun:test";
-import { homedir } from "node:os";
+import { mkdtemp, rm } from "node:fs/promises";
+import { createServer } from "node:net";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { caughtAsync } from "./caught.ts";
+import { ProcessAbortError } from "../src/proc.ts";
+import { clearKDistributionCache } from "../src/distribution.ts";
 import {
   KSERVER_SOCKET_ENV,
   KSERVER_SOCKET_FILE,
   KSERVER_SOCKET_PATH_MAX,
   KserverError,
   kserverEnv,
+  kserverRunning,
   kserverSocketDir,
   kserverSocketPath,
+  resetKserver,
   spawnKserver,
+  stopKserver,
 } from "../src/kserver.ts";
 
 const previous = process.env[KSERVER_SOCKET_ENV];
@@ -87,5 +94,54 @@ describe("spawnKserver's sun_path check — the failure `spawn-kserver` reports 
 
   test("the limit is the one Nailgun's SockaddrUn enforces on both platforms", () => {
     expect(KSERVER_SOCKET_PATH_MAX).toBe(104);
+  });
+});
+
+describe("kserver control children", () => {
+  test("without the bundled ng probe, neither an arbitrary socket path nor a stale-looking path can claim a server is running", async () => {
+    const path = process.env["PATH"];
+    const socketDir = await mkdtemp(join(tmpdir(), "ktool-no-ng-"));
+    const server = createServer();
+    const socketPath = kserverSocketPath(socketDir);
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(socketPath, () => {
+        resolve();
+      });
+    });
+    process.env["PATH"] = "";
+    clearKDistributionCache();
+    try {
+      for (const candidate of [socketDir, join(socketDir, "missing")]) {
+        const error = await caughtAsync(kserverRunning({ socketDir: candidate }), KserverError);
+        expect(error.code).toBe("ng-not-found");
+        expect(error.socketDir).toBe(candidate);
+      }
+    } finally {
+      if (path === undefined) delete process.env["PATH"];
+      else process.env["PATH"] = path;
+      clearKDistributionCache();
+      await new Promise<void>((resolve) =>
+        server.close(() => {
+          resolve();
+        }),
+      );
+      await rm(socketDir, { recursive: true, force: true });
+    }
+  });
+
+  test("a pre-aborted nested process control prevents every control child and a server spawn", async () => {
+    const processControl = { signal: AbortSignal.abort() };
+    const address = { socketDir: "/tmp/kserver-control", ngCommand: ["must-not-run"], processControl };
+
+    for (const operation of [
+      () => kserverRunning(address),
+      () => resetKserver(address),
+      () => stopKserver(address),
+      () => spawnKserver({ socketDir: address.socketDir, command: ["must-not-run"], processControl }),
+    ]) {
+      const error = await caughtAsync(operation(), ProcessAbortError);
+      expect(error.args[0]).toBe("must-not-run");
+    }
   });
 });

@@ -1,0 +1,20 @@
+\or{SortGeneratedTopCell{}}(
+    \equals{SortGeneratedTopCell{}, SortGeneratedTopCell{}}(
+        VarResult:SortGeneratedTopCell{},
+        Lbl'-LT-'generatedTop'-GT-'{}(
+            Lbl'-LT-'k'-GT-'{}(
+                kseq{}(Lblb'Unds'NONDET'Unds'KItem{}(), dotk{}())
+            ),
+            Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))
+        )
+    ),
+    \equals{SortGeneratedTopCell{}, SortGeneratedTopCell{}}(
+        VarResult:SortGeneratedTopCell{},
+        Lbl'-LT-'generatedTop'-GT-'{}(
+            Lbl'-LT-'k'-GT-'{}(
+                kseq{}(Lbla'Unds'NONDET'Unds'KItem{}(), dotk{}())
+            ),
+            Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))
+        )
+    )
+)

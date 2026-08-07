@@ -55,6 +55,7 @@ const ROWS: readonly Row[] = [
   { id: "sort", apply: (a) => ({ ...a, sort: "AExp" }), expected: ["--sort", "AExp"] },
   { id: "tempDir", apply: (a) => ({ ...a, tempDir: "/tmp/path" }), expected: ["--temp-dir", "/tmp/path"] },
   { id: "genGlrParser", apply: (a) => ({ ...a, genGlrParser: true }), expected: ["--gen-glr-parser"] },
+  { id: "noExcWrap", apply: (a) => ({ ...a, noExcWrap: true }), expected: ["--no-exc-wrap"] },
 ];
 
 describe("kastArgs — the golden table (untested upstream)", () => {

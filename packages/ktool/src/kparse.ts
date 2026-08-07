@@ -62,15 +62,20 @@
  * | stdout is emitted as the child produced it | **trimmed** | the native parser appends a bare `printf("\n")` (`main.c:318`) and `kast` appends its own newline; trimming is what makes the two routes return the *same* string, which is the whole premise |
  */
 
-import { access, readFile } from "node:fs/promises";
-import { constants as fsConstants } from "node:fs";
+import { access, readFile, readlink } from "node:fs/promises";
+import { accessSync, constants as fsConstants } from "node:fs";
 import { join } from "node:path";
 
-import { loadKompiledLayout, type KompiledLayout } from "@kframework-ts/kompiled";
+import {
+  bisonParserName as kompiledBisonParserName,
+  expectedBisonParserArtifacts,
+  loadKompiledLayout,
+  type KompiledLayout,
+} from "@kframework-ts/kompiled";
 
 import { kastArgs, type KAstInput, type RunKastOptions } from "./kast-cli.js";
 import type { ProcessRunner } from "./kore-print.js";
-import { checkDirPath, checkFilePath, runProcess, type ProcessLogger } from "./proc.js";
+import { checkDirPath, checkFilePath, runProcess, type ProcessControlOptions, type ProcessLogger } from "./proc.js";
 import { DEV_STDIN, withStdinFile } from "./stdio.js";
 
 //////////////////////////////
@@ -88,16 +93,14 @@ export const DEFAULT_PARSE_SORT = "KItem" as const;
  * (`kparse:194`).
  *
  * Neither component is escaped, because neither can contain a path separator: a
- * K sort is an identifier and a module name is dot- and hyphen-separated
- * identifiers. The observed shape on a real build is `parser_Exp_TINY-SYNTAX`,
+ * K sorts and module names use identifiers whose observed generated spelling
+ * permits `_` and `-`, but never `.`. The observed shape on a real build is `parser_Exp_TINY-SYNTAX`,
  * beside the symlinks `parser_PGM` and `parser_<cellName>` that `kompile` also
  * makes — this package never follows those, because the script does not: the
  * symlink targets are only correct for the *default* sort and module, and
  * resolving the real name costs nothing.
  */
-export function bisonParserName(sort: string, module: string): string {
-  return `parser_${sort}_${module}`;
-}
+export const bisonParserName = kompiledBisonParserName;
 
 /** {@link bisonParserName}, joined onto the kompiled directory. */
 export function bisonParserPath(definitionDir: string, sort: string, module: string): string {
@@ -176,12 +179,132 @@ export async function findBisonParser(
   return (await isExecutable(path)) ? { ...target, path } : undefined;
 }
 
+/** Runtime classification of an expected parser artifact; unlike `kompiled`, this checks executability. */
+export type BisonParserDiscovery =
+  | { readonly kind: "executable"; readonly parser: BisonParser }
+  | { readonly kind: "library"; readonly sort: string; readonly module: string; readonly path: string }
+  | { readonly kind: "backend-no-concrete-parser"; readonly backend: string }
+  | { readonly kind: "not-generated"; readonly reason: "missing-syntax-definition" | "absent" | "not-executable" };
+
+/** One forward-derived artifact inspection, including aliases' readlink agreement. */
+export type ListedBisonParserArtifact =
+  | { readonly kind: "executable"; readonly parser: BisonParser }
+  | { readonly kind: "library"; readonly sort: string; readonly module: string; readonly path: string }
+  | {
+      readonly kind: "alias";
+      readonly configVar: string;
+      readonly path: string;
+      readonly target: string | undefined;
+      readonly expectedTargets: readonly string[];
+      readonly agreement: "match" | "mismatch" | "not-link" | "missing";
+    };
+
+/** Classify the parser for one target without guessing from filenames. */
+export async function discoverBisonParser(
+  definitionDir: string,
+  layout: KompiledLayout,
+  query: KparseTargetQuery = {},
+): Promise<BisonParserDiscovery> {
+  if (!(await exists(join(definitionDir, "syntaxDefinition.kore")))) {
+    return { kind: "backend-no-concrete-parser", backend: layout.backend };
+  }
+  const target = resolveKparseTarget(layout, query);
+  const executable = bisonParserPath(definitionDir, target.sort, target.module);
+  if (await isExecutable(executable)) return { kind: "executable", parser: { ...target, path: executable } };
+  const artifact = expectedBisonParserArtifacts(layout).find(
+    (entry) => entry.kind === "concrete" && entry.sort === target.sort && entry.module === target.module,
+  );
+  if (artifact?.kind === "concrete" && (await exists(join(definitionDir, artifact.library)))) {
+    return { kind: "library", ...target, path: join(definitionDir, artifact.library) };
+  }
+  return { kind: "not-generated", reason: (await exists(executable)) ? "not-executable" : "absent" };
+}
+
+/** Synchronous counterpart for consumers whose own API is synchronous. */
+export function findBisonParserSync(
+  definitionDir: string,
+  layout: KompiledLayout,
+  query: KparseTargetQuery = {},
+): BisonParser | undefined {
+  try {
+    accessSync(join(definitionDir, "syntaxDefinition.kore"));
+    const target = resolveKparseTarget(layout, query);
+    const path = bisonParserPath(definitionDir, target.sort, target.module);
+    accessSync(path, fsConstants.X_OK);
+    return { ...target, path };
+  } catch {
+    return undefined;
+  }
+}
+
+/** List generated executable parsers by deriving every expected name from the layout; no directory entry is parsed. */
+export async function listBisonParsers(definitionDir: string, layout: KompiledLayout): Promise<readonly BisonParser[]> {
+  if (!(await exists(join(definitionDir, "syntaxDefinition.kore")))) return [];
+  const parsers: BisonParser[] = [];
+  for (const artifact of expectedBisonParserArtifacts(layout)) {
+    if (artifact.kind !== "concrete") continue;
+    const path = join(definitionDir, artifact.executable);
+    if (await isExecutable(path)) parsers.push({ sort: artifact.sort, module: artifact.module, path });
+  }
+  return parsers;
+}
+
+/**
+ * List expected parsers and aliases derived from `KompiledLayout`.
+ *
+ * Aliases are not classified from their filename: each path and allowed target
+ * comes from `kompiled`'s descriptor, then `readlink` merely checks that K's
+ * convenience link agrees. Missing aliases are normal; a mismatch is exposed
+ * for callers diagnosing the known K sort-string discrepancy.
+ */
+export async function listBisonParserArtifacts(
+  definitionDir: string,
+  layout: KompiledLayout,
+): Promise<readonly ListedBisonParserArtifact[]> {
+  const result: ListedBisonParserArtifact[] = [];
+  for (const artifact of expectedBisonParserArtifacts(layout)) {
+    if (artifact.kind === "concrete") {
+      const executable = join(definitionDir, artifact.executable);
+      if (await isExecutable(executable)) {
+        result.push({ kind: "executable", parser: { sort: artifact.sort, module: artifact.module, path: executable } });
+      } else if (await exists(join(definitionDir, artifact.library))) {
+        result.push({
+          kind: "library",
+          sort: artifact.sort,
+          module: artifact.module,
+          path: join(definitionDir, artifact.library),
+        });
+      }
+      continue;
+    }
+    const path = join(definitionDir, artifact.file);
+    let target: string | undefined;
+    let agreement: "match" | "mismatch" | "not-link" | "missing" = "missing";
+    try {
+      target = await readlink(path);
+      agreement = artifact.expectedTargets.includes(target) ? "match" : "mismatch";
+    } catch {
+      if (await exists(path)) agreement = "not-link";
+      else agreement = "missing";
+    }
+    result.push({
+      kind: "alias",
+      configVar: artifact.configVar,
+      path,
+      target,
+      expectedTargets: artifact.expectedTargets,
+      agreement,
+    });
+  }
+  return result;
+}
+
 //////////////////////////////
 // The dispatcher           //
 //////////////////////////////
 
 /** {@link kparse}'s options. */
-export interface KparseOptions extends KparseTargetQuery {
+export interface KparseOptions extends KparseTargetQuery, ProcessControlOptions {
   /** The `*-kompiled` directory. Required — see the divergence table. */
   readonly definitionDir: string;
   /**
@@ -220,6 +343,8 @@ export interface KparseOptions extends KparseTargetQuery {
    * being the default.
    */
   readonly native?: boolean;
+  /** Faithful only on the JVM `kast` fallback; native parsers do not accept this JVM option. */
+  readonly noExcWrap?: boolean;
   readonly cwd?: string;
   readonly env?: Readonly<Record<string, string>>;
   readonly logger?: ProcessLogger;
@@ -285,6 +410,9 @@ export async function kparse(options: KparseOptions): Promise<KparseResult> {
     ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
     ...(options.env === undefined ? {} : { env: options.env }),
     ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
+    ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     check: options.check !== false,
   };
 
@@ -315,6 +443,7 @@ export async function kparse(options: KparseOptions): Promise<KparseResult> {
         output: "kore",
         ...(options.module === undefined ? {} : { module: options.module }),
         ...(options.sort === undefined ? {} : { sort: options.sort }),
+        ...(options.noExcWrap === true ? { noExcWrap: true } : {}),
       } satisfies RunKastOptions),
       childOptions,
     ),

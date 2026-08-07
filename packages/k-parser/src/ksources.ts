@@ -15,7 +15,7 @@
  * code, so each carries its own copy of this small machinery.
  */
 
-import { K_RELEASE, TRANSCRIBED_FROM } from "./version.js";
+import { K_RELEASE, TRANSCRIBED_FROM, type KSourceTier } from "./version.js";
 
 /** A file this package is derived from, and its sha256 at a known K release. */
 export interface KSourceFile {
@@ -23,6 +23,8 @@ export interface KSourceFile {
   readonly path: string;
   /** Lowercase hex sha256 of that file at the release it was recorded at. */
   readonly sha256: string;
+  /** Defaults to `transcription` for programmatic callers of this API. */
+  readonly tier?: KSourceTier;
 }
 
 /**
@@ -35,6 +37,7 @@ export type KSourceStatus = "unchanged" | "changed" | "missing";
 
 export interface KSourceOutcome {
   readonly path: string;
+  readonly tier: KSourceTier;
   readonly status: KSourceStatus;
   /** The sha256 recorded in this package. */
   readonly expected: string;
@@ -63,6 +66,8 @@ export interface KSourcesReport {
   /** The release the recorded hashes were taken at. */
   readonly recordedAt: string;
   readonly verdict: KSourcesVerdict;
+  /** Per-tier outcomes; only `transcription` controls {@link verdict}. */
+  readonly verdicts: Readonly<Record<KSourceTier, KSourcesVerdict>>;
   readonly files: readonly KSourceOutcome[];
 }
 
@@ -77,10 +82,20 @@ export type KSourceFetcher = (path: string, release: string) => Promise<Uint8Arr
  * The files this package is a transcription of, derived from the manifest so
  * the two can never disagree about what is declared.
  */
-export const KAST_SOURCES: readonly KSourceFile[] = TRANSCRIBED_FROM.map(({ path, sha256 }) => ({
+export const KAST_SOURCES: readonly KSourceFile[] = TRANSCRIBED_FROM.map(({ path, sha256, tier }) => ({
   path,
   sha256,
+  tier,
 }));
+
+function verdictOf(files: readonly KSourceOutcome[], tier: KSourceTier): KSourcesVerdict {
+  const inTier = files.filter((file) => file.tier === tier);
+  return inTier.some((file) => file.status === "changed")
+    ? "changed"
+    : inTier.some((file) => file.status === "missing")
+      ? "could-not-locate"
+      : "unchanged";
+}
 
 /**
  * Web Crypto, reached through `globalThis` rather than named directly.
@@ -126,12 +141,14 @@ export async function checkKSources(
   const files: KSourceOutcome[] = await Promise.all(
     sources.map(async (source): Promise<KSourceOutcome> => {
       const bytes = await fetcher(source.path, release);
+      const tier = source.tier ?? "transcription";
       if (bytes === undefined) {
-        return { path: source.path, status: "missing", expected: source.sha256 };
+        return { path: source.path, tier, status: "missing", expected: source.sha256 };
       }
       const actual = await sha256Hex(bytes);
       return {
         path: source.path,
+        tier,
         status: actual === source.sha256 ? "unchanged" : "changed",
         expected: source.sha256,
         actual,
@@ -139,11 +156,10 @@ export async function checkKSources(
     }),
   );
 
-  const verdict: KSourcesVerdict = files.some((f) => f.status === "changed")
-    ? "changed"
-    : files.some((f) => f.status === "missing")
-      ? "could-not-locate"
-      : "unchanged";
+  const verdicts = {
+    transcription: verdictOf(files, "transcription"),
+    content: verdictOf(files, "content"),
+  } as const;
 
-  return { release, recordedAt, verdict, files };
+  return { release, recordedAt, verdict: verdicts.transcription, verdicts, files };
 }

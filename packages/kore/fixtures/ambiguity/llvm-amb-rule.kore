@@ -1,0 +1,2 @@
+\and{SortGeneratedTopCell{}} (
+  \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortExp{}, SortKItem{}}(Lblamb{SortExp{}}(\and{SortExp{}}(Lbl'UndsStarUndsUnds'MAIN-SYNTAX'Unds'Exp'Unds'Exp'Unds'Exp{}(VarX:SortExp{},VarY:SortExp{}),Var'Unds'Gen5:SortExp{}),\and{SortExp{}}(Lbl'UndsStarUndsUnds'MAIN-SYNTAX'Unds'Exp'Unds'Exp'Unds'Exp{}(VarX:SortExp{},VarY:SortExp{}),Var'Unds'Gen5:SortExp{}))),Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{}))

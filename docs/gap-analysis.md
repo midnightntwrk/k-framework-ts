@@ -75,6 +75,7 @@ nothing decays by waiting) with a concrete trigger:
 | **`KCFG.readNodeData` + `OptimizedNodeStore`**                 | First proof whose graph is too big to load whole.                                                                                                                                                                                                                                      |
 | **pyk-style JSON-RPC _server_** (`rpc/rpc.py`)                 | A concrete consumer wants an oracle-as-a-service endpoint. Zero consumers anywhere today, including RV's tree.                                                                                                                                                                         |
 | **`kore.rule.toAxiom` + definition-splicing**                  | Haskell-backend mutation runs bottlenecked on re-kompile. Capping caveat: the graded oracle runs the LLVM interpreter, which must re-`llvm-kompile` regardless.                                                                                                                        |
+| **`parseBisonParserName`**                                     | A consumer holds a generated-parser filename with no kompiled directory beside it (for example, detached CI artifact inventory or log scraping). Until then, derive names forward from `KompiledLayout`; detached `parser_MY_VAR` is intentionally ambiguous.                          |
 
 ## Upstream defects awaiting reports
 
@@ -118,6 +119,60 @@ item.
       body (3432 of KWasm's at the axiom's own sort variable `R`) in a
       redundant `inj{_, SortK{}}`. Reproduced faithfully here and pinned:
       `packages/kore/test/wasm-soak.test.ts`.
+- [ ] llvm-backend coverage logging treats `K_LOG_DIR` and `K_LOG_PREFIX` as
+      undocumented runtime controls and validates the output path only in its
+      `atexit` flush. A missing directory aborts after execution without a
+      useful diagnostic; an unwritable directory can dereference the null
+      result of `fopen` and crash. Pinned through the exact K gitlink and
+      llvm-backend commit in `packages/kcovr/src/version.ts`; the local
+      best-effort, explicitly TOCTOU preflight is
+      `packages/kcovr/src/fs.ts:checkCoverageLogDir`.
+- [ ] K's user-list conversion removes `strict` from the generated terminator
+      but leaves `seqstrict` attached. The terminator has no nonterminals, so
+      the latter is semantically unusable and exposes an asymmetric attribute
+      cleanup in `KILtoKORE`. Pinned at K v7.1.337 by
+      `packages/k-parser/src/version.ts` and reproduced in
+      `packages/k-parser/test/program-lists-strictness.test.ts`.
+- [ ] K's program-output route selects a production from an unordered
+      collection using `.head`; when several productions share a label, the
+      selected format/separator is not a stable round-trip contract. The
+      source-level boundary is pinned by the `KPrint.java`,
+      `RuleGrammarGenerator.java`, and `KOREToTreeNodes.scala` entries in
+      `packages/ktool/src/version.ts`; the measured route limitations are
+      documented in `packages/ktool/README.md` and `packages/kompiled/README.md`.
+- [ ] K/pyk expose stale output enum/help values: `latex` remains in the typed
+      output enums even though the supported `kore-print` script rejects it,
+      and the `binary`/printer surfaces do not describe a consistent portable
+      route. Pinned by `packages/ktool/src/version.ts` and the refusal tests in
+      `packages/ktool/test/cli.test.ts` and `packages/ktool/test/krun.test.ts`.
+      The same report should ask for an explicit pretty/program contract: K's
+      user-list and parametric-label behavior makes the currently implied
+      pretty-print/reparse round trip impossible in general.
+- [ ] `kompile` names a `$PGM:K` generated parser from the unmodified sort name
+      (`parser_K_...`), while `configVars.sh` records `KItem` and `kparse`
+      therefore looks for `parser_KItem_...`. The silent miss falls back to the
+      much slower JVM parser. The local forward lookup and fallback boundary is
+      pinned in `packages/ktool/src/kparse.ts` and
+      `packages/ktool/test/kparse.test.ts`; the producing source identity is in
+      `packages/ktool/src/version.ts`.
+- [ ] Generated-parser filenames erase sort parameters, so two configuration
+      variables whose sorts differ only by parameters can collide on the same
+      `parser_<sort>_<module>` path. The local API deliberately derives and
+      reports expected artifacts instead of treating a filename as an inverse
+      encoding: `packages/kompiled/src/parser-artifacts.ts` and
+      `packages/kompiled/test/parser-artifacts.test.ts`.
+- [ ] `kompile` does not validate the configuration-variable name supplied by
+      `parser(...)` before using it in an alias path; separators and `..` can
+      survive. The passive TypeScript inspector refuses an unsafe derived path
+      in `packages/kompiled/test/parser-artifacts.test.ts`; K's producer is
+      content-pinned in `packages/ktool/src/version.ts`.
+- [ ] `kast --gen-parser` copies over `parser_<sort>_<module>` with
+      `REPLACE_EXISTING` and swallows the `IOException`, creating a fifth
+      producer whose regular-file and failure behavior differs from
+      `kompile`'s aliases. The local implementation makes no inverse or
+      alias-shape guess; its forward artifact outcomes are pinned by
+      `packages/ktool/test/kparse.test.ts` and the `KastFrontEnd.java` source
+      identity in `packages/ktool/src/version.ts`.
 
 ## Package roadmaps
 

@@ -1,3 +1,5 @@
+import type { Location } from "./syntax.js";
+
 /**
  * Literate-K markdown — fenced-code-block selection, and the selector
  * mini-language that decides which blocks count.
@@ -340,6 +342,23 @@ export interface CodeBlock {
   readonly info: string;
   /** The block's lines, right-stripped (`markdown.py:61`). */
   readonly code: string;
+  /** The raw, un-rstripped code region between the fences. */
+  readonly span: Location;
+}
+
+/** Converts a UTF-16 offset to this package's 1-based line/column convention. */
+function locationAt(text: string, end: number): readonly [line: number, col: number] {
+  let line = 1;
+  let col = 1;
+  for (let offset = 0; offset < end; offset++) {
+    if (text[offset] === "\n") {
+      line++;
+      col = 1;
+    } else {
+      col++;
+    }
+  }
+  return [line, col];
 }
 
 /**
@@ -355,7 +374,14 @@ export interface CodeBlock {
  */
 export function* codeBlocks(text: string): Generator<CodeBlock> {
   for (const match of text.matchAll(CODE_BLOCK_PATTERN)) {
-    yield Object.freeze({ info: group(match, "info"), code: pyRstrip(group(match, "code")) });
+    const [start, end] = span(match, "code");
+    const [startLine, startCol] = locationAt(text, start);
+    const [endLine, endCol] = locationAt(text, end);
+    yield Object.freeze({
+      info: group(match, "info"),
+      code: pyRstrip(group(match, "code")),
+      span: [startLine, startCol, endLine, endCol] as Location,
+    });
   }
 }
 

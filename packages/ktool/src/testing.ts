@@ -16,6 +16,7 @@ import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { kVersion, type KVersion } from "./distribution.js";
 import { buildKompileArgv, kompile, KompileArgumentError, type KompileSpec } from "./kompile.js";
 import { K_RELEASE } from "./version.js";
+import type { ProcessControlOptions } from "./proc.js";
 
 /** Environment variable that enables real-K tests and names K's `bin` directory. */
 export const K_BIN_ENV = "KFRAMEWORK_TS_K_BIN" as const;
@@ -39,7 +40,7 @@ export type InlineKompileSpec =
       Readonly<{ definition: string; mainModule: string }>);
 
 /** Optional overrides for one cached compilation. */
-export interface KompileCachedOptions {
+export interface KompileCachedOptions extends ProcessControlOptions {
   /** Defaults to {@link K_BIN_ENV}; a `bin` directory or `kompile` executable. */
   readonly kBin?: string;
   /** Defaults to {@link K_COMPILE_CACHE_ENV}; omitted means a process-local temporary cache. */
@@ -111,7 +112,7 @@ export function requireKTestEnvironment(options: KompileCachedOptions = {}): Pro
   let environment = environments.get(key);
   if (environment === undefined) {
     environment = (async () => {
-      const version = await kVersion([kompilePath]);
+      const version = await kVersion([kompilePath], options);
       if (version.text !== expectedVersion) {
         throw new KompileHarnessError(
           "version-mismatch",
@@ -162,7 +163,7 @@ export async function kompileCached(spec: CachedKompileSpec, options: KompileCac
 
   let compiled = compiledDefinitions.get(cacheIdentity);
   if (compiled === undefined) {
-    compiled = compileCached(spec, key, cacheRoot, environment);
+    compiled = compileCached(spec, key, cacheRoot, environment, options);
     compiledDefinitions.set(cacheIdentity, compiled);
     void compiled.catch(() => {
       // A failed compilation is not a cache entry.  Leaving its rejected
@@ -237,6 +238,7 @@ async function compileCached(
   key: string,
   cacheRoot: string,
   environment: KTestEnvironment,
+  options: ProcessControlOptions,
 ): Promise<string> {
   const outputDir = join(cacheRoot, "definitions", key);
   const marker = join(outputDir, CACHE_MARKER);
@@ -264,6 +266,9 @@ async function compileCached(
       outputDir: stagingDir,
       typeInferenceMode: "checked",
       warningsToErrors: true,
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     });
     await writeFile(join(stagingDir, CACHE_MARKER), JSON.stringify({ schema: CACHE_SCHEMA_VERSION, key }) + "\n");
     await rename(stagingDir, outputDir);

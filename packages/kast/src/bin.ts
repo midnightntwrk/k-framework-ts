@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The `kast` executable.  All logic lives in `cli.ts`, which is a pure
+ * The `kast-ts` executable. All logic lives in `cli.ts`, which is a pure
  * function of its arguments; this file exists only to bind that to the process,
  * so the command can be tested without spawning one.
  */

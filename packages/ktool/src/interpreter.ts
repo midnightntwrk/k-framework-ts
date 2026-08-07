@@ -50,7 +50,14 @@ import { KoreParser, koreText, type Pattern } from "@kframework-ts/kore";
 import { join } from "node:path";
 
 import type { ProcessRunner } from "./kore-print.js";
-import { checkFilePath, ProcessError, runProcess, type CompletedProcess, type ProcessLogger } from "./proc.js";
+import {
+  checkFilePath,
+  ProcessError,
+  runProcess,
+  type CompletedProcess,
+  type ProcessControlOptions,
+  type ProcessLogger,
+} from "./proc.js";
 import { DEV_STDIN, DEV_STDOUT, withStdinFile, withStdoutFile } from "./stdio.js";
 
 /**
@@ -66,13 +73,13 @@ import { DEV_STDIN, DEV_STDOUT, withStdinFile, withStdoutFile } from "./stdio.js
  */
 export class InterpreterError extends Error {
   /** The interpreter's exit status, or `-signum` if a signal killed it. */
-  readonly returncode: number;
+  readonly returncode: number | undefined;
   /** Everything it wrote to stderr. */
   readonly stderr: string;
   /** Whether the failure was "no output" rather than "non-zero status". */
   readonly emptyOutput: boolean;
 
-  constructor(message: string, returncode: number, stderr: string, emptyOutput: boolean) {
+  constructor(message: string, returncode: number | undefined, stderr: string, emptyOutput: boolean) {
     super(message);
     this.name = "InterpreterError";
     this.returncode = returncode;
@@ -82,7 +89,7 @@ export class InterpreterError extends Error {
 }
 
 /** Options shared by {@link llvmInterpret} and {@link llvmInterpretRaw}. */
-export interface LlvmInterpretOptions {
+export interface LlvmInterpretOptions extends ProcessControlOptions {
   /** Maximal number of rewrite steps.  Absent means `-1`, "to completion". */
   readonly depth?: number;
   /** Throw on a non-zero exit.  Defaults to `true`. */
@@ -154,6 +161,9 @@ export async function llvmInterpretRaw(
         ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
         ...(options.env === undefined ? {} : { env: options.env }),
         ...(options.logger === undefined ? {} : { logger: options.logger }),
+        ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
+        ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
         check: options.check !== false,
       }),
     ),

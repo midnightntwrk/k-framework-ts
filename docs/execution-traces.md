@@ -150,8 +150,12 @@ runtime accepts two process-wide environment variables:
 
 A caller can isolate concurrent runs by assigning a separate existing directory
 or prefix to each process. These variables are runtime implementation details,
-not a documented K command-line contract. A nonexistent `K_LOG_DIR` can block a
-run while the runtime retries the path.
+not a documented K command-line contract. The directory must already exist and
+be writable: the LLVM runtime validates it only while flushing at process exit;
+a missing directory aborts without a useful diagnostic, while an unwritable one
+can crash during the flush. `@kframework-ts/kcovr/fs` provides
+`checkCoverageLogDir` as a best-effort preflight, subject to the usual race
+between checking the path and the runtime opening it.
 
 Coverage logs contain no substitution or matched term. `@kframework-ts/kcovr`
 reads them, resolves rules, and produces coverage reports.

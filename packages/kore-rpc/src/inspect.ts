@@ -1,7 +1,7 @@
 /**
  * Reading and re-aiming recorded kore-rpc traffic by hand — the two halves of
  * the manual RPC-debugging loop, and the library behind
- * `kore-rpc rpc-print` / `kore-rpc rpc-kast`.
+ * `kore-rpc-ts rpc-print` / `kore-rpc-ts rpc-kast`.
  *
  * Transcribed from pyk's `exec_rpc_print` and `exec_rpc_kast`
  * (`k/pyk/src/pyk/__main__.py:136-216` and `:218-236`), whose CLI surface is

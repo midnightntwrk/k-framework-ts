@@ -30,6 +30,8 @@ import {
 
 import {
   deriveConfigVars,
+  distinctLineCount,
+  duplicateRuleIds,
   lookupRule,
   parseAllRules,
   parseConfigVars,
@@ -187,6 +189,7 @@ describe("allRules.txt", () => {
   test("the fixture's 170 rules all parse", () => {
     expect(allRules.size).toBe(170);
     expect(text.split("\n").length).toBe(170);
+    expect(parseAllRules(text).duplicateRuleIds).toEqual([]);
   });
 
   test("keys are full-length sha256 hex, and the 12-char index is pyk's", () => {
@@ -229,6 +232,28 @@ describe("allRules.txt", () => {
   test("blank lines are skipped, as pyk skips them", () => {
     const { allRules: rules } = parseAllRules("\n  \naaaaaaaaaaaa /a.md:1:2\n\n");
     expect(rules.size).toBe(1);
+  });
+
+  test("keeps every row while compatibility maps remain last-write-wins and the audit includes identical repeats", () => {
+    const a = "a".repeat(64);
+    const b = "b".repeat(64);
+    const parsed = parseAllRules(`${a} /a.k:1:1\n${a} /a.k:2:1\n${b} /b.k:3:1\n${b} /b.k:3:1`);
+
+    expect(parsed.allRulesRows).toHaveLength(4);
+    expect(parsed.allRules.get(a)?.location).toBe("/a.k:2:1");
+    expect(parsed.allRules.get(b)?.location).toBe("/b.k:3:1");
+    expect(
+      parsed.duplicateRuleIds.map(({ ruleId, locations }) => [ruleId, locations.map(({ location }) => location)]),
+    ).toEqual([
+      [a, ["/a.k:1:1", "/a.k:2:1"]],
+      [b, ["/b.k:3:1", "/b.k:3:1"]],
+    ]);
+    expect(parsed.distinctLineCount).toBe(3);
+    expect(distinctLineCount(`${a} /a.k:1:1\n${a} /a.k:2:1\n${b} /b.k:3:1\n${b} /b.k:3:1`)).toBe(3);
+    expect(duplicateRuleIds(`${a} /a.k:1:1\n${a} /a.k:2:1\n${b} /b.k:3:1\n${b} /b.k:3:1`)).toHaveLength(2);
+
+    const distinctRows = `${a} /a.k:1:1\n${a} /a.k:2:1\n${b} /b.k:3:1\n${b} /b.k:4:1`;
+    expect(parseAllRules(distinctRows).distinctLineCount).toBe(4);
   });
 
   test("a line with no location is kept, with an empty location", () => {

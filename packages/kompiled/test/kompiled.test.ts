@@ -179,6 +179,27 @@ describe("compiled.json", () => {
   });
 });
 
+describe("parsed.json", () => {
+  test("is optional and remains a distinct pre-compilation definition", () => {
+    const absent = new KompiledDefinition(sourceOf({}).source);
+    expect(absent.parsedDefinition).toBeUndefined();
+
+    const parsed = readFileSync(join(UPSTREAM, "imp-outer-json", "imp.json"), "utf8");
+    const kompiled = new KompiledDefinition(sourceOf({ "parsed.json": parsed }).source);
+    expect(kompiled.parsedDefinition?.mainModuleName).toBe("IMP");
+    // It cannot silently stand in for compiled.json: compiled-only operations
+    // still request the compiled artifact and retain its actionable failure.
+    expect(() => kompiled.definition).toThrow(MissingCompiledJsonError);
+    expect(() => kompiled.configVars).toThrow(MissingCompiledJsonError);
+  });
+
+  test("keeps parsed.json's artifact name in invalid-envelope diagnostics", () => {
+    const kompiled = new KompiledDefinition(sourceOf({ "parsed.json": "not json" }).source);
+    const error = caught(() => kompiled.parsedDefinition, InvalidKompiledFileError);
+    expect(error.file).toBe("parsed.json");
+  });
+});
+
 describe("error contract", () => {
   test("no compiled.json → the message says to re-kompile with --emit-json", () => {
     // `emitJson` defaults to false in the Java frontend
@@ -196,7 +217,11 @@ describe("error contract", () => {
     // Two K installs on the survey machine disagreed, 7.1.191 emitting v3 and
     // 7.1.337 emitting v4.  All three facts
     // have to be in the message or the reader cannot act on it.
-    const v3 = JSON.stringify({ format: "KAST", version: 3, term: { node: "KDefinition" } });
+    const v3 = JSON.stringify({
+      format: "KAST",
+      version: 3,
+      term: { node: "KDefinition" },
+    });
     const kompiled = new KompiledDefinition(sourceOf({ "compiled.json": v3 }).source);
 
     const error = caught(() => kompiled.definition, UnsupportedKastVersionError);
@@ -478,7 +503,7 @@ describe("koreToKast is injected, never imported", () => {
 });
 
 describe("refused artifacts", () => {
-  test("the artifact type admits only the four files this package reads", async () => {
+  test("the artifact type admits exactly the five readable artifact names", async () => {
     // `compiled.bin`, `cache.bin`, `haskellDefinition.bin`, `interpreter`,
     // `scanner` and `dt/` are refused rather than half-supported.
     // The type is the enforcement; this test
@@ -486,6 +511,7 @@ describe("refused artifacts", () => {
     const kompiled = await loadKompiledDefinition(IMP_HASKELL);
     const artifacts: KompiledArtifact[] = ["compiled.json", "definition.kore", "syntaxDefinition.kore", "macros.kore"];
     for (const artifact of artifacts) expect(kompiled.text(artifact)).toBeDefined();
+    expect(kompiled.text("parsed.json")).toBeUndefined();
     expect(ksort("KItem").name).toBe("KItem"); // kast is reachable; sanity.
   });
 });
@@ -525,7 +551,9 @@ describe("the /core subpath has no filesystem in it", () => {
     }
 
     expect(offenders).toEqual([]);
-    expect(seen).toEqual(new Set(["core.ts", "errors.ts", "kompiled.ts", "ksources.ts", "layout.ts", "version.ts"]));
+    expect(seen).toEqual(
+      new Set(["core.ts", "errors.ts", "kompiled.ts", "ksources.ts", "layout.ts", "parser-artifacts.ts", "version.ts"]),
+    );
     expect(seen.has("fs.ts")).toBe(false);
   });
 
@@ -551,8 +579,14 @@ describe("the /core subpath has no filesystem in it", () => {
     const pkg = JSON.parse(readFileSync(join(SRC, "..", "package.json"), "utf8")) as {
       exports: Record<string, { types: string; import: string }>;
     };
-    expect(pkg.exports["./core"]).toEqual({ types: "./dist/core.d.ts", import: "./dist/core.js" });
+    expect(pkg.exports["./core"]).toEqual({
+      types: "./dist/core.d.ts",
+      import: "./dist/core.js",
+    });
     // The root export includes the core API.
-    expect(pkg.exports["."]).toEqual({ types: "./dist/index.d.ts", import: "./dist/index.js" });
+    expect(pkg.exports["."]).toEqual({
+      types: "./dist/index.d.ts",
+      import: "./dist/index.js",
+    });
   });
 });

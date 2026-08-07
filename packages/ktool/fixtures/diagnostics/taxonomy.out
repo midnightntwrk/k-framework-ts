@@ -1,0 +1,47 @@
+[Error] Inner Parser: Parse error: unexpected end of file.
+[Error] Inner Parser: Parse error: unexpected token '@'.
+[Error] Inner Parser: Scanner error: unexpected character sequence '@'.
+[Error] Inner Parser: Parsing ambiguity.
+1: syntax Exp ::= Exp "+" Exp [symbol(veryLongProductionName)]
+    1 + 2 + 3
+2: syntax Exp ::= Int [token]
+    1 + 2 + 3
+[Error] Inner Parser: Invalid applyPriority attribute value: bad.
+[Error] Inner Parser: Rewrite is not allowed to be an immediate child of Lblparent{}.    Use parentheses: (x)=>(y) to set the proper scope of the operations.
+[Error] Inner Parser: ~> is not allowed to be an immediate child of Lblparent{}.    Use parentheses: (x)~>(y) to set the proper scope of the operations.
+[Error] Inner Parser: #let is not allowed to be an immediate child of Lblparent{}.    Use parentheses: #let x = y #in (z) to set the proper scope of the operations.
+[Error] Inner Parser: Lblchild{} is not allowed to be an immediate child of cast.    Use parentheses: (x):Sort to set the proper scope of the operations.
+[Error] Inner Parser: Priority filter exception. Cannot use Lblchild{} as an immediate child of Lblparent{}. Consider using parentheses around Lblchild{}
+[Error] Inner Parser: Associativity filter exception. Cannot use Lblchild{} as an immediate left child of Lblparent{}. Consider using parentheses around Lblchild{}
+[Error] Inner Parser: Associativity filter exception. Cannot use Lblchild{} as an immediate right child of Lblparent{}. Consider using parentheses around Lblchild{}
+[Error] Inner Parser: Unexpected sort A for term x. Expected B.
+[Error] Inner Parser: Unexpected sort A for term parsed as production f. Expected B.
+[Error] Inner Parser: Unexpected sort A for variable X. Expected: B.
+[Error] Inner Parser: Sort inferred as greatest lower bound of [A, B], but no such bound exists.
+[Error] Inner Parser: Sort of variable inferred as least upper bound of [A, B], but candidate bounds are incomparable: [C, D].
+[Error] Inner Parser: Sort of X inferred as least upper bound of [A, B], but candidate bounds are incomparable: [C, D].
+[Error] Inner Parser: Unexpected sort A for term parsed as production f. Expected: B
+[Error] Inner Parser: Term is not well-sorted due to monomorphization failure. Add sort annotations to produce a better error message.
+[Error] Inner Parser: Overloaded term does not have a least sort. Possible sorts: [A, B]
+[Error] Inner Parser: List terminator for overloaded term does not have a least sort. Possible sorts: [A, B]
+[Error] Inner Parser: Duplicate record production key: field
+[Error] Inner Parser: Could not find any suitable productions for label f
+[Error] Inner Parser: Could not find start symbol: Missing provided to command line
+[Error] Outer Parser: Circular dependency between lexical identifiers: A, B
+[Error] Outer Parser: Unrecognized lexical identifiers in regular expression: A
+[Error] Outer Parser: Named lexical syntax cannot contain line anchors.
+[Error] Outer Parser: Encountered unexpected token.
+[Error] Compiler: Had 2 parsing errors.
+[Error] krun: krun --definition test-kompiled broken.pgm
+[Error] kparse: kparse --definition test-kompiled broken.pgm
+[Error] kparse-gen: kparse-gen --definition test-kompiled broken.pgm
+[Error] kore-print: kore-print broken.kore
+[Warning] Compiler: future warning from K
+[Error] Internal: future diagnostic from K
+[Error] Critical: fatal frontend condition
+	Source(definition.k)
+	Location(2,3,2,7)
+	line two of the rendered source snippet
+[Error] Prover: prover frontend condition
+1:2:1:3:syntax error: unexpected @
+program.pgm:1:2:1:3:syntax error, unexpected TOK_BAD

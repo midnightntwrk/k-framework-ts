@@ -47,7 +47,14 @@ import { stat } from "node:fs/promises";
 import { basename, extname, join } from "node:path";
 
 import { resolveOnPath } from "./distribution.js";
-import { absOrRelTo, checkDirPath, checkFilePath, runProcess, type ProcessLogger } from "./proc.js";
+import {
+  absOrRelTo,
+  checkDirPath,
+  checkFilePath,
+  runProcess,
+  type ProcessControlOptions,
+  type ProcessLogger,
+} from "./proc.js";
 
 //////////////////////////////
 // Enumerations             //
@@ -366,9 +373,9 @@ export function sortIncludeDirs(dirs: readonly string[]): readonly string[] {
  * `KompileArgs.args()` (`ktool/kompile.py:589-637`) — the positional main file
  * and every backend-independent flag, in emission order.
  *
- * The order is the contract: `kompile`'s own parser does not care, but the
- * golden tables in `test/` do, and a reordering here would silently invalidate
- * every recorded argv downstream.
+ * The order is a published semver stability promise: it changes only in a
+ * major version. `kompile`'s own parser does not care, but a reordering would
+ * silently invalidate every recorded argv downstream.
  */
 export function kompileBaseArgs(args: KompileArgs): string[] {
   const argv: string[] = [args.mainFile];
@@ -475,7 +482,7 @@ export function kompileArgs(spec: KompileSpec): string[] {
  * it is a tar-append interop format (`pyk/utils.py:696-743`) worth its own
  * module when somebody needs pyk-compatible bug reports.
  */
-export interface KompileCallOptions {
+export interface KompileCallOptions extends ProcessControlOptions {
   /** Defaults to `['kompile']` (`:296`).  Only `command[0]` is resolved on `PATH`. */
   readonly command?: readonly string[];
   /** `--output-definition`.  Also the value {@link kompile} returns. */
@@ -655,6 +662,9 @@ export async function kompile(spec: KompileSpec, options: KompileCallOptions = {
     ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
     ...(options.env === undefined ? {} : { env: options.env }),
     ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
+    ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     teeStdout: options.toolMode === true,
     teeStderr: options.toolMode === true,
     check: options.check !== false,

@@ -14,7 +14,9 @@
  *
  * The `registry/all` row is generated on *both* sides by walking the registry
  * and picking a sample value per codec, so it fails if the two registries
- * disagree about any key at all.
+ * disagree about any key at all, except `userList`: persisted K artifacts only
+ * use `"*"` and `"+"`, so this package deliberately closes that one pyk
+ * `AnyType` key and records the local sample below.
  *
  * pyk *installed* will not do: it is 7.1.174 there, several `Atts` keys older.
  * `$K` below is a checkout of `runtimeverification/k` at the v7.1.337 tag.
@@ -209,6 +211,7 @@ import {
   NONE_TYPE,
   PATH_TYPE,
   STR_TYPE,
+  USER_LIST_TYPE,
   attKeys,
   type AttKey,
 } from "../src/att.ts";
@@ -298,7 +301,7 @@ const REGISTRY: readonly (readonly [string, string])[] = [
   ["unparseAvoid", "NoneType"],
   ["unused", "NoneType"],
   ["update", "AnyType"],
-  ["userList", "AnyType"],
+  ["userList", "UserListType"],
   ["wrapElement", "AnyType"],
 ];
 
@@ -320,6 +323,7 @@ const TAGS: ReadonlyMap<unknown, string> = new Map<unknown, string>([
   [FORMAT_TYPE, "FormatType"],
   [COLOR_TYPE, "ColorType"],
   [COLORS_TYPE, "ColorsType"],
+  [USER_LIST_TYPE, "UserListType"],
   [Atts.CONCRETE.type, "OptionalType[StrType]"],
 ]);
 
@@ -338,6 +342,7 @@ const SAMPLE: Readonly<Record<string, JsonValue>> = {
   FormatType: "%1 + %2",
   ColorType: "red",
   ColorsType: "red, blue",
+  UserListType: "*",
   "OptionalType[StrType]": "opt-value",
 };
 
@@ -553,8 +558,8 @@ const EXPECTED: Readonly<Record<string, readonly [string, string]>> = {
     '[symbol("foo"), function, total, klabel(foo), org.kframework.attributes.Location(1,2,3,4), org.kframework.attributes.Source("/a/b.k")]',
   ],
   "registry/all": [
-    '{"att": {"UNIQUE_ID": "any-value", "alias": "", "alias-rec": "", "anywhere": "", "assoc": "", "avoid": "", "bracket": "", "bracketLabel": "any-value", "cell": "", "cellCollection": "", "cellFragment": "any-value", "cellName": "str-value", "cellOptAbsent": "any-value", "circularity": "", "color": "red", "colors": "red,blue", "comm": "", "concat": "any-value", "concrete": "opt-value", "constructor": "", "depends": "any-value", "digest": "any-value", "element": "any-value", "exit": "any-value", "freshGenerator": "", "function": "", "functional": "", "group": "str-value", "hasDomainValues": "", "hook": "any-value", "hybrid": "opt-value", "idem": "", "impure": "", "index": "42", "initializer": "", "injective": "", "label": "any-value", "left": "any-value", "macro": "", "macro-rec": "", "maincell": "", "multiplicity": "any-value", "no-evaluators": "", "org.kframework.attributes.Location": [1, 2, 3, 4], "org.kframework.attributes.Source": "/a/b.k", "org.kframework.definition.Production": "any-value", "org.kframework.kore.Sort": "any-value", "overload": "str-value", "owise": "", "predicate": "any-value", "prefer": "", "priorities": "any-value", "priority": "any-value", "private": "", "projection": "", "public": "", "returnsUnit": "", "right": "any-value", "seqstrict": "any-value", "simplification": "any-value", "smt-lemma": "", "stream": "opt-value", "strict": "any-value", "symbol": "str-value", "symbolic": "opt-value", "syntaxModule": "str-value", "terminals": "str-value", "terminator-symbol": "any-value", "token": "", "total": "", "trusted": "", "type": "any-value", "unit": "str-value", "unparseAvoid": "", "unused": "", "update": "any-value", "userList": "any-value", "wrapElement": "any-value"}, "node": "KAtt"}',
-    '[alias, alias-rec, anywhere, assoc, avoid, bracket, bracketLabel(any-value), circularity, cell, cellCollection, cellFragment(any-value), cellName("str-value"), cellOptAbsent(any-value), color(red), colors(red,blue), comm, concat(any-value), concrete("opt-value"), constructor, depends(any-value), digest(any-value), element(any-value), exit(any-value), freshGenerator, function, functional, group("str-value"), hasDomainValues, hook(any-value), hybrid("opt-value"), idem, impure, index(42), initializer, injective, label(any-value), left(any-value), org.kframework.attributes.Location(1,2,3,4), macro, macro-rec, maincell, multiplicity(any-value), no-evaluators, overload("str-value"), owise, predicate(any-value), prefer, priority(any-value), priorities(any-value), private, org.kframework.definition.Production(any-value), projection, public, right(any-value), returnsUnit, simplification(any-value), seqstrict(any-value), org.kframework.kore.Sort(any-value), org.kframework.attributes.Source("/a/b.k"), stream("opt-value"), smt-lemma, strict(any-value), symbol("str-value"), syntaxModule("str-value"), symbolic("opt-value"), terminals("str-value"), terminator-symbol(any-value), token, total, trusted, type(any-value), unit("str-value"), UNIQUE_ID(any-value), unparseAvoid, unused, update(any-value), userList(any-value), wrapElement(any-value)]',
+    '{"att": {"UNIQUE_ID": "any-value", "alias": "", "alias-rec": "", "anywhere": "", "assoc": "", "avoid": "", "bracket": "", "bracketLabel": "any-value", "cell": "", "cellCollection": "", "cellFragment": "any-value", "cellName": "str-value", "cellOptAbsent": "any-value", "circularity": "", "color": "red", "colors": "red,blue", "comm": "", "concat": "any-value", "concrete": "opt-value", "constructor": "", "depends": "any-value", "digest": "any-value", "element": "any-value", "exit": "any-value", "freshGenerator": "", "function": "", "functional": "", "group": "str-value", "hasDomainValues": "", "hook": "any-value", "hybrid": "opt-value", "idem": "", "impure": "", "index": "42", "initializer": "", "injective": "", "label": "any-value", "left": "any-value", "macro": "", "macro-rec": "", "maincell": "", "multiplicity": "any-value", "no-evaluators": "", "org.kframework.attributes.Location": [1, 2, 3, 4], "org.kframework.attributes.Source": "/a/b.k", "org.kframework.definition.Production": "any-value", "org.kframework.kore.Sort": "any-value", "overload": "str-value", "owise": "", "predicate": "any-value", "prefer": "", "priorities": "any-value", "priority": "any-value", "private": "", "projection": "", "public": "", "returnsUnit": "", "right": "any-value", "seqstrict": "any-value", "simplification": "any-value", "smt-lemma": "", "stream": "opt-value", "strict": "any-value", "symbol": "str-value", "symbolic": "opt-value", "syntaxModule": "str-value", "terminals": "str-value", "terminator-symbol": "any-value", "token": "", "total": "", "trusted": "", "type": "any-value", "unit": "str-value", "unparseAvoid": "", "unused": "", "update": "any-value", "userList": "*", "wrapElement": "any-value"}, "node": "KAtt"}',
+    '[alias, alias-rec, anywhere, assoc, avoid, bracket, bracketLabel(any-value), circularity, cell, cellCollection, cellFragment(any-value), cellName("str-value"), cellOptAbsent(any-value), color(red), colors(red,blue), comm, concat(any-value), concrete("opt-value"), constructor, depends(any-value), digest(any-value), element(any-value), exit(any-value), freshGenerator, function, functional, group("str-value"), hasDomainValues, hook(any-value), hybrid("opt-value"), idem, impure, index(42), initializer, injective, label(any-value), left(any-value), org.kframework.attributes.Location(1,2,3,4), macro, macro-rec, maincell, multiplicity(any-value), no-evaluators, overload("str-value"), owise, predicate(any-value), prefer, priority(any-value), priorities(any-value), private, org.kframework.definition.Production(any-value), projection, public, right(any-value), returnsUnit, simplification(any-value), seqstrict(any-value), org.kframework.kore.Sort(any-value), org.kframework.attributes.Source("/a/b.k"), stream("opt-value"), smt-lemma, strict(any-value), symbol("str-value"), syntaxModule("str-value"), symbolic("opt-value"), terminals("str-value"), terminator-symbol(any-value), token, total, trusted, type(any-value), unit("str-value"), UNIQUE_ID(any-value), unparseAvoid, unused, update(any-value), userList(*), wrapElement(any-value)]',
   ],
 };
 

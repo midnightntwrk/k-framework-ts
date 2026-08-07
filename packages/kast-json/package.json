@@ -52,6 +52,9 @@
     "check": "bun run check:types && bun test",
     "prepublishOnly": "bun run --cwd ../.. check && bun run build"
   },
+  "devDependencies": {
+    "@kframework-ts/kast": "workspace:*"
+  },
   "peerDependencies": {
     "zod": "^4.4.3"
   },

@@ -33,6 +33,7 @@ import {
   parseTags,
   selectCodeBlocks,
   selectorLexer,
+  type CodeBlock,
   type Selector,
 } from "../src/markdown.ts";
 import {
@@ -65,6 +66,11 @@ function bool(record: Record<string, unknown>, field: string): boolean {
   const value = record[field];
   if (typeof value !== "boolean") throw new TypeError(`${field} is not a boolean: ${JSON.stringify(value)}`);
   return value;
+}
+
+/** Existing pyk fixtures do not encode the additive in-memory block spans. */
+function withoutSpans(blocks: Iterable<CodeBlock>): readonly { readonly info: string; readonly code: string }[] {
+  return [...blocks].map(({ info, code }) => ({ info, code }));
 }
 
 function strings(record: Record<string, unknown>, field: string): string[] {
@@ -143,7 +149,7 @@ describe("markdown-code-blocks goldens", () => {
   for (const name of names) {
     test(name, () => {
       const golden = parseCodeBlocksTest(readFixture(MARKDOWN_CODE_BLOCKS, name));
-      expect([...codeBlocks(golden.text)]).toEqual([...golden.blocks]);
+      expect(withoutSpans(codeBlocks(golden.text))).toEqual([...golden.blocks]);
     });
   }
 
@@ -457,7 +463,7 @@ function nonBlank(text: string): string {
 describe("fences", () => {
   test("an opening fence may be indented by at most three spaces", () => {
     const ok = "   ```k\nfoo\n```\n";
-    expect([...codeBlocks(ok)]).toEqual([{ info: "k", code: "foo" }]);
+    expect(withoutSpans(codeBlocks(ok))).toEqual([{ info: "k", code: "foo" }]);
 
     const tooFar = "    ```k\nfoo\n```\n";
     expect([...codeBlocks(tooFar)]).toEqual([]);
@@ -465,10 +471,10 @@ describe("fences", () => {
   });
 
   test("a closing fence may be indented and may be longer", () => {
-    expect([...codeBlocks("```k\nfoo\n   ```\n")]).toEqual([{ info: "k", code: "foo" }]);
-    expect([...codeBlocks("```k\nfoo\n``````\n")]).toEqual([{ info: "k", code: "foo" }]);
+    expect(withoutSpans(codeBlocks("```k\nfoo\n   ```\n"))).toEqual([{ info: "k", code: "foo" }]);
+    expect(withoutSpans(codeBlocks("```k\nfoo\n``````\n"))).toEqual([{ info: "k", code: "foo" }]);
     // …but not shorter, and a shorter run just becomes part of the code.
-    expect([...codeBlocks("````k\nfoo\n```\nbar\n````\n")]).toEqual([{ info: "k", code: "foo\n```\nbar" }]);
+    expect(withoutSpans(codeBlocks("````k\nfoo\n```\nbar\n````\n"))).toEqual([{ info: "k", code: "foo\n```\nbar" }]);
   });
 
   test("a fourth backtick after the opening run is not an info string", () => {
@@ -483,13 +489,13 @@ describe("fences", () => {
   });
 
   test("an empty block has empty code", () => {
-    expect([...codeBlocks("```k\n```\n")]).toEqual([{ info: "k", code: "" }]);
+    expect(withoutSpans(codeBlocks("```k\n```\n"))).toEqual([{ info: "k", code: "" }]);
     // And a block of only a blank line, after `rstrip`, likewise.
-    expect([...codeBlocks("```k\n\n```\n")]).toEqual([{ info: "k", code: "" }]);
+    expect(withoutSpans(codeBlocks("```k\n\n```\n"))).toEqual([{ info: "k", code: "" }]);
   });
 
   test("`code` is right-stripped but not left-stripped", () => {
-    expect([...codeBlocks("```k\n  foo  \n```\n")]).toEqual([{ info: "k", code: "  foo" }]);
+    expect(withoutSpans(codeBlocks("```k\n  foo  \n```\n"))).toEqual([{ info: "k", code: "  foo" }]);
   });
 
   test("a fence must start a line", () => {
@@ -500,7 +506,7 @@ describe("fences", () => {
     // JavaScript's `.` excludes `\r`, so with a literal `.` this would find no
     // block at all. Python's does not, and neither does this.
     const blocks = [...codeBlocks("```k\r\nmodule A\r\n```\r\n")];
-    expect(blocks).toEqual([{ info: "k\r", code: "module A" }]);
+    expect(withoutSpans(blocks)).toEqual([{ info: "k\r", code: "module A" }]);
     // pyk rejects that info string too, `\r` not being alnum — the fix only
     // decides whether the block is seen, not whether it is accepted.
     expect(() => parseTags("k\r")).toThrow("Invalid tag: 'k\\r'");

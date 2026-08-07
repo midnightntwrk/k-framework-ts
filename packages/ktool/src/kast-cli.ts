@@ -30,6 +30,10 @@
  * housekeeping detail — it is how you debug a failing `kast` invocation, by
  * pointing `useDirectory` at somewhere you can read afterwards.
  * {@link withTempFile} reproduces both halves.
+ *
+ * `pretty` and `program` are K printer routes, not parse/print inverses.
+ * Bison-list lowering and generated parametric labels remain parser-generation
+ * concerns; this argv layer never repairs printed text or guesses artifacts.
  */
 
 import { randomUUID } from "node:crypto";
@@ -38,7 +42,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { ProcessRunner } from "./kore-print.js";
-import { checkDirPath, checkFilePath, runProcess, type CompletedProcess, type ProcessLogger } from "./proc.js";
+import {
+  checkDirPath,
+  checkFilePath,
+  runProcess,
+  type CompletedProcess,
+  type ProcessControlOptions,
+  type ProcessLogger,
+} from "./proc.js";
 
 //////////////////////////////
 // Enumerations             //
@@ -85,14 +96,18 @@ export interface KastArgs {
   readonly tempDir?: string;
   /** `--gen-glr-parser`; turns {@link file} into an output path. */
   readonly genGlrParser?: boolean;
+  /** Hidden official JVM option; unlike wrapper routes, `kast` receives it directly. */
+  readonly noExcWrap?: boolean;
 }
 
 /**
  * The complete argv for one `kast` run — `_build_arg_list`
  * (`ktool/kprint.py:136-168`), in emission order.
  *
- * Pure: no filesystem, no process, no K required.  Upstream has no test for
- * this order; `test/kast-cli.test.ts` is the table that pins it.
+ * Pure: no filesystem, no process, no K required. The bare default `kast` is
+ * resolved by the OS through `PATH`; pass an absolute `command` for a pinned
+ * K installation. Upstream has no test for this order;
+ * `test/kast-cli.test.ts` is the table that pins it.
  */
 export function kastArgs(options: KastArgs = {}): string[] {
   const argv = [...(options.command ?? ["kast"])];
@@ -106,6 +121,7 @@ export function kastArgs(options: KastArgs = {}): string[] {
   if (present(options.sort)) argv.push("--sort", options.sort);
   if (present(options.tempDir)) argv.push("--temp-dir", options.tempDir);
   if (options.genGlrParser === true) argv.push("--gen-glr-parser");
+  if (options.noExcWrap === true) argv.push("--no-exc-wrap");
 
   return argv;
 }
@@ -120,7 +136,7 @@ function present(value: string | undefined): value is string {
 //////////////////////////////
 
 /** The non-argv half of a {@link runKast} call. */
-export interface RunKastOptions extends KastArgs {
+export interface RunKastOptions extends KastArgs, ProcessControlOptions {
   /**
    * Text written to the child's stdin.
    *
@@ -168,6 +184,9 @@ export async function runKast(options: RunKastOptions = {}): Promise<CompletedPr
     ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
     ...(options.env === undefined ? {} : { env: options.env }),
     ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
+    ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     check: options.check !== false,
   });
 }

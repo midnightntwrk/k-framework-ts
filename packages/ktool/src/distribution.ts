@@ -28,7 +28,7 @@ import { access, stat } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
 
-import { runProcess, type ProcessLogger } from "./proc.js";
+import { runProcess, type ProcessControlOptions, type ProcessLogger } from "./proc.js";
 
 //////////////////////////////
 // PATH resolution          //
@@ -155,6 +155,19 @@ export interface KVersion {
   readonly text: string;
 }
 
+/** A strict parse result that preserves an unrecognised observed spelling. */
+export type KVersionParseResult =
+  | { readonly kind: "parsed"; readonly version: KVersion }
+  | { readonly kind: "unrecognized"; readonly text: string };
+
+/** A parsed version together with the exact bytes `kompile --version` emitted. */
+export interface KVersionResult extends KVersion {
+  /** The complete, unmodified stdout banner. */
+  readonly banner: string;
+  /** The unmodified first line of {@link banner}. */
+  readonly line: string;
+}
+
 /**
  * `KVersion.PATTERN` (`kbuild/utils.py:38-47`), with one character changed.
  *
@@ -212,6 +225,22 @@ export function parseKVersion(text: string): KVersion {
   return Object.freeze({ major, minor, patch, git, text: formatKVersion(major, minor, patch, git) });
 }
 
+/**
+ * Parse a K version when possible, otherwise preserve its observed spelling.
+ *
+ * Unlike {@link parseKVersion}, this never throws and does not broaden the
+ * strict grammar. It is for toolchain fingerprints that must survive an
+ * unfamiliar local build banner.
+ */
+export function tryParseKVersion(text: string): KVersionParseResult {
+  try {
+    return Object.freeze({ kind: "parsed" as const, version: parseKVersion(text) });
+  } catch (error) {
+    if (!(error instanceof KVersionParseError)) throw error;
+    return Object.freeze({ kind: "unrecognized" as const, text });
+  }
+}
+
 /** `KVersion.text` (`kbuild/utils.py:60-66`) — the spelling `parse` accepts back. */
 function formatKVersion(major: number, minor: number, patch: number, git: KVersionGit | undefined): string {
   const base = `v${major}.${minor}.${patch}`;
@@ -244,9 +273,17 @@ const K_VERSION_LABEL = /^K\s+version:\s*/u;
  */
 export async function kVersion(
   command: readonly string[] = ["kompile"],
-  options: { readonly cwd?: string; readonly logger?: ProcessLogger } = {},
-): Promise<KVersion> {
+  options: {
+    readonly cwd?: string;
+    readonly logger?: ProcessLogger;
+    readonly env?: Readonly<Record<string, string>>;
+  } & ProcessControlOptions = {},
+): Promise<KVersionResult> {
   const result = await runProcess([...command, "--version"], options);
   const firstLine = result.stdout.split("\n")[0] ?? "";
-  return parseKVersion(firstLine.replace(K_VERSION_LABEL, "").trim());
+  return Object.freeze({
+    ...parseKVersion(firstLine.replace(K_VERSION_LABEL, "").trim()),
+    banner: result.stdout,
+    line: firstLine,
+  });
 }

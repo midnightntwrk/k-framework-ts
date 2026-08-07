@@ -77,6 +77,28 @@ export interface RuleLocation {
   readonly column: number;
 }
 
+/** Every occurrence of one `UNIQUE_ID` in an `allRules.txt`, including identical repeated rows. */
+export interface DuplicateRuleId {
+  /** The duplicated `UNIQUE_ID`. */
+  readonly ruleId: string;
+  /** The source-order rows that claim it. */
+  readonly locations: readonly RuleLocation[];
+}
+
+/** The one row parse from which the compatibility maps and integrity facts are derived. */
+export interface ParsedAllRules {
+  /** Every non-blank row in source order; unlike the maps, this never deduplicates. */
+  readonly allRulesRows: readonly RuleLocation[];
+  /** Full-id compatibility index; repeated ids keep their last row. */
+  readonly allRules: ReadonlyMap<string, RuleLocation>;
+  /** Twelve-character-prefix compatibility index; repeated prefixes keep their last row. */
+  readonly allRulesByPrefix: ReadonlyMap<string, RuleLocation>;
+  /** Every id that occurs on multiple rows, including byte-identical repeated rows. */
+  readonly duplicateRuleIds: readonly DuplicateRuleId[];
+  /** pyk's `all_rules` set size: distinct non-blank stripped lines. */
+  readonly distinctLineCount: number;
+}
+
 /** What `configVars.sh` declares (`CompiledDefinition.java:81-139`). */
 export interface ConfigVars {
   /**
@@ -224,25 +246,49 @@ export const RULE_HASH_PREFIX_LENGTH = 12;
  * remainder — with `line`/`column` set to `NaN`, because losing the rule
  * entirely would be worse than losing its position.
  */
-export function parseAllRules(text: string): {
-  readonly allRules: ReadonlyMap<string, RuleLocation>;
-  readonly allRulesByPrefix: ReadonlyMap<string, RuleLocation>;
-} {
+export function parseAllRules(text: string): ParsedAllRules {
+  const allRulesRows: RuleLocation[] = [];
   const allRules = new Map<string, RuleLocation>();
   const allRulesByPrefix = new Map<string, RuleLocation>();
+  const rowsById = new Map<string, RuleLocation[]>();
+  const distinctLines = new Set<string>();
   for (const rawLine of text.split("\n")) {
     const line = rawLine.trim();
     if (line === "") continue;
+    distinctLines.add(line);
     const space = line.indexOf(" ");
     // `str.partition(' ')` with no separator gives `(line, '', '')` — pyk
     // records the whole line as a hash with an empty location.
     const uniqueId = space === -1 ? line : line.slice(0, space);
     const location = space === -1 ? "" : line.slice(space + 1);
     const entry = Object.freeze({ uniqueId, location, ...splitLocation(location) });
+    allRulesRows.push(entry);
     allRules.set(uniqueId, entry);
     allRulesByPrefix.set(uniqueId.slice(0, RULE_HASH_PREFIX_LENGTH), entry);
+    const rows = rowsById.get(uniqueId);
+    if (rows === undefined) rowsById.set(uniqueId, [entry]);
+    else rows.push(entry);
   }
-  return { allRules, allRulesByPrefix };
+  const duplicates = [...rowsById]
+    .filter(([, rows]) => rows.length > 1)
+    .map(([ruleId, locations]) => Object.freeze({ ruleId, locations: Object.freeze([...locations]) }));
+  return Object.freeze({
+    allRulesRows: Object.freeze(allRulesRows),
+    allRules,
+    allRulesByPrefix,
+    duplicateRuleIds: Object.freeze(duplicates),
+    distinctLineCount: distinctLines.size,
+  });
+}
+
+/** Complete duplicate-id audit, preserving source order and identical repeated rows. */
+export function duplicateRuleIds(text: string): readonly DuplicateRuleId[] {
+  return parseAllRules(text).duplicateRuleIds;
+}
+
+/** pyk's `all_rules` set size: distinct non-blank stripped lines. */
+export function distinctLineCount(text: string): number {
+  return parseAllRules(text).distinctLineCount;
 }
 
 /**

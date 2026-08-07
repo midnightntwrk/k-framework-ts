@@ -108,6 +108,27 @@ export class MissingCoverageFileError extends KcovrError {
   }
 }
 
+/** A directory supplied as `K_LOG_DIR` is unsafe for LLVM coverage output. */
+export class CoverageLogDirError extends KcovrError {
+  readonly dir: string;
+  readonly reason: "missing" | "not-directory" | "unwritable";
+  override readonly cause?: unknown;
+
+  constructor(dir: string, reason: "missing" | "not-directory" | "unwritable", cause?: unknown) {
+    super(
+      reason === "missing"
+        ? `Coverage-log directory does not exist: ${dir}`
+        : reason === "not-directory"
+          ? `Coverage-log path is not a directory: ${dir}`
+          : `Coverage-log directory is not writable: ${dir}`,
+    );
+    this.name = "CoverageLogDirError";
+    this.dir = dir;
+    this.reason = reason;
+    this.cause = cause;
+  }
+}
+
 /**
  * No rule in the definition carries the requested `UNIQUE_ID` —
  * `get_rule_by_id`'s `ValueError` (`coverage.py:31`).

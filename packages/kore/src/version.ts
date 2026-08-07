@@ -177,4 +177,20 @@ export const TRANSCRIBED_FROM: readonly KoreTranscribedSource[] = [
     sha256: "88e961adb3620b4a51a8b1e3adb8b56961123ace89c67e04637aa7cd8334c3e4",
     tier: "content",
   },
+  // The frontend's GLR ambiguity application is a content-level extension to
+  // ordinary KORE, not a grammar production. These files define `amb` and the
+  // bison parser's binary `Lblamb` emission; drift means re-check the measured
+  // projection and its vendored term, not that KORE syntax itself changed.
+  {
+    repo: "runtimeverification/k",
+    path: "k-distribution/include/kframework/builtin/kast.md",
+    sha256: "42c815ea80ed522dde962e231bdacc3d0d7e643016f8d649eab8d4be1d570040",
+    tier: "content",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "k-distribution/include/kframework/cparser/main.c",
+    sha256: "27b4e784542a732a7cb3699f6b78f1e25500ec38a8eae22bc1c05faa83a27201",
+    tier: "content",
+  },
 ];

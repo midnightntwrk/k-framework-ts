@@ -172,6 +172,19 @@ export const SORT_GENERATED_COUNTER_CELL: SortApp = deepFrozen(sortApp("SortGene
  */
 export const INJ = "inj";
 
+/**
+ * `amb` — the K label of an ambiguity node declared by `K-AMBIGUITIES`.
+ *
+ * This is a K frontend extension, not a KORE grammar construct and not a pyk
+ * transcription.  A bison GLR parser emits its KORE spelling, {@link LBL_AMB},
+ * when more than one parse survives.  See `findAmbiguities` for the total
+ * projection that consumes those ordinary applications.
+ */
+export const AMB = "amb";
+
+/** `Lblamb` — the KORE spelling of {@link AMB}, emitted by GLR parsers. */
+export const LBL_AMB = "Lblamb";
+
 /** `kseq` — the K-sequence cons symbol, `prelude.py:154`. */
 export const KSEQ = "kseq";
 

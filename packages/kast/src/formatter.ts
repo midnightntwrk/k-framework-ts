@@ -1,7 +1,7 @@
 /**
  * `format`-driven printing with bracket insertion — a hand-transcription of
  * `pyk/kast/formatter.py` (246 L) at K **v7.1.337**, pinned in
- * `version.ts`' `TRANSCRIBED_FROM` so `kast check-k` reports its drift.
+ * `version.ts`' `TRANSCRIBED_FROM` so `kast-ts check-k` reports its drift.
  *
  * Where {@link PrettyPrinter} prints a term through a table of hand-written
  * unparsers, this prints it through the definition itself: each application's

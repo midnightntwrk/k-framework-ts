@@ -17,6 +17,7 @@ function fetcherReturning(bytes: Record<string, Uint8Array | undefined>): KSourc
 const failingFetcher: KSourceFetcher = () => Promise.reject(new Error("network down"));
 
 /** A fetcher for a release where every declared path is gone. */
+// oxlint-disable-next-line unicorn/no-useless-undefined -- a clean 404 is the fetcher's declared `undefined` result.
 const goneFetcher: KSourceFetcher = () => Promise.resolve(undefined);
 
 /** Captures both output streams of one `main` invocation. */
@@ -30,20 +31,32 @@ describe("KAST_SOURCES", () => {
   test("derives one entry per manifest file, in manifest order", () => {
     expect(KAST_SOURCES.map((s) => s.path)).toEqual(TRANSCRIBED_FROM.map((m) => m.path));
     expect(KAST_SOURCES.map((s) => s.sha256)).toEqual(TRANSCRIBED_FROM.map((m) => m.sha256));
+    expect(KAST_SOURCES.map((s) => s.tier)).toEqual(TRANSCRIBED_FROM.map((m) => m.tier));
   });
 
   test("hashes are well-formed", () => {
     for (const { sha256 } of KAST_SOURCES) expect(sha256).toMatch(/^[0-9a-f]{64}$/u);
   });
 
-  test("the manifest is the six pyk outer-parser files, each declared once", () => {
-    expect(TRANSCRIBED_FROM).toHaveLength(6);
-    expect(new Set(TRANSCRIBED_FROM.map((s) => s.path)).size).toBe(6);
-    for (const { path, lines } of TRANSCRIBED_FROM) {
-      expect(path.startsWith("pyk/src/pyk/kast/")).toBe(true);
-      expect(path.endsWith(".py")).toBe(true);
+  test("the manifest pins pyk and Java frontend authorities, each declared once", () => {
+    expect(TRANSCRIBED_FROM).toHaveLength(12);
+    expect(new Set(TRANSCRIBED_FROM.map((s) => s.path)).size).toBe(12);
+    for (const { path, lines, tier } of TRANSCRIBED_FROM) {
+      expect(["transcription", "content"]).toContain(tier);
+      expect(path.startsWith("pyk/src/pyk/kast/") || path.startsWith("k-frontend/src/main/")).toBe(true);
+      expect(path.endsWith(".py") || path.startsWith("k-frontend/src/main/")).toBe(true);
       expect(lines).toBeGreaterThan(0);
     }
+    const paths = new Set(TRANSCRIBED_FROM.map(({ path }) => path));
+    for (const path of [
+      "k-frontend/src/main/java/org/kframework/parser/inner/RuleGrammarGenerator.java",
+      "k-frontend/src/main/java/org/kframework/compile/ResolveStrict.java",
+      "k-frontend/src/main/java/org/kframework/compile/ResolveContexts.java",
+      "k-frontend/src/main/java/org/kframework/compile/ResolveHeatCoolAttribute.java",
+    ]) {
+      expect(paths.has(path)).toBe(true);
+    }
+    expect(TRANSCRIBED_FROM.find(({ path }) => path.endsWith("ResolveHeatCoolAttribute.java"))?.tier).toBe("content");
   });
 });
 
@@ -58,6 +71,7 @@ describe("checkKSources", () => {
     ];
     const report = await checkKSources("v9.9.9", fetcherReturning({ "a.py": content, "b.py": content }), sources);
     expect(report.verdict).toBe("unchanged");
+    expect(report.verdicts).toEqual({ transcription: "unchanged", content: "unchanged" });
     expect(report.recordedAt).toBe(K_RELEASE);
     expect(report.files.map((f) => f.status)).toEqual(["unchanged", "unchanged"]);
   });
@@ -82,6 +96,24 @@ describe("checkKSources", () => {
     ];
     const report = await checkKSources("v9.9.9", fetcherReturning({ "ok.py": content }), sources);
     expect(report.verdict).toBe("could-not-locate");
+  });
+
+  test("content drift is visible but advisory to the transcription verdict", async () => {
+    const sha256 = await sha256Hex(content);
+    const report = await checkKSources(
+      "v9.9.9",
+      fetcherReturning({ "copied.py": content, "authority.java": content }),
+      [
+        { path: "copied.py", sha256, tier: "transcription" },
+        { path: "authority.java", sha256: "0".repeat(64), tier: "content" },
+      ],
+    );
+    expect(report.verdict).toBe("unchanged");
+    expect(report.verdicts).toEqual({ transcription: "unchanged", content: "changed" });
+    expect(report.files.map((file) => [file.tier, file.status])).toEqual([
+      ["transcription", "unchanged"],
+      ["content", "changed"],
+    ]);
   });
 
   test("a fetcher failure propagates instead of becoming a verdict", () => {
@@ -146,9 +178,10 @@ describe("render", () => {
       release: "v9.9.9",
       recordedAt: K_RELEASE,
       verdict: "changed",
+      verdicts: { transcription: "changed", content: "unchanged" },
       files: [
-        { path: "a.py", status: "unchanged", expected: "0".repeat(64) },
-        { path: "b.py", status: "changed", expected: "0".repeat(64), actual: "f".repeat(64) },
+        { path: "a.py", tier: "transcription", status: "unchanged", expected: "0".repeat(64) },
+        { path: "b.py", tier: "transcription", status: "changed", expected: "0".repeat(64), actual: "f".repeat(64) },
       ],
     });
     expect(text).toContain("ok    a.py");

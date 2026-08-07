@@ -1,0 +1,5 @@
+[Error] Inner Parser: Scanner error: unexpected character sequence '@'.
+	Source(/home/sebdev20/Documents/git/workspaces/starstream-fv/k-framework-ts/./packages/ktool/fixtures/diagnostics/scanner.pgm)
+	Location(1,1,1,2)
+	1 |	@
+	  .	^

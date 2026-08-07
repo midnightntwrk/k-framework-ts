@@ -23,7 +23,7 @@
  * families, a byte-exact emitter, the substitution flattener, the TCP
  * transport, {@link KoreClient}, the recorded-traffic readers
  * ({@link rpcPrint} / {@link rpcKast}), and the upstream-drift check
- * ({@link checkKoreRpcSources}, which the `kore-rpc check-k` command shells
+ * ({@link checkKoreRpcSources}, which the `kore-rpc-ts check-k` command shells
  * around).
  *
  * The only I/O in it is `transport.ts`'s `node:net` socket, and it is behind
@@ -45,7 +45,7 @@
  *
  * Three modules are deliberately not re-exported: `src/internal.ts` (the
  * shared strict-JSON reading machinery, not API), and `src/cli.ts` /
- * `src/bin.ts` (the `kore-rpc` executable, every command of which is reachable
+ * `src/bin.ts` (the `kore-rpc-ts` executable, every command of which is reachable
  * as a library function without going through argv).
  */
 

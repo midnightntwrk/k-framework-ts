@@ -62,6 +62,48 @@ you want this package.
   prints through each production's `format` attribute and inserts brackets
 - **The textual KAST reader** (`parseKast`) — the `kast --output kast`
   format
+- **Named-module grammar views** — `moduleImportClosure`,
+  `moduleLocalProductions`, and `moduleImportSubsortEdges` retain the direct
+  declared edges of any module's import closure; `KDefinition.modules` keeps
+  its existing meaning as the main module's closure
+- **Source user lists** — `classifyUserLists` pairs list declarations by sort,
+  never by generated labels, and returns a typed refusal for unsupported
+  source shapes. `Atts.USER_LIST` is deliberately closed to `"*" | "+"`, the
+  only values K persists in definitions.
+- **Production attribution** — `ProductionIndex.forModule` builds a
+  closure-scoped label/direct-edge index while keeping `measured` local to the
+  named module. Its iterative `productionsUsed(term, expectedSort)` returns
+  production identities or a typed refusal (`unknown-label`, arity mismatch,
+  missing/ambiguous subsort path, and unsupported term node); callers own any
+  report, waiver, or rendering policy.
+
+### Sort and production facts
+
+`isInternalSort(sort)` identifies K's reserved grammar namespace: every name
+beginning with `#`, plus the pinned v7.1.337 names in
+`INTERNAL_SORT_NAMES`. `isBuiltinTokenSort(sort)` tests the separately pinned
+v7.1.337 builtin `[token]` roster, exposed as `BUILTIN_TOKEN_SORT_NAMES`.
+These are bare-name facts, not a claim that every builtin token sort is
+internal.
+
+`definitionTokenFacts(definition)` reports the `[token]` sorts declared by a
+definition (from both `KSyntaxSort` and `KProduction`). It coalesces repeated
+structurally equal sort values and preserves declaration order. A fact's
+`terminals` contains only whole-terminal token productions: regex token sorts
+and compound productions deliberately have no invented representative value.
+
+`ProductionIndex.subsortPath(from, to)` finds declared direct-production edges
+across the indexed module's import closure. Equal sorts return `[]`; one path
+returns its production references; no path returns `no-subsort-path`; and two
+or more paths return `ambiguous-subsort` with two witness paths. It terminates
+on cyclic graphs and does not use transitive KORE or backend subsort tables,
+because those cannot identify the direct production witnesses.
+
+`ProductionIndex.forModule` coalesces duplicate labels only when the
+productions are structurally equal under the same rule as
+`KDefinition.symbols`; genuinely distinct duplicates return
+`duplicate-label`. Unlabelled and token productions are retained in
+`excluded` with their reason instead of making index construction fail.
 
 Not ported here: parsing of `.k`/`.md` sources — that is
 [`@kframework-ts/k-parser`](../k-parser#readme), which produces this
@@ -126,18 +168,20 @@ The prelude mirrors pyk's layout as subpath imports —
 — because its exports are short, collision-prone names (`K`, `TRUE`, `INT`,
 `token`, …) that read best qualified by module.
 
-## The `kast` command
+## The `kast-ts` command
 
 ```sh
-kast check-k v7.1.400   # is the transcription still current at that K release?
+kast-ts check-k v7.1.400   # is copied behaviour still current at that K release?
 ```
 
-Exit codes: `0` unchanged, `1` changed, `3` could not locate, `2` could not
-run. See "K compatibility" below.
+Exit codes apply to copied behaviour: `0` unchanged, `1` changed, `3` could
+not locate, `2` could not run. Content authorities are reported separately as
+advisory. See "K compatibility" below.
 
 ## K compatibility
 
-`src/version.ts` exports `K_RELEASE` and `TRANSCRIBED_FROM` — the pyk files
-this package was ported from, with their sha256 at `v7.1.337`. See
-`docs/versioning.md` at the repo root for how compatibility with any other K
-release is checked on demand.
+`src/version.ts` exports `K_RELEASE` and `TRANSCRIBED_FROM` — copied pyk and
+Java behaviour plus K-produced content authorities, each with its sha256 at
+`v7.1.337`. `kast-ts check-k` gates trust on copied behaviour and reports content
+drift for review. See `docs/versioning.md` at the repo root for how
+compatibility with any other K release is checked on demand.

@@ -74,9 +74,9 @@ before the API:
   sorts its own output.
 - **Hit logs are append-only.** Each is opened `"a+"` and flushed at `atexit`
   (`io.cpp:552,566`), so a second run against the same directory **doubles every
-  count** rather than replacing it. Resetting is the caller's job: delete
-  everything matching `*_coverage.txt` before the run you want to measure.
-  Nothing in this package deletes a file.
+  count** rather than replacing it. Give each run or scan a fresh `K_LOG_DIR`;
+  directory lifecycle is caller-owned, and this package deliberately has no
+  reset/delete helper.
 - **One process, one log.** The filename is
   `<K_LOG_DIR | dirname(path)>/<K_LOG_PREFIX><pid>_coverage.txt`
   (`io.cpp:526-557`), so a corpus scan leaves dozens of files rather than one —
@@ -84,6 +84,30 @@ before the API:
   glob; `K_LOG_DIR` sends the logs somewhere else entirely, and a run redirected
   that way leaves the definition directory empty, so point the reader at wherever
   they landed.
+
+For an LLVM run, compose the coverage environment with the spawning package's
+environment and preflight the directory before the spawn:
+
+```ts
+import { coverageLogEnv } from "@kframework-ts/kcovr";
+import { checkCoverageLogDir, coverageLogEntries } from "@kframework-ts/kcovr/fs";
+
+const dir = "/tmp/my-run-coverage"; // create/manage this fresh directory in the caller
+await checkCoverageLogDir(dir); // existence, directory type, and writability; TOCTOU remains possible
+const env = coverageLogEnv({ dir, prefix: "case-0001-" });
+// Pass `env` to the existing krun/interpreter process option.
+const entries = await coverageLogEntries(dir, "case-0001-"); // exact-prefix attribution
+```
+
+`coverageLogName` and `parseCoverageLogName` expose the filename grammar.
+Without an expected prefix, parsing is explicitly `"heuristic"`: it reports
+whether the maximal final digit run is ambiguous. For example,
+`case142_coverage.txt` may be `case` + pid 142 or `case1` + pid 42.
+Pass the expected prefix to the pure parser or `coverageLogEntries` for
+`"exact"` attribution; mismatches remain `"unattributed"`, and the macro log
+remains separately identified. A missing file alone proves neither a bad
+directory nor a failed run: a timeout/abort or a run with no logged rule can
+produce the same state.
 
 ## The shape of the library
 
@@ -199,6 +223,9 @@ $ npx @kframework-ts/kcovr kore-log run.log --definition my-kompiled
 $ npx @kframework-ts/kcovr check-k v7.1.400
 ```
 
+When installed as a package, the executable is `kcovr-ts`; the suffix avoids
+shadowing K's own `kcovr` binary on `PATH`.
+
 `report` is `pyk-covr` parity; `rules` is `pyk coverage` parity; `kore-log` is
 `kore-exec-covr` parity. `hits` — one line of
 `UNIQUE_ID <TAB> applications <TAB> file:line:col`, sorted — and `translate`
@@ -230,7 +257,7 @@ Four things to know before piping any of it anywhere:
   warning to stderr, excludes those ids from the rates, and still writes the XML
   to stdout.
 
-### `kcovr check-k <k-release>`
+### `kcovr-ts check-k <k-release>`
 
 The house drift check, with one difference from every sibling: **both tiers
 decide the exit code.**
@@ -250,14 +277,13 @@ pyk is living in today. So `0 unchanged, 1 changed, 3 could not locate, 2 could
 not ask` is computed over both. `checkKcovrSources` is exported if you would
 rather call it than shell out.
 
-One authority is **not** in the manifest and is checked by nothing:
-`runtime/io/io.cpp`, which decides where a hit log lands and what it is called.
-It lives in the `llvm-backend` **submodule**, and `check-k`'s
-fetch-from-`runtimeverification/k`-at-a-tag mechanism cannot reach a submodule's
-tree. Its identity at the pinned release is recorded in `src/version.ts` as
-`IO_CPP_IDENTITY` and labelled honestly as unchecked. The other absentee is
-deliberate rather than mechanical: `Kompile.java`, which writes `allRules.txt`,
-is pinned by `@kframework-ts/kompiled`'s manifest, because this package does not
+`runtime/io/io.cpp`, which decides where a hit log lands and what it is called,
+is checked through its submodule identity. `check-k` resolves the `llvm-backend`
+gitlink recorded in the requested K release, then fetches `io.cpp` from
+`runtimeverification/llvm-backend` at that exact commit; it never assumes a K
+tag exists in the backend repository. The report records both repositories and
+the resolved commit. The other absentee is deliberate: `Kompile.java`, which
+writes `allRules.txt`, is pinned by `@kframework-ts/kompiled`'s manifest, because this package does not
 parse that file — it delegates.
 
 Per [`docs/versioning.md`](../../docs/versioning.md): coverage artifacts carry no

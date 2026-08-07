@@ -20,6 +20,7 @@
 
 import {
   K_RELEASE,
+  SEARCH_SOURCE_IDENTITIES,
   TRANSCRIBED_FROM,
   type KtoolSourceRepo,
   type KtoolSourceTier,
@@ -40,6 +41,14 @@ export interface KtoolSourceOutcome {
   readonly actual?: string;
   /** Why the file is in the manifest — carried through so a report is readable. */
   readonly why: string;
+  /** Revision actually read; backend rows are resolved through K gitlinks. */
+  readonly revision?: string;
+  readonly resolvedFrom?: {
+    readonly repo: "runtimeverification/k";
+    readonly release: string;
+    readonly path: (typeof SEARCH_SOURCE_IDENTITIES)[number]["gitlinkPath"];
+    readonly commit?: string;
+  };
 }
 
 /**
@@ -80,6 +89,15 @@ export type KtoolSourceFetcher = (
   path: string,
   release: string,
 ) => Promise<Uint8Array | undefined>;
+
+/** A fetcher with this capability lets `check-k` follow K's backend gitlinks. */
+export type KtoolGitlinkAwareFetcher = KtoolSourceFetcher & {
+  gitlink(
+    repo: "runtimeverification/k",
+    path: (typeof SEARCH_SOURCE_IDENTITIES)[number]["gitlinkPath"],
+    release: string,
+  ): Promise<string | undefined>;
+};
 
 /**
  * Web Crypto, reached through `globalThis` rather than named directly — the
@@ -148,6 +166,62 @@ export async function checkKtoolSources(
       };
     }),
   );
+
+  // K's raw tree contains a gitlink, not these files.  Only the CLI's
+  // gitlink-aware fetcher can make this part of the report; retaining a plain
+  // function fetcher keeps the pure unit-test API source-compatible.
+  if ("gitlink" in fetcher && typeof fetcher.gitlink === "function") {
+    for (const identity of SEARCH_SOURCE_IDENTITIES) {
+      const commit = await fetcher.gitlink("runtimeverification/k", identity.gitlinkPath, release);
+      const resolvedFrom = {
+        repo: "runtimeverification/k" as const,
+        release,
+        path: identity.gitlinkPath,
+        ...(commit === undefined ? {} : { commit }),
+      };
+      if (commit === undefined) {
+        files.push({
+          repo: identity.repo,
+          path: identity.path,
+          tier: "content",
+          status: "missing",
+          expected: identity.sha256,
+          why: identity.why,
+          revision: "",
+          resolvedFrom,
+        });
+        continue;
+      }
+      if (!/^[0-9a-f]{40}$/u.test(commit))
+        throw new Error(`Invalid backend gitlink at runtimeverification/k@${release}: ${commit}`);
+      const bytes = await fetcher(identity.repo, identity.path, commit);
+      if (bytes === undefined) {
+        files.push({
+          repo: identity.repo,
+          path: identity.path,
+          tier: "content",
+          status: "missing",
+          expected: identity.sha256,
+          why: identity.why,
+          revision: commit,
+          resolvedFrom,
+        });
+        continue;
+      }
+      const actual = await sha256Hex(bytes);
+      files.push({
+        repo: identity.repo,
+        path: identity.path,
+        tier: "content",
+        status: actual === identity.sha256 ? "unchanged" : "changed",
+        expected: identity.sha256,
+        actual,
+        why: identity.why,
+        revision: commit,
+        resolvedFrom,
+      });
+    }
+  }
 
   return {
     release,

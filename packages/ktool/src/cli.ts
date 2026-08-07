@@ -72,6 +72,7 @@ import { KRun, runKrun } from "./krun.js";
 import { KproveModuleParser } from "./parse-modules.js";
 import {
   checkKtoolSources,
+  type KtoolGitlinkAwareFetcher,
   type KtoolSourceFetcher,
   type KtoolSourcesReport,
   type KtoolSourcesVerdict,
@@ -175,12 +176,17 @@ interface ResponseLike {
   readonly ok: boolean;
   readonly statusText: string;
   arrayBuffer(): Promise<ArrayBuffer>;
+  json(): Promise<unknown>;
 }
 
 type FetchLike = (url: string) => Promise<ResponseLike>;
 
+function isUnknownArray(value: unknown): value is readonly unknown[] {
+  return Array.isArray(value);
+}
+
 /** Fetches from GitHub raw.  A 404 is "not at this tag"; anything else throws. */
-export const fetchFromGitHub: KtoolSourceFetcher = async (repo, path, release) => {
+const fetchFromGitHubRaw: KtoolSourceFetcher = async (repo, path, release) => {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const { fetch } = globalThis as unknown as { fetch: FetchLike };
   const response = await fetch(`${RAW}/${repo}/${encodeURIComponent(release)}/${path}`);
@@ -191,6 +197,37 @@ export const fetchFromGitHub: KtoolSourceFetcher = async (repo, path, release) =
   }
   return response.status === 404 ? undefined : new Uint8Array(await response.arrayBuffer());
 };
+
+/** The production fetcher also resolves immutable backend commits from K's gitlinks. */
+export const fetchFromGitHub: KtoolGitlinkAwareFetcher = Object.assign(fetchFromGitHubRaw, {
+  gitlink: async (repo: string, path: string, release: string): Promise<string | undefined> => {
+    // GitHub's raw endpoint cannot traverse a gitlink. Resolve it from K's tree,
+    // then fetch the backend file at that immutable submodule commit.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const { fetch } = globalThis as unknown as { fetch: FetchLike };
+    const response = await fetch(
+      `https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(release)}?recursive=1`,
+    );
+    if (!response.ok && response.status !== 404)
+      throw new Error(`GET git tree ${repo}@${release}: HTTP ${response.status} ${response.statusText}`);
+    if (response.status === 404) return undefined;
+    const body = await response.json();
+    if (typeof body !== "object" || body === null || !("tree" in body) || !isUnknownArray(body.tree))
+      throw new Error(`Malformed git tree response for ${repo}@${release}`);
+    const entry = body.tree.find(
+      (item): item is { path: string; type: string; sha: string } =>
+        typeof item === "object" &&
+        item !== null &&
+        "path" in item &&
+        "type" in item &&
+        "sha" in item &&
+        item.path === path &&
+        item.type === "commit" &&
+        typeof item.sha === "string",
+    );
+    return entry?.sha;
+  },
+});
 
 //////////////////////////////
 // Shared parsing helpers   //
@@ -603,7 +640,10 @@ async function mainKompile(
   try {
     // `toolMode` mirrors kompile's own two streams onto this process's, which
     // is what a compiler driver owes its user; see the module header.
-    const dir = await kompile(parsed.spec, { ...parsed.options, toolMode: true });
+    const dir = await kompile(parsed.spec, {
+      ...parsed.options,
+      toolMode: true,
+    });
     out(`${dir}\n`);
     return 0;
   } catch (error) {
@@ -693,7 +733,15 @@ export function parseRunArgs(args: readonly string[]): RunInvocation | string {
     return "--parser applies to program input only; a KORE configuration is not parsed by krun";
   }
 
-  return { definitionDir, file, input: resolved, depth, output, forceKrun, parser };
+  return {
+    definitionDir,
+    file,
+    input: resolved,
+    depth,
+    output,
+    forceKrun,
+    parser,
+  };
 }
 
 /**
@@ -999,7 +1047,14 @@ export function parseClaimsArgs(args: readonly string[]): ClaimsInvocation | str
     includeDependencies,
   };
 
-  return { specFile, definitionDir, options, ordered, findBuiltinDir: builtinDir === undefined, verbose };
+  return {
+    specFile,
+    definitionDir,
+    options,
+    ordered,
+    findBuiltinDir: builtinDir === undefined,
+    verbose,
+  };
 }
 
 async function mainClaims(

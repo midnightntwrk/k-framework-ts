@@ -269,9 +269,26 @@ export async function fuzz(
 
   const handler = options.handler ?? NULL_KFUZZ_HANDLER;
   const substFunc = options.substFunc ?? substituteVars;
+  const run = options.run ?? {};
+  const timeout = run.timeout ?? DEFAULT_DEADLINE_MS;
   const interpretOptions = options.interpretOptions;
   const interpret: Interpret =
-    options.interpret ?? ((dir, kore) => llvmInterpretRaw(dir, kore, { ...interpretOptions, check: false }));
+    options.interpret ??
+    (async (dir, kore) => {
+      const result = await llvmInterpretRaw(dir, kore, {
+        ...interpretOptions,
+        // The property deadline is the only default owner.  An explicitly
+        // supplied interpreter timeout remains an intentional override.
+        ...(interpretOptions?.timeoutMs === undefined && timeout > 0 ? { timeoutMs: timeout } : {}),
+        check: false,
+      });
+      // InterpretResult intentionally requires a real backend status. A forced
+      // process cancellation has no observable exit yet and is a failed case,
+      // not a fabricated zero status.
+      if (result.returncode === undefined)
+        throw new Error(`Interpreter cancelled by ${result.cancelledBy ?? "an unobserved cause"}`);
+      return { returncode: result.returncode, stdout: result.stdout, stderr: result.stderr };
+    });
 
   // `def test(subst_case)` (`:178-198`), with the handler calls in upstream's
   // positions: `handle_test` before the interpreter runs, `handle_failure`
@@ -298,8 +315,6 @@ export async function fuzz(
     }
   });
 
-  const run = options.run ?? {};
-  const timeout = run.timeout ?? DEFAULT_DEADLINE_MS;
   const details = await fc.check(property, {
     // `endOnFailure` is the inverse of shrinking: pyk's phase list has no
     // `Phase.shrink`, so this defaults to "stop at the first failure".
@@ -307,7 +322,10 @@ export async function fuzz(
     ...(run.seed === undefined ? {} : { seed: run.seed }),
     ...(run.numRuns === undefined ? {} : { numRuns: run.numRuns }),
     ...(run.path === undefined ? {} : { path: run.path }),
-    ...(timeout === 0 ? {} : { timeout }),
+    // The default interpreter path owns its deadline in runProcess so it can
+    // kill the child group. A replaced interpret seam has no such contract, so
+    // fast-check remains its sole watchdog.
+    ...(timeout === 0 || options.interpret === undefined ? {} : { timeout }),
     ...(run.examples === undefined ? {} : { examples: run.examples.map((subst): [KoreSubst] => [subst]) }),
     ...(run.interruptAfterTimeLimit === undefined
       ? {}

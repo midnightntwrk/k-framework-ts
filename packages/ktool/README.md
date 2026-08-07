@@ -48,7 +48,7 @@ the functions that spawn one — see [Guarantees](#guarantees).
 | module                       | what it is                                                                                                                                |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `proc.ts`                    | `runProcess` — pyk's `run_process_2` semantics — plus `ProcessError`, `checkDirPath`/`checkFilePath`, `absOrRelTo`, `formatCommand`       |
-| `distribution.ts`            | `getKDistribution()`, `resolveOnPath`, `kVersion`/`parseKVersion`                                                                         |
+| `distribution.ts`            | `getKDistribution()`, `resolveOnPath`, `kVersion`/`parseKVersion`/`tryParseKVersion`                                                      |
 | `kompile.ts`                 | the enums, `KompileSpec`, the argv builders, `kompile()`, `boosterKompile()`, `kompileFromDict()`, `defaultDirectory()`                   |
 | `kore-print.ts`              | `PrintOutput`, `korePrintArgs`, `korePrint` — pyk's `kore/tools.py`, housed here so `@kframework-ts/kore` stays process-free              |
 | `kparse.ts`                  | `bisonParserName`, `resolveKparseTarget`, `findBisonParser`, `kparse` — the K distribution's native-parser lookup rule                    |
@@ -62,9 +62,38 @@ the functions that spawn one — see [Guarantees](#guarantees).
 | `claim-index.ts`             | `ClaimIndex` — pure: label resolution, dependency closure, topological order                                                              |
 | `claim-loader.ts`            | `ClaimLoader`, `claimDigest`, `claimCacheFile` — the `<spec>.json` cache over an injected `ModuleParser`                                  |
 | `parse-modules.ts`           | `parseModules`, `KproveModuleParser`, `buildKproveArgv` — the cterm-free half of `kprove`                                                 |
+| `term-conversion.ts`         | `toKInner` — explicit, typed conversion from `kast-json` terms to `kast`'s `KInner` algebra                                               |
 | `version.ts` / `ksources.ts` | which upstream files this is derived from, and whether they still hash to what was recorded                                               |
 
 `index.ts` is the whole public API — there is no deep-import contract.
+
+### Integration boundaries
+
+`kVersion()` retains the exact `kompile --version` stdout as `banner` and its
+unmodified first line as `line`, while continuing to parse only K's strict
+version grammar. Use `tryParseKVersion(text)` when a build fingerprint must
+preserve an unfamiliar spelling: it returns either `{ kind: "parsed" }` or
+`{ kind: "unrecognized", text }` without broadening that grammar. `kVersion()`
+remains the strict convenience API and throws for an unrecognised banner.
+
+`kserverRunning()` reports K Nailgun liveness only by K's `JavaVersion` probe.
+If the bundled `ng` client cannot be found, it throws `KserverError` with code
+`"ng-not-found"`; it never treats a socket file or arbitrary Unix listener as
+live. A listener that is not Nailgun can take the probe's five-second control
+timeout before returning `false`; absent or stale sockets normally return
+quickly.
+
+`unqualifyLabel(label)` removes the text through the first `.` (`A.b.c` becomes
+`b.c`) and otherwise leaves the label unchanged. It does not infer the owning
+module.
+
+`toKInner(term)` is the explicit boundary from `@kframework-ts/kast-json` to
+`@kframework-ts/kast`. It iteratively converts `KApply`, `KToken`, `KSequence`,
+`KVariable`, `KRewrite`, and `KAs`, including nested sort parameters. An
+`InjectedKLabel` or `KOther` returns a typed refusal with its source path
+rather than throwing. It accepts a missing JSON `KLabel.params` field as an
+empty list; `kast.fromDict` is stricter, so use that reader when validating
+adversarial JSON.
 
 ### kompile
 
@@ -89,6 +118,11 @@ kdist-style build plugin holding a `Record<string, unknown>`, and it throws on a
 unknown key exactly as pyk does. `boosterKompile` is `_booster_kompile` — two
 concurrent kompilations, LLVM into `<outputDir>/llvm-library` and Haskell into
 `<outputDir>`.
+
+The exact order emitted by `buildKompileArgv`, `kompileArgs`,
+`kompileBaseArgs`, and `kompileCallArgs` is part of this package's public API.
+It is a semver stability promise and changes only in a major version, so their
+output is suitable for a canonical build fingerprint.
 
 ### run and interpret
 
@@ -124,6 +158,11 @@ await kprint.koreToKast(pattern); // konvert, falling back to the binary
 await kprint.parseToken(ktoken("3 + 4", ksort("AExp"))); // needs `kast`
 await korePrint(pattern, { definitionDir: "imp-kompiled", output: "pretty" }); // needs `kore-print`
 ```
+
+`runKast` and the binary fallback in `KPrint` default to the bare command
+`kast`, which the operating system resolves through `PATH`. Package-manager
+scripts such as `npm run` and `bun run` prepend `node_modules/.bin`; pass an
+absolute `command` when the selected K installation must be deterministic.
 
 `ConversionStrategy` makes pyk's implicit `try konvert / except / shell out`
 explicit: `pure` (no process, and a conversion `konvert` cannot do throws),
@@ -464,6 +503,94 @@ This is the short list.
   substitutes rather than changing its default.
 - **`run_proof_hint` is not ported.** It exists upstream only because Python
   needed a bytes-mode process runner, and it has zero downstream users.
+
+### Bounded runs and decoded output
+
+Every non-interactive spawning wrapper accepts `timeoutMs`, `signal`, and
+`killGraceMs`. `kserver` is the one shape with two distinct deadlines: its
+top-level `spawnKserver`/`stopKserver` `timeoutMs` values bound lifecycle
+readiness/shutdown waits, while `processControl` on its address controls each
+short-lived Nailgun probe, reset, or shutdown child (five seconds when that
+nested control leaves `timeoutMs` absent). A bounded child is put in its own
+process group and is stopped by TERM, then KILL after the grace (2 seconds by
+default). `timeoutMs` must be a positive finite number; `0` is rejected, while
+`killGraceMs: 0` requests an immediate KILL. `CompletedProcess.cancelledBy`
+distinguishes `"timeout"` from `"abort"`; with `check: true` either throws
+`ProcessCancelledError`, and with `check: false` the captured partial streams
+are returned. A pre-aborted signal throws `ProcessAbortError` before spawning.
+The interactive `krun --debugger` route deliberately remains unbounded and
+inherits the terminal.
+
+`decodeSearchResult`/`decodeSearchConfigurations` and their `Kore` twins decode
+the measured `krun --search-final` / `--search` output only when given the explicit
+`--no-pattern` mode. They return a typed `trivial` or `unrecognised` outcome
+instead of guessing from the term. Search result order is document order only;
+compare KAST and KORE results as sets. `parseKDiagnostics` similarly parses
+the JVM, shell-wrapper, and native-parser formats without running a process;
+unknown diagnostic messages remain raw-preserving.
+Repeated complete search substitutions are deduplicated structurally; this is
+intentional and does not depend on `kast-json` equality.
+
+Measured at K v7.1.337: LLVM search requires `kompile --enable-search`; both
+`--search` and `--search-final` are official synonyms (and both are exposed so
+callers preserve the argv spelling they selected). LLVM accepts `--bound` and
+`--pattern`, returns rc 0 for zero solutions, and rejects `--search-all`,
+`--search-one-step`, and `--search-one-or-more-steps`. Its `--statistics`
+output corrupts the disjunction stream, so it must not be decoded as KORE.
+The Haskell backend supports all search types, but silently ignores
+`--no-pattern`. K's help text incorrectly says LLVM does not support
+`--pattern` at this release. These flags, search type, and output choice remain
+direct argv concerns rather than decoder options. The decoders are pure: they
+neither spawn `krun` nor infer pattern mode from the result; rc 0 is not proof
+that a search had solutions.
+
+The measured backend matrix is recorded byte-for-byte in
+`fixtures/search/`: LLVM requires `--enable-search`, supports only
+`--search`/`--search-final`, and refuses the other search kinds; Haskell accepts
+the broader search vocabulary but ignores `--no-pattern`. Search forces the
+LLVM interpreter's I/O mode off for the invocation. The unsupported LLVM
+command returns rc **1** and writes the external-tool bytes
+`[Error] krun: Backend llvm does not support --search-all, \n--search-one-or-more-steps, or --search-one-step yet.`;
+the literal space before `\n` is a byte in stderr. The escaped inline form is
+used so the trailing space is not lost to Markdown rendering; it is retained in
+the fixture provenance rather than rephrased as a library error.
+
+`noExcWrap` is forwarded faithfully: `kast` receives the JVM option directly;
+the `krun` and JVM-fallback `kparse` shell routes consume it before the JVM, so
+it affects only their wrapper error line. Native `kparse` has no such option.
+
+Frontend exit facts are intentionally coarse: direct JVM tools use **0** for
+success/help/version, **1** for option/boot or uncaught failures, **113** for
+any `KEMException` diagnostic (not specifically ambiguity), and **124** for
+their timeout route. Generated native parsers use **1** for both scanner and
+syntax failures and **2** for stack exhaustion. Shell wrappers may add their
+own **1**/**2** setup failures or propagate a child/backend status; `krun`'s
+interpreter/backend code is therefore outside this frontend taxonomy.
+
+### K output routes (measured at v7.1.337)
+
+`pretty` and `program` are distinct official `kore-print` routes. `pretty`
+uses the definition's unparsing modules and can render a configuration as its
+cell structure; `program` is the program-oriented route and is only meaningful
+where K can recover the configured program view. Neither is a round-trip
+promise: parsing either text again can lose variable naming, brackets,
+associativity choices, formatting, and generated-label details. This package
+does not repair or emulate either printer.
+
+| requested `KRun` output                        | mechanism                                                                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `json`                                         | KORE parse, then in-process KAST conversion and KAST-v4 envelope                                              |
+| `kore`                                         | KORE parse and canonical text render                                                                          |
+| `pretty`, `program`, `kast`, `binary`, `latex` | `kore-print --output`; `latex` remains a stale `KRunOutput` enum member and is rejected by current kore-print |
+| `none`                                         | no parse/render                                                                                               |
+
+`--bison-lists` is a parser-generation compatibility mode, not a promise that
+printed user lists reparse identically. Parametric/generated labels are an
+equally important boundary: a stored compiled definition may be readable by a
+consumer while its parser artifacts are absent; concrete parser names and
+aliases are re-derived from the layout, never guessed from detached filenames.
+The package records this as **stored vs readable vs re-derived**, rather than
+claiming a universal printer or round-trip facility.
 
 ## Development
 

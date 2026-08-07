@@ -183,6 +183,9 @@ const server = await koreRpcServer({
   `kore-rpc-booster` **iff `llvmKompiledDir` is given** (`rpc.py:1591-1601`).
   Nothing sniffs the filesystem. `koreServer` and `boosterServer` are the two
   halves if you would rather be explicit.
+- **The default legacy command is the bare `kore-rpc` name**, resolved through
+  `PATH`. `npm run` and `bun run` prepend `node_modules/.bin`; pass an absolute
+  `command` when the K distribution selection must be deterministic.
 - **`haskellThreads` becomes `GHCRTS=-N<n>`**, prepended to any inherited
   `GHCRTS`. This is the only knob that makes a server able to answer more than
   one request at a time; pair it with that many transports.
@@ -285,7 +288,7 @@ them. They are pyk's `pyk rpc-print` / `pyk rpc-kast`
 (`pyk/src/pyk/__main__.py:136-236`), and they pair with the tarball above.
 
 ```sh
-$ tar xf proof-42.tar && kore-rpc rpc-print proof-42/1/proof-42-017_response.json
+$ tar xf proof-42.tar && kore-rpc-ts rpc-print proof-42/1/proof-42-017_response.json
 JSON RPC Response
 id: proof-42-017
 Method: execute
@@ -296,7 +299,7 @@ State:
 Lbl'-LT-'generatedTop'-GT-'{}(...)
 ...
 
-$ kore-rpc rpc-kast proof-42/1/proof-42-017_request.json proof-42/1/proof-42-017_response.json > next.json
+$ kore-rpc-ts rpc-kast proof-42/1/proof-42-017_request.json proof-42/1/proof-42-017_response.json > next.json
 ```
 
 `rpc-kast` builds a **new request** out of a reference request's envelope and
@@ -411,7 +414,7 @@ documents `implies` as returning `valid: bool` and `get-model` as returning
 ### "Does this hold at _my_ K release?" — ask it
 
 ```sh
-$ npx @kframework-ts/kore-rpc check-k v7.1.400
+$ npx --package @kframework-ts/kore-rpc kore-rpc-ts check-k v7.1.400
 ```
 
 It fetches every file recorded in `TRANSCRIBED_FROM` at that release — the

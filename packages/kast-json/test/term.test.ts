@@ -9,9 +9,13 @@ import {
   firstArg,
   flattenSort,
   head,
+  pathEq,
   type KTerm,
   parseTermDocument,
+  subtermAt,
   token,
+  termDifference,
+  termEq,
   unflattenSort,
 } from "../src/index.ts";
 
@@ -26,6 +30,7 @@ const apply = (name: string, args: unknown[]) => ({
 });
 const tok = (t: string, s = "Int") => ({ node: "KToken", sort: sort(s), token: t });
 const wrap = (term: unknown, version = 3): string => JSON.stringify({ format: "KAST", version, term });
+const decodedTerm = (value: unknown): KTerm => decodeTerm(value);
 
 /** A structured v4 KSort, as the v4 `ToJson` emits it — `params` always present. */
 const sort4 = (name: string, params: unknown[] = []) => ({ node: "KSort", name, params });
@@ -472,6 +477,100 @@ describe("navigation", () => {
     expect(children(decodeTerm(tok("1")))).toHaveLength(0);
     expect(children(decodeTerm({ node: "KRewrite", lhs: tok("1"), rhs: tok("2") }))).toHaveLength(2);
     expect(children(decodeTerm({ node: "KSequence", items: [tok("1")] }))).toHaveLength(1);
+  });
+});
+
+describe("structural term comparison", () => {
+  const structural = { unreadable: "structural" } as const;
+  const distinct = { unreadable: "distinct" } as const;
+
+  test("compares every node-local field", () => {
+    const cases: readonly [KTerm, KTerm][] = [
+      [decodedTerm(apply("f", [])), decodedTerm(apply("g", []))],
+      [
+        decodedTerm({ node: "KApply", label: label("f", [sort("Int")]), args: [] }),
+        decodedTerm({ node: "KApply", label: label("f", [sort("Bool")]), args: [] }),
+      ],
+      [decodedTerm(apply("f", [])), decodedTerm(apply("f", [tok("1")]))],
+      [decodedTerm(tok("1", "Int")), decodedTerm(tok("2", "Int"))],
+      [decodedTerm(tok("1", "Int")), decodedTerm(tok("1", "Id"))],
+      [decodedTerm({ node: "KSequence", items: [] }), decodedTerm({ node: "KSequence", items: [tok("1")] })],
+      [decodedTerm({ node: "KVariable", name: "X" }), decodedTerm({ node: "KVariable", name: "Y" })],
+      [decodedTerm({ node: "KVariable", name: "X" }), decodedTerm({ node: "KVariable", name: "X", sort: sort("") })],
+      [
+        decodedTerm({ node: "InjectedKLabel", label: label("f", [sort("Int")]) }),
+        decodedTerm({ node: "InjectedKLabel", label: label("f", [sort("Bool")]) }),
+      ],
+      [
+        { node: "KOther", args: [decodedTerm(tok("1"))], items: [] },
+        { node: "KOther", args: [], items: [decodedTerm(tok("1"))] },
+      ],
+    ];
+    for (const [left, right] of cases) {
+      const difference = termDifference(left, right, structural);
+      expect(difference?.path).toEqual([]);
+      expect(termEq(left, right, structural)).toBe(false);
+    }
+  });
+
+  test("reports the first difference depth-first in children order", () => {
+    const left = decodedTerm(apply("f", [apply("left", [tok("1")]), apply("right", [tok("1")])]));
+    const right = decodedTerm(apply("f", [apply("left", [tok("2")]), apply("right", [tok("2")])]));
+    const difference = termDifference(left, right, structural);
+    expect(difference?.path).toEqual([0, 0]);
+    expect(subtermAt(left, difference?.path ?? [])).toBe(difference?.left);
+
+    const rewrite = decodedTerm({ node: "KRewrite", lhs: tok("1"), rhs: tok("2") });
+    const rewriteChanged = decodedTerm({ node: "KRewrite", lhs: tok("3"), rhs: tok("4") });
+    expect(termDifference(rewrite, rewriteChanged, structural)?.path).toEqual([0]);
+
+    const as = decodedTerm({ node: "KAs", pattern: tok("1"), alias: tok("2") });
+    const asChanged = decodedTerm({ node: "KAs", pattern: tok("3"), alias: tok("4") });
+    expect(termDifference(as, asChanged, structural)?.path).toEqual([0]);
+  });
+
+  test("makes the unreadable-node policy explicit", () => {
+    const unreadable: KTerm = {
+      node: "KOther",
+      args: [decodedTerm(tok("1"))],
+      items: [decodedTerm(tok("2"))],
+    };
+    expect(termEq(unreadable, unreadable, structural)).toBe(true);
+    expect(termDifference(unreadable, unreadable, structural)).toBeUndefined();
+    expect(termEq(unreadable, unreadable, distinct)).toBe(false);
+    expect(termDifference(unreadable, unreadable, distinct)?.path).toEqual([]);
+
+    const changed: KTerm = {
+      node: "KOther",
+      args: [decodedTerm(tok("1"))],
+      items: [decodedTerm(tok("3"))],
+    };
+    expect(termDifference(unreadable, changed, structural)?.path).toEqual([1]);
+  });
+
+  test("subtermAt and pathEq are total path values", () => {
+    const root = decodedTerm(apply("f", [apply("g", [tok("1")])]));
+    expect(head(subtermAt(root, [0])!)).toBe("g");
+    expect(token(subtermAt(root, [0, 0])!)).toBe("1");
+    expect(subtermAt(root, [])).toBe(root);
+    expect(subtermAt(root, [1])).toBeUndefined();
+    expect(subtermAt(root, [-1])).toBeUndefined();
+    expect(pathEq([0, 1], [0, 1])).toBe(true);
+    expect(pathEq([0, 1], [1, 0])).toBe(false);
+  });
+
+  test("compares and addresses a 100,000-deep term without recursion", () => {
+    const DEPTH = 100_000;
+    let left: KTerm = { node: "KToken", token: "left", sort: "Int" };
+    let right: KTerm = { node: "KToken", token: "right", sort: "Int" };
+    for (let i = 0; i < DEPTH; i++) {
+      left = { node: "KApply", label: "f", params: [], args: [left] };
+      right = { node: "KApply", label: "f", params: [], args: [right] };
+    }
+    const difference = termDifference(left, right, structural);
+    expect(difference).toBeDefined();
+    expect(difference?.path).toHaveLength(DEPTH);
+    expect(token(subtermAt(left, difference?.path ?? [])!)).toBe("left");
   });
 });
 

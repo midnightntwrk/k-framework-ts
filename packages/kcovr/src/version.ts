@@ -29,31 +29,34 @@ export const K_COMMIT = "4a46d1231473b599c699160132fd6e76a5c46406";
 
 /**
  * Identity of `io.cpp`, which is **not** in {@link TRANSCRIBED_FROM} and is
- * checked by nothing.
+ * checked by {@link checkKcovrSources} through the exact gitlink K records.
  *
  * `io.cpp:526-572` is the authority for where a hit log lands and what it is
  * called — `<K_LOG_DIR | dirname(path)>/<K_LOG_PREFIX><pid>_coverage.txt`
  * (`:539-552`), opened in append mode (`"a+"`, `:552`) and flushed at `atexit`
  * (`:566`) — and it implements the `#logToFile` hook (`:560`).  It
- * cannot join the manifest because it lives in the `llvm-backend` **submodule**,
- * and `checkKcovrSources`' fetch-from-`runtimeverification/k`-at-tag mechanism
- * cannot reach a submodule's tree.  Its identity at the release
- * `runtimeverification/k` `v7.1.337` pins is recorded here instead, honestly
- * labelled as unchecked.
+ * lives in the `llvm-backend` **submodule**.  The checker therefore resolves
+ * the `llvm-backend` gitlink in the K tree at the requested K release and then
+ * fetches this path at that exact commit.  It must never assume that a K tag
+ * also exists in `llvm-backend`.
  *
  * @see https://github.com/runtimeverification/llvm-backend
  */
 export const IO_CPP_IDENTITY = {
   repo: "runtimeverification/llvm-backend",
+  /** The submodule path in runtimeverification/k's tree. */
+  gitlinkPath: "llvm-backend/src/main/native/llvm-backend",
+  /** The gitlink recorded by runtimeverification/k at {@link K_RELEASE}. */
+  commit: "f02284f09858cd2b9f310ad0142b3e04054295ec",
   path: "runtime/io/io.cpp",
   lines: 786,
   sha256: "977b8238f8303163191a90512139974d4ccb5d4793b1db3ee6049379f22617c9",
   why: "hit-log filename grammar (:539-551), append mode (:552), atexit flush (:566), the #logToFile hook (:560)",
-  checkedBy: "nothing — submodule, unreachable from the k-repo-at-tag fetcher",
+  checkedBy: "checkKcovrSources — resolves runtimeverification/k's llvm-backend gitlink, then hashes this exact commit",
 } as const;
 
 /** The repository a transcription source lives in. */
-export type KcovrSourceRepo = "runtimeverification/k";
+export type KcovrSourceRepo = "runtimeverification/k" | "runtimeverification/llvm-backend";
 
 /**
  * The two drift tiers, hashed separately because a diff in each means a

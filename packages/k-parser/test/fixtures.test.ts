@@ -522,15 +522,16 @@ describe("imp-outer-json/", () => {
 });
 
 describe("PROVENANCE.md", () => {
-  test("records exactly the 124 vendored files — no more, no fewer", () => {
+  test("records exactly the 130 vendored or provenance-backed files — no more, no fewer", () => {
     const recorded = recordedChecksums();
-    expect(recorded).toHaveLength(124);
+    expect(recorded).toHaveLength(130);
 
     const vendored = walk(FIXTURES).filter(
       (path) =>
         !path.endsWith(".outer.json") &&
         !path.endsWith(".py") &&
         !path.startsWith("pyk-unit") &&
+        !path.startsWith("label-precedence/") &&
         path !== "PROVENANCE.md",
     );
     expect(recorded.map(([, path]) => path).toSorted()).toEqual(vendored.toSorted());

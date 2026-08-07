@@ -11,6 +11,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import { eq, fromDict, kastTerm } from "../../kast/src/index.ts";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -39,6 +40,7 @@ import {
   setElements,
   type StructuredSort,
   token,
+  termEq,
   unflattenSort,
   userListElements,
 } from "../src/index.ts";
@@ -426,6 +428,22 @@ describe("KAST v4 conformance: the same panopticon toolchain runs at K v7.1.337"
       expect(canonicalKey(v4.term)).toBe(canonicalKey(v3.term));
     });
   }
+
+  test("term equality agrees with kast on every v4 term fixture both readers accept", () => {
+    const terms = V4_TERMS.map((name) => {
+      const text = read("term", "v4", name);
+      const decoded = parseTermDocument(text);
+      if (!decoded.ok) throw new Error(`${name}: kast-json must decode`);
+      return { name, decoded: decoded.term, strict: fromDict(kastTerm(JSON.parse(text))) };
+    });
+    for (const left of terms) {
+      for (const right of terms) {
+        expect(termEq(left.decoded, right.decoded, { unreadable: "structural" }), `${left.name} / ${right.name}`).toBe(
+          eq(left.strict, right.strict),
+        );
+      }
+    }
+  });
 });
 
 describe("an instantiated parametric sort, MInt{64}, from both toolchains", () => {

@@ -2,12 +2,12 @@
  * Answering "does this transcription still hold at K release vX?" — for any
  * `vX`, including releases published after this package was.
  *
- * The package records what it was transcribed from (`TRANSCRIBED_FROM`: paths
- * plus sha256 at `K_RELEASE`).  Given that, the question is decided by fetching
- * the same paths at the requested tag and comparing hashes, rather than by
- * consulting a list of releases somebody had to enumerate in advance.  See
- * `docs/versioning.md` for why a declared "verified through vX" range was
- * rejected in favour of this.
+ * The package records copied behaviour and content authorities
+ * (`TRANSCRIBED_FROM`: paths plus sha256 at `K_RELEASE`). Given that, the
+ * question is decided by fetching the same paths at the requested tag and
+ * comparing hashes, rather than by consulting a list of releases somebody had
+ * to enumerate in advance. See `docs/versioning.md` for why a declared
+ * "verified through vX" range was rejected in favour of this.
  *
  * The logic here is pure and takes its fetcher as an argument, so it is tested
  * offline; `cli.ts` supplies the one that talks to GitHub.  It is a sibling of
@@ -15,14 +15,16 @@
  * carries its own copy of this small machinery.
  */
 
-import { K_RELEASE, TRANSCRIBED_FROM } from "./version.js";
+import { K_RELEASE, TRANSCRIBED_FROM, type KSourceTier } from "./version.js";
 
-/** A file this package is derived from, and its sha256 at a known K release. */
+/** A source authority and its sha256 at a known K release. */
 export interface KSourceFile {
   /** Path within the `runtimeverification/k` tree. */
   readonly path: string;
   /** Lowercase hex sha256 of that file at the release it was recorded at. */
   readonly sha256: string;
+  /** Defaults to `transcription` for compatibility with programmatic callers. */
+  readonly tier?: KSourceTier;
 }
 
 /**
@@ -35,6 +37,7 @@ export type KSourceStatus = "unchanged" | "changed" | "missing";
 
 export interface KSourceOutcome {
   readonly path: string;
+  readonly tier: KSourceTier;
   readonly status: KSourceStatus;
   /** The sha256 recorded in this package. */
   readonly expected: string;
@@ -43,9 +46,9 @@ export interface KSourceOutcome {
 }
 
 /**
- * The overall answer.  Three-valued, never boolean — see `docs/versioning.md`.
+ * A per-tier answer. Three-valued, never boolean — see `docs/versioning.md`.
  *
- * - `unchanged` — every declared file is byte-identical. The transcription holds.
+ * - `unchanged` — every declared file in the tier is byte-identical.
  * - `changed` — at least one declared file differs. A human must diff it.
  * - `could-not-locate` — nothing differed, but at least one path is gone. This
  *   is *not* a compatibility verdict; the check has stopped being able to
@@ -62,7 +65,10 @@ export interface KSourcesReport {
   readonly release: string;
   /** The release the recorded hashes were taken at. */
   readonly recordedAt: string;
+  /** Legacy overall answer and CLI gate: the `transcription` tier's verdict. */
   readonly verdict: KSourcesVerdict;
+  /** Per-authority verdicts; `content` is advisory and never changes {@link verdict}. */
+  readonly verdicts: Readonly<Record<KSourceTier, KSourcesVerdict>>;
   readonly files: readonly KSourceOutcome[];
 }
 
@@ -74,13 +80,23 @@ export interface KSourcesReport {
 export type KSourceFetcher = (path: string, release: string) => Promise<Uint8Array | undefined>;
 
 /**
- * The files this package is a transcription of, derived from the manifest so
+ * The source authorities declared by this package, derived from the manifest so
  * the two can never disagree about what is declared.
  */
-export const KAST_SOURCES: readonly KSourceFile[] = Object.values(TRANSCRIBED_FROM).map(({ path, sha256 }) => ({
+export const KAST_SOURCES: readonly KSourceFile[] = Object.values(TRANSCRIBED_FROM).map(({ path, sha256, tier }) => ({
   path,
   sha256,
+  tier,
 }));
+
+function verdictOf(files: readonly KSourceOutcome[], tier: KSourceTier): KSourcesVerdict {
+  const inTier = files.filter((file) => file.tier === tier);
+  return inTier.some((file) => file.status === "changed")
+    ? "changed"
+    : inTier.some((file) => file.status === "missing")
+      ? "could-not-locate"
+      : "unchanged";
+}
 
 /**
  * Web Crypto, reached through `globalThis` rather than named directly.
@@ -126,12 +142,14 @@ export async function checkKSources(
   const files: KSourceOutcome[] = await Promise.all(
     sources.map(async (source): Promise<KSourceOutcome> => {
       const bytes = await fetcher(source.path, release);
+      const tier = source.tier ?? "transcription";
       if (bytes === undefined) {
-        return { path: source.path, status: "missing", expected: source.sha256 };
+        return { path: source.path, tier, status: "missing", expected: source.sha256 };
       }
       const actual = await sha256Hex(bytes);
       return {
         path: source.path,
+        tier,
         status: actual === source.sha256 ? "unchanged" : "changed",
         expected: source.sha256,
         actual,
@@ -139,11 +157,13 @@ export async function checkKSources(
     }),
   );
 
-  const verdict: KSourcesVerdict = files.some((f) => f.status === "changed")
-    ? "changed"
-    : files.some((f) => f.status === "missing")
-      ? "could-not-locate"
-      : "unchanged";
+  const verdicts = {
+    transcription: verdictOf(files, "transcription"),
+    content: verdictOf(files, "content"),
+  } as const;
 
-  return { release, recordedAt, verdict, files };
+  // `verdict` is the legacy CLI/programmatic answer: copied behaviour gates
+  // trust. Content authorities are deliberately reported separately because
+  // they describe K-produced shapes rather than a ported implementation.
+  return { release, recordedAt, verdict: verdicts.transcription, verdicts, files };
 }

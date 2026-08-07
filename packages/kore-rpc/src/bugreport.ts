@@ -135,8 +135,8 @@
  * `run-tarball` replays every recorded request in `sequence/` order and diffs
  * each answer against the recorded response, exiting `2` on the first
  * divergence (`--keep-going` to see them all). Reading one request or response
- * by hand is `kore-rpc rpc-print`, and turning a recorded response back into
- * the next request to send is `kore-rpc rpc-kast` — see `inspect.ts`, which is
+ * by hand is `kore-rpc-ts rpc-print`, and turning a recorded response back into
+ * the next request to send is `kore-rpc-ts rpc-kast` — see `inspect.ts`, which is
  * the other half of this loop.
  */
 

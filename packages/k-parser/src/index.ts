@@ -34,5 +34,7 @@ export * from "./ksources.js";
 export * from "./lexer.js";
 export * from "./markdown.js";
 export * from "./parser.js";
+export * from "./programLists.js";
+export * from "./strictness.js";
 export * from "./syntax.js";
 export * from "./version.js";

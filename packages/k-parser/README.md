@@ -108,13 +108,67 @@ with types. Node 20+, Bun 1.3+.
 - **The outer parser** (`outer_parser.py`) — LL(2) recursive descent over the
   `outer_syntax` surface AST (all 24 node types), with `syntaxToDict`, pyk's
   own dataclass-to-JSON encoding of it
+- **In-memory source spans** — every parsed sentence, import, require,
+  production, priority block, user list, attribute list and code block carries
+  a half-open `span`; `Att.itemSpans` is aligned with its attribute items
 - **`Sentence → KSentence`** — productions, priorities, associativities, user
   lists, sort synonyms, lexical syntax, and the five bubble sentences, with the
   **generated** klabels (`_+__IMP-SYNTAX_AExp_AExp_AExp`) that priority
   sentences have to point at
+- **User-list grammar derivation** — exported source-list labels, K's
+  `--bison-lists` write shape (with its `List` refusal), and a re-derivable
+  `PROGRAM-LISTS` expansion over `kast`'s structural classifier
+- **Strictness labels** — ordered `strict`/`seqstrict` positions and predicted
+  heat/cool labels, including a definition walker that preserves the declaring
+  module rather than the importing module
 - **`require` slurping** (`kast/utils.py`) — DFS in first-require-first order,
   dedup by resolved path, include-directory search, on an injectable filesystem
 - **The `k-parser` CLI** — `parse`, `parse-outer`, `check-k`
+
+## Source locations and spans
+
+`Location` is `[startLine, startColumn, endLine, endColumn]`: 1-based,
+half-open UTF-16 code-unit coordinates, with no tab expansion and with `\r`
+counting as a column. `sliceLocation(text, location)` and
+`locationToOffsets(text, location)` turn those coordinates into source slices
+or offsets.
+
+`span` is the full lexical extent of a parsed construct and is always available
+for parser-produced source nodes, even without a file path. It is deliberately
+separate from `location`: a `Module.location` remains its full module span,
+while a bubble sentence's legacy `location` remains its degenerate body start
+for KAST `contentStartLine`/`contentStartColumn`. A bubble's `span` begins at
+its keyword and includes its trailing attribute list. `span` and `itemSpans`
+are in-memory metadata only; `syntaxToDict` and KAST conversion do not emit
+them, preserving pyk-compatible serialized output.
+
+For literate Markdown, `selectCodeBlocks` preserves the input's UTF-16 length:
+it blanks non-selected text in place rather than extracting it. Consequently a
+span from `OuterParser(selectCodeBlocks(markdown), source)` addresses the
+original Markdown. `codeBlocks(markdown)` likewise exposes each raw,
+un-rstripped fenced-code region through its `span`, while `code` keeps pyk's
+right-stripped value.
+
+## Derived user-list and strictness facts
+
+`userListToKProductions` exposes KILtoKORE's source-level expansion and its
+`bisonLists` option. `programListGrammar(classifyUserLists(...))` then
+re-derives the program parser's list productions: it is not a reader for
+`parser.y`, which K keeps only under `--debug`. Generated productions retain
+their source production through a return-shape `original` pointer; they never
+write Java's non-serializable `originalPrd` attribute or bison-only marker
+attributes.
+
+`strictPositions`, `heatCoolResidue`, `heatCoolPairs`, and
+`heatCoolLabels` predict K's strictness-derived contexts. Labels use the
+declaring module and are opaque strings; a context without `label` creates a
+pair but no label. `generatedRuleLabels` walks every module's local sentences
+to avoid accidentally qualifying an imported production with the importing
+module. An outer `context` bubble with a label produces that label's `-heat`
+and `-cool` names verbatim (`[label(myctx)]` gives `myctx-heat` and
+`myctx-cool`; `context [myctx]:` gives `MODULE.myctx-heat` and
+`MODULE.myctx-cool`). `context alias` remains an opaque alias bubble and is
+explicitly excluded from generated heat/cool labels.
 
 ## The shape of the library
 
@@ -156,7 +210,10 @@ pragma, nothing — so this package asserts nothing at runtime about its input's
 version, and its own package version deliberately does not encode one (see
 [`docs/versioning.md`](../../docs/versioning.md)). What is pinned is the
 _transcription_: `src/version.ts` exports `K_RELEASE` and `TRANSCRIBED_FROM`,
-the six pyk files this package was ported from with their sha256 at `v7.1.337`.
+the six pyk files plus the Java frontend authorities this package relies on,
+with their sha256 at `v7.1.337` and a transcription/content tier. Transcription
+drift controls the command's verdict; content authorities remain visible as
+advisory evidence about generated K shapes.
 
 Ask directly about any K release, including ones published after this package:
 
@@ -259,10 +316,12 @@ Permanently, not "not yet":
   parses here can still be rejected by `kompile`, and `fixtures/rarities/`
   vendors 32 files that do exactly that, as the test that this boundary is where
   it should be.
-- **`bisonLists`.** The other user-list expansion (`Es ::= Es "," E`,
-  `KILtoKORE.java:329-336`) is selected by a `kompile` flag that defaults to
-  `false`, and a definition file does not say which way it was compiled — this
-  package has no input for that decision. The default expansion is implemented.
+- **Generated parser files as an input artifact.** `parser.y` is retained only
+  for `kompile --debug`; `programListGrammar` re-derives K's PROGRAM-LISTS
+  productions from persisted user-list halves instead. Their item order records
+  left versus right orientation, so the classifier does not need a separate
+  compilation-mode flag. `--bison-lists` accepts `NeList` only; K and this
+  package refuse `List` with `Cannot use List with --bison-lists`.
 - **Regex normalization.** `KRegexTerminal` keeps the regex verbatim; Java runs
   it through `ParseRegex` into an AST and prints it back (`KILtoKORE.java:290`),
   which respells it. Porting a regex parser buys nothing but oracle parity on a
@@ -273,11 +332,6 @@ Permanently, not "not yet":
 
 Open, and blocked on work rather than on principle:
 
-- **`Location`/`Source` on syntax sentences.** pyk's parser records them on
-  exactly two node types, `Module` (`outer_parser.py:145`) and `StringSentence`
-  (`:373`); Java puts both on all 485 productions of `imp.json`. Fixing it means
-  diverging `parser.ts` from pyk, which the 88 transcribed parser cases and the
-  nine surface-AST goldens currently pin.
 - **`f(/* comment */)`** in an argument list, which Java accepts and pyk rejects
   — the one genuine pyk bug found across a 108-file real-world corpus
   (`mir-semantics/…/ty.md:309`). pyk's rejection is transcribed as-is, so the

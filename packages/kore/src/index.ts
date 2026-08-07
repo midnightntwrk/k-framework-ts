@@ -30,6 +30,7 @@
  */
 
 export * from "./definition.js";
+export * from "./ambiguity.js";
 export * from "./demangle.js";
 export * from "./escape.js";
 export * from "./inject.js";

@@ -87,10 +87,10 @@ describe("info", () => {
     expect(out).toContain("artifacts:");
     expect(out).toContain("compiled.json");
     expect(out).toContain("definition.kore");
-    // The fixture is a complete directory, so every readable artifact has a
-    // size and nothing reports absent.  The `absent` line is what tells you a
-    // directory was built without `--emit-json`; it is exercised below.
-    expect(out).not.toContain("absent");
+    // parsed.json and generated parsers are optional, so their absence is
+    // reported without making this otherwise complete fixture unreadable.
+    expect(out).toContain("parsed.json                absent");
+    expect(out).toContain("parser_PGM             missing");
     expect(out).toContain("timestamp                     7 B");
   });
 

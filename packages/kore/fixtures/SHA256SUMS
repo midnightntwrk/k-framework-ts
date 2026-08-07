@@ -1,3 +1,4 @@
+5783ee32cd85d6fc44e9a7be79fde17cba66922bae87e3a9b96c40ca04eca641  ./ambiguity/llvm-amb-rule.kore
 2c8ca31e6d131e48314cb43ff01a601dbd94310988e902f6d230d723fa74836f  ./definitions/a-to-f.definition.kore
 9dae0073732602713ad3fe42a48d5acf2f23a6a068bf70e65d45feefbdd15fb5  ./definitions/empty.definition.kore
 7231129cca42034e777b2d9435724330008b3bb9a1b6743522db1b342c7edd0c  ./definitions/prelude.kore

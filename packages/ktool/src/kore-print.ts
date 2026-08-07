@@ -39,11 +39,22 @@
  * anything else.  `korePrint(p, {output: 'latex'})` therefore fails at the
  * child, not here.  The value is kept so the union is the enum; it is not kept
  * because it works.
+ *
+ * `pretty` and `program` retain the script's distinct meanings and are not a
+ * reparse promise: stored artifacts may be readable but not executable, and
+ * generated/parametric labels and bison-list lowering are not reconstructed.
  */
 
 import { koreText, type Pattern } from "@kframework-ts/kore";
 
-import { checkDirPath, runProcess, type CompletedProcess, type ProcessLogger, type RunProcessOptions } from "./proc.js";
+import {
+  checkDirPath,
+  runProcess,
+  type CompletedProcess,
+  type ProcessControlOptions,
+  type ProcessLogger,
+  type RunProcessOptions,
+} from "./proc.js";
 import { withStdinFile } from "./stdio.js";
 
 //////////////////////////////
@@ -124,7 +135,7 @@ export function korePrintArgs(inputFile: string, options: KorePrintArgs = {}): s
 // Spawning                 //
 //////////////////////////////
 
-export interface KorePrintOptions extends KorePrintArgs {
+export interface KorePrintOptions extends KorePrintArgs, ProcessControlOptions {
   /** The child's working directory.  Checked before the spawn. */
   readonly cwd?: string;
   /** The child's whole environment, replacing this process's. */
@@ -176,6 +187,9 @@ export async function korePrint(pattern: Pattern | string, options: KorePrintOpt
       ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
       ...(options.env === undefined ? {} : { env: options.env }),
       ...(options.logger === undefined ? {} : { logger: options.logger }),
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
       check: options.check !== false,
     }),
   );

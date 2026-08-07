@@ -80,19 +80,19 @@ import { KAST_VERSION } from "./version.js";
  * `compiled.bin` is also in `compiled.json`, and half-supporting a Java object
  * graph would be worse than not supporting it.
  *
- * `parsed.json` is absent for a different and softer reason.  It is *readable* —
- * a KAST v4 `KDefinition` like `compiled.json`, which `readKastDefinition` would
- * take — but it is the **pre-compilation** KAST: the outer-parsed definition
- * before any compilation pass has run, so it carries no `<generatedTop>`, no
- * generated cell productions and no `UNIQUE'Unds'ID`s, and nothing this class
- * derives (`configVars`, `allRules` joins, `emptyConfig`) would be correct
- * against it.  It is written only under `--emit-json`, pyk never reads it (no
- * module under `pyk/src/pyk` names the file), and the generated fixtures here do
- * not contain it.  It is readable in principle; this enumeration is the set of
- * files something in this package *reads*, and `parsed.json` is re-addable the
- * day a consumer appears.
+ * `parsed.json` is a separate, optional **pre-compilation** KAST definition.
+ * It is readable through {@link KompiledDefinition.parsedDefinition}, but it
+ * must never be substituted for `compiled.json`: it has no `<generatedTop>`,
+ * generated cell productions, or `UNIQUE'Unds'ID`s, so compiled-only operations
+ * such as `configVars`, `allRules` joins, and `emptyConfig` remain tied to
+ * {@link KompiledDefinition.definition}.  K writes it only under `--emit-json`.
  */
-export type KompiledArtifact = "compiled.json" | "definition.kore" | "syntaxDefinition.kore" | "macros.kore";
+export type KompiledArtifact =
+  | "compiled.json"
+  | "parsed.json"
+  | "definition.kore"
+  | "syntaxDefinition.kore"
+  | "macros.kore";
 
 /**
  * A kompiled directory, read lazily and by name.
@@ -197,6 +197,7 @@ export class KompiledDefinition {
   readonly #texts = new Map<KompiledArtifact, string | undefined>();
 
   #definition: KDefinition | undefined;
+  #parsedDefinition: KDefinition | undefined;
   #koreDefinition: LazyKoreDefinitionIndex | undefined;
   #syntaxKore: KoreDefinitionIndex | undefined;
   #macrosKore: KoreDefinitionIndex | undefined;
@@ -243,7 +244,7 @@ export class KompiledDefinition {
     } catch (error) {
       throw new InvalidKompiledFileError(this.path, "compiled.json", `Not JSON: ${describeError(error)}`);
     }
-    this.#checkKastEnvelope(doc);
+    this.#checkKastEnvelope(doc, "compiled.json");
 
     try {
       this.#definition = readKastDefinition(doc);
@@ -251,6 +252,35 @@ export class KompiledDefinition {
       throw new InvalidKompiledFileError(this.path, "compiled.json", describeError(error));
     }
     return this.#definition;
+  }
+
+  /**
+   * The optional pre-compilation KAST definition from `parsed.json`.
+   *
+   * This is the outer-parsed source definition, not the compiled definition
+   * and not the in-memory programs grammar accepted by generated parsers.
+   * Its absence is normal even in directories with `compiled.json`; callers
+   * that need compiled-only data must use {@link definition} instead.
+   */
+  get parsedDefinition(): KDefinition | undefined {
+    if (this.#parsedDefinition !== undefined) return this.#parsedDefinition;
+    const text = this.text("parsed.json");
+    if (text === undefined) return undefined;
+
+    let doc: unknown;
+    try {
+      doc = JSON.parse(text);
+    } catch (error) {
+      throw new InvalidKompiledFileError(this.path, "parsed.json", `Not JSON: ${describeError(error)}`);
+    }
+    this.#checkKastEnvelope(doc, "parsed.json");
+
+    try {
+      this.#parsedDefinition = readKastDefinition(doc);
+    } catch (error) {
+      throw new InvalidKompiledFileError(this.path, "parsed.json", describeError(error));
+    }
+    return this.#parsedDefinition;
   }
 
   /**
@@ -262,9 +292,9 @@ export class KompiledDefinition {
    * {@link KompiledError}, and this is the branch that keeps the version
    * number in the message.
    */
-  #checkKastEnvelope(doc: unknown): void {
+  #checkKastEnvelope(doc: unknown, artifact: "compiled.json" | "parsed.json"): void {
     if (typeof doc !== "object" || doc === null || Array.isArray(doc)) {
-      throw new InvalidKompiledFileError(this.path, "compiled.json", "Not a KAST document: expected a JSON object.");
+      throw new InvalidKompiledFileError(this.path, artifact, "Not a KAST document: expected a JSON object.");
     }
     // The guard above establishes it is a non-array object; TypeScript has no
     // way to say "an object, indexed by string" without an assertion, and the
@@ -274,13 +304,13 @@ export class KompiledDefinition {
     if (record["format"] !== "KAST") {
       throw new InvalidKompiledFileError(
         this.path,
-        "compiled.json",
+        artifact,
         `Not a KAST document: expected "format": "KAST", got ${JSON.stringify(record["format"])}.`,
       );
     }
     const version = record["version"];
     if (version !== KAST_VERSION) {
-      throw new UnsupportedKastVersionError(this.path, typeof version === "number" ? version : undefined);
+      throw new UnsupportedKastVersionError(this.path, typeof version === "number" ? version : undefined, artifact);
     }
   }
 

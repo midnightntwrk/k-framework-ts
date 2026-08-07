@@ -538,6 +538,198 @@ export function children(term: KTerm): readonly KTerm[] {
   }
 }
 
+/** A position in a decoded term: child indices in {@link children} order. */
+export type TermPath = readonly number[];
+
+/** The first pair of corresponding subterms that differs structurally. */
+export interface TermDifference {
+  /** The position of {@link left} and {@link right}; `[]` denotes the root. */
+  readonly path: TermPath;
+  readonly left: KTerm;
+  readonly right: KTerm;
+}
+
+/** Controls how the reader's intentionally lossy {@link KOther} arm compares. */
+export interface TermCompareOptions {
+  /**
+   * `"distinct"` treats every `KOther` as unreadable, including when it is
+   * compared with itself. `"structural"` compares its retained children.
+   *
+   * This option is required: the former answers whether two terms are
+   * provably the same program, while the latter answers whether they are the
+   * same as far as this reader can observe. In particular, `"distinct"` is
+   * deliberately non-reflexive for terms containing a `KOther`, like `NaN`.
+   */
+  readonly unreadable: "distinct" | "structural";
+}
+
+interface PathFrame {
+  readonly parent: PathFrame | undefined;
+  readonly index: number;
+}
+
+interface CompareFrame {
+  readonly left: KTerm;
+  readonly right: KTerm;
+  readonly path: PathFrame | undefined;
+}
+
+/** Materialise one stack-linked path only when a difference is found. */
+function materializePath(path: PathFrame | undefined): TermPath {
+  const out: number[] = [];
+  for (let current = path; current !== undefined; current = current.parent) out.push(current.index);
+  out.reverse();
+  return out;
+}
+
+/** The number of children in {@link children} order, without constructing a list. */
+function childCount(term: KTerm): number {
+  switch (term.node) {
+    case "KApply":
+      return term.args.length;
+    case "KSequence":
+      return term.items.length;
+    case "KRewrite":
+    case "KAs":
+      return 2;
+    case "KOther":
+      return term.args.length + term.items.length;
+    case "KToken":
+    case "KVariable":
+    case "InjectedKLabel":
+      return 0;
+    default:
+      return exhausted(term, 0);
+  }
+}
+
+/** One child in {@link children} order, or `undefined` outside that order. */
+function childAt(term: KTerm, index: number): KTerm | undefined {
+  switch (term.node) {
+    case "KApply":
+      return term.args[index];
+    case "KSequence":
+      return term.items[index];
+    case "KRewrite":
+      return index === 0 ? term.lhs : index === 1 ? term.rhs : undefined;
+    case "KAs":
+      return index === 0 ? term.pattern : index === 1 ? term.alias : undefined;
+    case "KOther":
+      return index < term.args.length ? term.args[index] : term.items[index - term.args.length];
+    case "KToken":
+    case "KVariable":
+    case "InjectedKLabel":
+      return undefined;
+    default:
+      return exhausted(term, undefined);
+  }
+}
+
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  if (left.length !== right.length) return false;
+  for (let i = 0; i < left.length; i++) {
+    if (left[i] !== right[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * The first structural difference, depth-first and node-before-children in
+ * {@link children} order. Every walk is iterative, including paths on terms
+ * deeper than the JavaScript call stack.
+ */
+export function termDifference(a: KTerm, b: KTerm, options: TermCompareOptions): TermDifference | undefined {
+  const stack: CompareFrame[] = [{ left: a, right: b, path: undefined }];
+  for (;;) {
+    const current = stack.pop();
+    if (current === undefined) return undefined;
+    const { left, right, path } = current;
+    const difference = (): TermDifference => ({ path: materializePath(path), left, right });
+
+    if (left.node !== right.node) return difference();
+    switch (left.node) {
+      case "KApply":
+        if (
+          right.node !== "KApply" ||
+          left.label !== right.label ||
+          !sameStrings(left.params, right.params) ||
+          left.args.length !== right.args.length
+        ) {
+          return difference();
+        }
+        break;
+      case "KToken":
+        if (right.node !== "KToken" || left.token !== right.token || left.sort !== right.sort) return difference();
+        break;
+      case "KSequence":
+        if (right.node !== "KSequence" || left.items.length !== right.items.length) return difference();
+        break;
+      case "KVariable":
+        if (right.node !== "KVariable" || left.name !== right.name || left.sort !== right.sort) return difference();
+        break;
+      case "KRewrite":
+        break;
+      case "KAs":
+        break;
+      case "InjectedKLabel":
+        if (right.node !== "InjectedKLabel" || left.label !== right.label || !sameStrings(left.params, right.params)) {
+          return difference();
+        }
+        break;
+      case "KOther":
+        if (options.unreadable === "distinct") return difference();
+        if (
+          right.node !== "KOther" ||
+          left.args.length !== right.args.length ||
+          left.items.length !== right.items.length
+        ) {
+          return difference();
+        }
+        break;
+      default:
+        return exhausted(left, undefined);
+    }
+
+    const count = childCount(left);
+    for (let i = count - 1; i >= 0; i--) {
+      const leftChild = childAt(left, i);
+      const rightChild = childAt(right, i);
+      // Bounds are proved by childCount. Retain a total fallback if a future
+      // union arm makes those helpers disagree.
+      if (leftChild === undefined || rightChild === undefined) return difference();
+      stack.push({ left: leftChild, right: rightChild, path: { parent: path, index: i } });
+    }
+  }
+}
+
+/** Structural equality over every {@link KTerm} arm. See {@link termDifference}. */
+export function termEq(a: KTerm, b: KTerm, options: TermCompareOptions): boolean {
+  return termDifference(a, b, options) === undefined;
+}
+
+/**
+ * Read a subterm by a {@link TermPath}, returning `undefined` for an invalid
+ * path instead of throwing. The walk is iterative and total over KTerms.
+ */
+export function subtermAt(term: KTerm, path: TermPath): KTerm | undefined {
+  let current = term;
+  for (const index of path) {
+    const next = childAt(current, index);
+    if (next === undefined) return undefined;
+    current = next;
+  }
+  return current;
+}
+
+/** Whether two term paths contain precisely the same child indices. */
+export function pathEq(a: TermPath, b: TermPath): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 /**
  * Assert at compile time that `value` is `never`, and at run time hand back
  * `fallback`. It keeps exhaustiveness checking without ever throwing.
@@ -639,6 +831,7 @@ export function token(term: KTerm): string | undefined {
  * Imposes a stable order on associative-commutative collections, whose
  * emitted order carries no meaning (see `collections.ts`).  It is an internal
  * ordering key, not a K syntax, and its exact spelling is not an interface.
+ * Use {@link termEq} for term equality.
  */
 export function canonicalKey(term: KTerm): string {
   // Iterative: the stack holds terms still to render and literal fragments

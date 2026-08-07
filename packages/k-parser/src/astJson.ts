@@ -18,6 +18,8 @@
  * entirely when `None`; every other field is emitted even when it is empty or
  * `null`, which is why a {@link PriorityBlock} without an associativity carries
  * `"assoc": null` rather than nothing.
+ * Additive in-memory `span` and `itemSpans` metadata is deliberately excluded,
+ * preserving pyk-compatible serialized output.
  *
  * Beyond that: tuples become arrays (so an {@link Att} is
  * `{"node": "Att", "items": [["key", "value"], …]}` — a list of two-element
@@ -90,9 +92,10 @@ const ASSOC_NAMES: Readonly<Record<Assoc, string>> = Object.freeze({
 });
 
 /**
- * `{"node": …}` plus `source`/`location` when the node carries them — the two
- * base-class fields, in declaration order, ahead of everything the node
- * declares itself.
+ * `{"node": …}` plus pyk's `source`/`location` when the node carries them —
+ * the serialized base-class fields, in declaration order, ahead of everything
+ * the node declares itself. In-memory spans intentionally do not cross this
+ * boundary.
  */
 function head(node: string, base: AstBase): JsonObject {
   const out: Record<string, JsonValue> = { node };

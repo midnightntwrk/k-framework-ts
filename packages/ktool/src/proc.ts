@@ -80,16 +80,31 @@ export interface CompletedProcess {
    *
    * The negative form is Python's, not Node's; see the module header.
    */
-  readonly returncode: number;
+  /** Observed exit status; absent only when forced cancellation settled before exit was observable. */
+  readonly returncode?: number;
   /** Everything the child wrote to stdout, concatenated in order. */
   readonly stdout: string;
   /** Everything the child wrote to stderr, concatenated in order. */
   readonly stderr: string;
   /** The signal that killed the child, if one did — `undefined` for a normal exit. */
   readonly signal: NodeJS.Signals | undefined;
+  /** Why this run was stopped by this library, if it was. */
+  readonly cancelledBy?: "timeout" | "abort" | undefined;
 }
 
-export interface RunProcessOptions {
+/** Optional controls shared by every non-interactive K-tool invocation. */
+export interface ProcessControlOptions {
+  /** Wall-clock limit from spawn.  Must be finite and greater than zero. */
+  readonly timeoutMs?: number;
+  /** Cancels this one run.  A pre-aborted signal prevents spawning altogether. */
+  readonly signal?: AbortSignal;
+  /** TERM-to-KILL grace period.  Defaults to {@link DEFAULT_KILL_GRACE_MS}; zero kills immediately. */
+  readonly killGraceMs?: number;
+}
+
+export const DEFAULT_KILL_GRACE_MS = 2_000;
+
+export interface RunProcessOptions extends ProcessControlOptions {
   /**
    * Text written to the child's stdin, which is then closed.
    *
@@ -120,6 +135,22 @@ export interface RunProcessOptions {
   readonly check?: boolean;
 }
 
+/** A cancellation with no child outcome, currently only a pre-aborted signal. */
+export class ProcessAbortError extends Error {
+  readonly args: readonly string[];
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly cancelledBy = "abort" as const;
+
+  constructor(args: readonly string[]) {
+    super(`Command was aborted before it started: ${formatCommand(args)}`);
+    this.name = "ProcessAbortError";
+    this.args = args;
+    this.stdout = "";
+    this.stderr = "";
+  }
+}
+
 /**
  * A child exited non-zero under `check`.
  *
@@ -131,14 +162,15 @@ export interface RunProcessOptions {
  */
 export class ProcessError extends Error {
   readonly args: readonly string[];
-  readonly returncode: number;
+  readonly returncode: number | undefined;
   readonly stdout: string;
   readonly stderr: string;
   readonly signal: NodeJS.Signals | undefined;
+  readonly cancelledBy: CompletedProcess["cancelledBy"];
 
   constructor(result: CompletedProcess) {
     super(
-      `Command failed with status ${result.returncode}: ${formatCommand(result.args)}` +
+      `Command failed with status ${result.returncode ?? "unobserved"}: ${formatCommand(result.args)}` +
         (result.stderr === "" ? "" : `\n${result.stderr.trimEnd()}`),
     );
     this.name = "ProcessError";
@@ -147,6 +179,18 @@ export class ProcessError extends Error {
     this.stdout = result.stdout;
     this.stderr = result.stderr;
     this.signal = result.signal;
+    this.cancelledBy = result.cancelledBy;
+  }
+}
+
+/** A child was stopped by its deadline or by its caller's abort signal. */
+export class ProcessCancelledError extends ProcessError {
+  declare readonly cancelledBy: "timeout" | "abort";
+
+  constructor(result: CompletedProcess) {
+    super(result);
+    this.name = result.cancelledBy === "timeout" ? "ProcessTimeoutError" : "ProcessAbortError";
+    this.cancelledBy = result.cancelledBy ?? "abort";
   }
 }
 
@@ -172,11 +216,15 @@ export async function runProcess(args: readonly string[], options: RunProcessOpt
   const executable = args[0];
   if (executable === undefined) throw new Error("Cannot run an empty command");
 
+  validateProcessControls(options);
+  if (options.signal?.aborted === true) throw new ProcessAbortError(args);
+
   if (options.cwd !== undefined) await checkDirPath(options.cwd);
 
   const log = options.logger ?? (() => undefined);
   const result = await spawnAndCommunicate(executable, args, options, log);
 
+  if (options.check !== false && result.cancelledBy !== undefined) throw new ProcessCancelledError(result);
   if (options.check !== false && result.returncode !== 0) throw new ProcessError(result);
   return result;
 }
@@ -189,12 +237,14 @@ function spawnAndCommunicate(
   log: ProcessLogger,
 ): Promise<CompletedProcess> {
   return new Promise<CompletedProcess>((fulfil, reject) => {
+    const controlled = options.timeoutMs !== undefined || options.signal !== undefined;
     const child = spawn(executable, args.slice(1), {
       // `input === undefined` → `/dev/null`, matching `utils.py:545`.  Both
       // output pipes are unconditional: the tee is an *extra* destination.
       stdio: [options.input === undefined ? "ignore" : "pipe", "pipe", "pipe"],
       ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
       ...(options.env === undefined ? {} : { env: options.env }),
+      ...(controlled ? { detached: true } : {}),
     });
 
     // `pid` is `undefined` until the `spawn` event; pyk has a real pid by the
@@ -203,6 +253,12 @@ function spawnAndCommunicate(
     const prefix = (): string => `[PID=${child.pid ?? "?"}]`;
     const start = Date.now();
     let settled = false;
+    let exited = false;
+    let exitCode: number | null = null;
+    let exitSignal: NodeJS.Signals | null = null;
+    let cancelledBy: CompletedProcess["cancelledBy"];
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    let escalation: ReturnType<typeof setTimeout> | undefined;
 
     for (const line of formatCommand(args).split("\n")) log(`${prefix()}[exec] ${line}`);
 
@@ -216,9 +272,36 @@ function spawnAndCommunicate(
     child.stdout?.on("data", (chunk: string) => stdout.push(chunk));
     child.stderr?.on("data", (chunk: string) => stderr.push(chunk));
 
+    const cleanup = (): void => {
+      if (deadline !== undefined) clearTimeout(deadline);
+      if (escalation !== undefined) clearTimeout(escalation);
+      options.signal?.removeEventListener("abort", abort);
+    };
+
+    const result = (code: number | null | undefined, signal: NodeJS.Signals | null | undefined): CompletedProcess => ({
+      args,
+      ...(code === undefined && signal === undefined ? {} : { returncode: code ?? -signalNumber(signal) }),
+      stdout: stdout.text(),
+      stderr: stderr.text(),
+      signal: signal ?? undefined,
+      cancelledBy,
+    });
+
+    const settle = (code: number | null | undefined, signal: NodeJS.Signals | null | undefined): void => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      stdout.end();
+      stderr.end();
+      const completed = result(code, signal);
+      log(`${prefix()}[done] status=${completed.returncode ?? "unobserved"} time=${elapsed(start)}`);
+      fulfil(completed);
+    };
+
     const fail = (error: unknown): void => {
       if (settled) return;
       settled = true;
+      cleanup();
       // `popen.kill()` in the `except BaseException` arm (`utils.py:570`): a
       // rejected promise must not leave a live child behind.
       child.kill();
@@ -227,6 +310,63 @@ function spawnAndCommunicate(
     };
 
     child.on("error", fail);
+
+    const signalChild = (signal: NodeJS.Signals): void => {
+      if (exited) return;
+      if (controlled && child.pid !== undefined) {
+        try {
+          process.kill(-child.pid, signal);
+          return;
+        } catch (error: unknown) {
+          const code =
+            typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+              ? error.code
+              : undefined;
+          log(
+            `${prefix()}[kill] group ${signal} failed${code === undefined ? "" : ` (${code})`}; falling back to child`,
+          );
+        }
+      }
+      try {
+        child.kill(signal);
+      } catch {
+        // The exit event is authoritative; a raced-away child needs no further action.
+      }
+    };
+
+    const cancel = (cause: "timeout" | "abort"): void => {
+      if (settled) return;
+      // The leader can exit while a descendant still owns its stdout/stderr.
+      // In that state `close` cannot arrive until the descendant does.  A
+      // deadline is still bounded: stop waiting on those pipes, but retain the
+      // already-observed leader outcome.  Exit wins over the late deadline, so
+      // this is deliberately not recorded as a cancellation.
+      if (exited) {
+        child.stdout?.destroy();
+        child.stderr?.destroy();
+        settle(exitCode, exitSignal);
+        return;
+      }
+      cancelledBy = cause;
+      signalChild("SIGTERM");
+      const force = (): void => {
+        if (!exited) signalChild("SIGKILL");
+        // Pipe-holding descendants must not extend a bounded call forever.
+        child.stdout?.destroy();
+        child.stderr?.destroy();
+        settle(exited ? exitCode : undefined, exited ? exitSignal : undefined);
+      };
+      const grace = options.killGraceMs ?? DEFAULT_KILL_GRACE_MS;
+      // `setTimeout(force, 0)` still waits for the next event-loop turn. Zero
+      // is a public same-turn contract, for callers that abort then tear down.
+      if (grace === 0) force();
+      else escalation = setTimeout(force, grace);
+    };
+    const abort = (): void => cancel("abort");
+    if (options.signal !== undefined) options.signal.addEventListener("abort", abort, { once: true });
+    // An AbortSignal may flip between the preflight test and listener setup.
+    if (options.signal?.aborted === true) abort();
+    if (options.timeoutMs !== undefined) deadline = setTimeout(() => cancel("timeout"), options.timeoutMs);
 
     if (options.input !== undefined && child.stdin !== null) {
       for (const line of options.input.split("\n")) log(`${prefix()}[stdi] ${line}`);
@@ -237,26 +377,34 @@ function spawnAndCommunicate(
       child.stdin.end(options.input);
     }
 
+    child.on("exit", (code: number | null, signal: NodeJS.Signals | null) => {
+      exited = true;
+      exitCode = code;
+      exitSignal = signal;
+      // A controlled run must settle on exit, rather than wait for a descendant
+      // that inherited its pipes.  The ordinary path preserves pyk's close rule.
+      if (cancelledBy !== undefined) {
+        child.stdout?.destroy();
+        child.stderr?.destroy();
+        settle(code, signal);
+      }
+    });
+
     // `close` — not `exit` — is the one that fires after both pipes are drained,
     // which is what pyk's two `thread.join()` calls achieve before `wait()`.
     child.on("close", (code: number | null, signal: NodeJS.Signals | null) => {
-      if (settled) return;
-      settled = true;
-      stdout.end();
-      stderr.end();
-      // Node reports `code === null` for a signal death; POSIX `wait`, and so
-      // Python, reports `-signum`.  Carry Python's number.
-      const returncode = code ?? -signalNumber(signal);
-      log(`${prefix()}[done] status=${returncode} time=${elapsed(start)}`);
-      fulfil({
-        args,
-        returncode,
-        stdout: stdout.text(),
-        stderr: stderr.text(),
-        signal: signal ?? undefined,
-      });
+      settle(code, signal);
     });
   });
+}
+
+function validateProcessControls(options: ProcessControlOptions): void {
+  if (options.timeoutMs !== undefined && (!Number.isFinite(options.timeoutMs) || options.timeoutMs <= 0)) {
+    throw new Error(`timeoutMs must be a finite number greater than zero, got: ${String(options.timeoutMs)}`);
+  }
+  if (options.killGraceMs !== undefined && (!Number.isFinite(options.killGraceMs) || options.killGraceMs < 0)) {
+    throw new Error(`killGraceMs must be a finite non-negative number, got: ${String(options.killGraceMs)}`);
+  }
 }
 
 /**

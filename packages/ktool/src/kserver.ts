@@ -73,7 +73,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { getKDistribution, resolveOnPath } from "./distribution.js";
-import { runProcess, type ProcessLogger } from "./proc.js";
+import { ProcessAbortError, runProcess, type ProcessControlOptions, type ProcessLogger } from "./proc.js";
 
 //////////////////////////////
 // Names and paths          //
@@ -143,9 +143,9 @@ export function kserverEnv(
  * `<prefix>/lib/kframework/bin/ng`.
  *
  * `undefined` when there is no K distribution on `PATH`, or when the binary is
- * not where the layout says it should be. Both are recoverable: the caller
- * degrades to a socket-file check ({@link kserverRunning}) or reports that it
- * cannot talk to the server ({@link stopKserver}).
+ * not where the layout says it should be. Callers that need to establish
+ * Nailgun liveness report the typed `ng-not-found` error: a socket-file check
+ * cannot prove the Java-version request works.
  */
 export async function ngPath(): Promise<string | undefined> {
   const distribution = await getKDistribution();
@@ -203,7 +203,19 @@ export interface KserverAddressOptions {
   /** The Nailgun client. Defaults to {@link ngPath}'s answer. */
   readonly ngCommand?: readonly string[];
   readonly logger?: ProcessLogger;
+  /**
+   * Controls for each short-lived Nailgun probe, reset, or shutdown child.
+   *
+   * This is nested because `SpawnKserverOptions.timeoutMs` and
+   * `StopKserverOptions.timeoutMs` already bound their lifecycle waits, not
+   * one individual control command. A control child defaults to five seconds
+   * only when this object leaves `timeoutMs` absent.
+   */
+  readonly processControl?: ProcessControlOptions;
 }
+
+/** A wedged Nailgun control client must not make lifecycle operations hang forever. */
+const KSERVER_CONTROL_TIMEOUT_MS = 5_000;
 
 /**
  * Is a kserver answering on this socket? — `checkJava:27-28`, whose whole
@@ -212,19 +224,25 @@ export interface KserverAddressOptions {
  *
  * The probe is the *same* one the K scripts make, which matters: a socket file
  * left behind by a killed server exists but does not answer, and only the probe
- * can tell the difference. When `ng` cannot be located the answer degrades to
- * "is the socket file there", which is strictly weaker and is documented rather
- * than hidden — {@link ngPath} returning `undefined` is the condition.
+ * can tell the difference. When `ng` cannot be located, no probe can run, so
+ * this throws {@link KserverError} with code `ng-not-found`; a socket stat or
+ * raw connection cannot establish that the Nailgun Java-version request works.
  */
 export async function kserverRunning(options: KserverAddressOptions = {}): Promise<boolean> {
   const socketDir = options.socketDir ?? kserverSocketDir();
   const ng = options.ngCommand ?? (await ngCommandFor(undefined));
-  if (ng === undefined) return isSocket(kserverSocketPath(socketDir));
+  if (ng === undefined) {
+    throw new KserverError(
+      "ng-not-found",
+      "The bundled Nailgun client (<prefix>/lib/kframework/bin/ng) could not be located; is K on PATH?",
+      { socketDir },
+    );
+  }
 
-  const result = await runProcess([...ng, "--nailgun-server", `local:${kserverSocketPath(socketDir)}`, JAVA_VERSION], {
-    ...(options.logger === undefined ? {} : { logger: options.logger }),
-    check: false,
-  });
+  const result = await runProcess(
+    [...ng, "--nailgun-server", `local:${kserverSocketPath(socketDir)}`, JAVA_VERSION],
+    kserverControlOptions(options, false),
+  );
   return result.returncode === 0;
 }
 
@@ -335,6 +353,12 @@ export async function spawnKserver(options: SpawnKserverOptions = {}): Promise<K
   const socketDir = resolve(options.socketDir ?? kserverSocketDir());
   const socketPath = kserverSocketPath(socketDir);
 
+  // Unlike the short-lived Nailgun controls below, the server is deliberately
+  // a detached background process. Still honour a pre-aborted shared control
+  // before it can become a new JVM; its timeout belongs to each control child,
+  // while SpawnKserverOptions.timeoutMs remains the readiness-wait deadline.
+  if (options.processControl?.signal?.aborted === true) throw new ProcessAbortError(options.command ?? ["kserver"]);
+
   // Before anything else: the check upstream does not make. See the module
   // header — the failure is otherwise silent, delayed, and in a file.
   if (Buffer.byteLength(socketPath, "utf8") >= KSERVER_SOCKET_PATH_MAX) {
@@ -352,6 +376,7 @@ export async function spawnKserver(options: SpawnKserverOptions = {}): Promise<K
     socketDir,
     ...(ngCommand === undefined ? {} : { ngCommand }),
     ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...(options.processControl === undefined ? {} : { processControl: options.processControl }),
   };
 
   const restore = publish(socketDir, options.exportSocket !== false);
@@ -450,16 +475,16 @@ export async function stopKserver(options: StopKserverOptions = {}): Promise<boo
   const socketDir = options.socketDir ?? kserverSocketDir();
   const ng = options.ngCommand ?? (await ngCommandFor(socketDir));
 
-  await runProcess([...ng, "--nailgun-server", `local:${kserverSocketPath(socketDir)}`, KSERVER_FRONTEND, "shutdown"], {
-    ...(options.logger === undefined ? {} : { logger: options.logger }),
-    // See the doc comment: 227 is what success looks like.
-    check: false,
-  });
+  await runProcess(
+    [...ng, "--nailgun-server", `local:${kserverSocketPath(socketDir)}`, KSERVER_FRONTEND, "shutdown"],
+    kserverControlOptions(options, false),
+  );
 
   const address: KserverAddressOptions = {
     socketDir,
     ngCommand: ng,
     ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...(options.processControl === undefined ? {} : { processControl: options.processControl }),
   };
   const deadline = Date.now() + (options.timeoutMs ?? 30_000);
   do {
@@ -496,10 +521,10 @@ export async function stopKserver(options: StopKserverOptions = {}): Promise<boo
 export async function resetKserver(options: KserverAddressOptions = {}): Promise<void> {
   const socketDir = options.socketDir ?? kserverSocketDir();
   const ng = options.ngCommand ?? (await ngCommandFor(socketDir));
-  await runProcess([...ng, "--nailgun-server", `local:${kserverSocketPath(socketDir)}`, KSERVER_FRONTEND, "reset"], {
-    ...(options.logger === undefined ? {} : { logger: options.logger }),
-    check: true,
-  });
+  await runProcess(
+    [...ng, "--nailgun-server", `local:${kserverSocketPath(socketDir)}`, KSERVER_FRONTEND, "reset"],
+    kserverControlOptions(options, true),
+  );
 }
 
 //////////////////////////////
@@ -526,6 +551,17 @@ function handle(
       await resetKserver(address);
     },
   });
+}
+
+/** Common options for a bounded short-lived Nailgun control child. */
+function kserverControlOptions(options: KserverAddressOptions, check: boolean) {
+  const control = options.processControl;
+  return {
+    ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...control,
+    ...(control?.timeoutMs === undefined ? { timeoutMs: KSERVER_CONTROL_TIMEOUT_MS } : {}),
+    check,
+  };
 }
 
 /**
@@ -570,6 +606,7 @@ async function isFile(path: string): Promise<boolean> {
   }
 }
 
+/** A startup hint only; running status is always established by the ng probe. */
 async function isSocket(path: string): Promise<boolean> {
   try {
     return (await stat(path)).isSocket();

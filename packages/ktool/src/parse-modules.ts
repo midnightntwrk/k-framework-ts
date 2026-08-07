@@ -57,7 +57,8 @@ import { basename, join } from "node:path";
 
 import type { ModuleParser, ParseModulesOptions } from "./claim-loader.js";
 import type { TypeInferenceMode } from "./kompile.js";
-import { checkDirPath, checkFilePath, runProcess, type ProcessLogger } from "./proc.js";
+import { checkDirPath, checkFilePath, runProcess, type ProcessControlOptions, type ProcessLogger } from "./proc.js";
+import type { ProcessRunner } from "./kore-print.js";
 
 //////////////////////////////
 // The argv table           //
@@ -199,10 +200,11 @@ export function kproveParseModulesArgs(specFile: string, emitJsonSpec: string, a
 }
 
 /** What {@link parseModules} accepts beyond {@link ParseModulesArgs}. */
-export interface ParseModulesRunOptions {
+export interface ParseModulesRunOptions extends ProcessControlOptions {
   readonly logger?: ProcessLogger;
   /** Mirror `kprove`'s stderr onto ours while still capturing it. */
   readonly teeStderr?: boolean;
+  readonly runner?: ProcessRunner;
 }
 
 /**
@@ -235,9 +237,12 @@ export async function parseModules(
   const dir = await mkdtemp(join(parent, "ktool-parse-modules-"));
   try {
     const emitted = join(dir, `${basename(specFile)}.parsed.json`);
-    await runProcess(kproveParseModulesArgs(specFile, emitted, args), {
+    await (options.runner ?? runProcess)(kproveParseModulesArgs(specFile, emitted, args), {
       ...(options.logger === undefined ? {} : { logger: options.logger }),
       ...(options.teeStderr === undefined ? {} : { teeStderr: options.teeStderr }),
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     });
     return decodeModuleList(await readFile(emitted, "utf8"));
   } finally {
@@ -283,6 +288,15 @@ export class KproveModuleParser implements ModuleParser {
   // Not `async`: the free `parseModules` here is the module-level function, and
   // returning its promise directly is one less microtask than re-awaiting it.
   parseModules(specFile: string, options: ParseModulesOptions = {}): Promise<KFlatModuleList> {
-    return parseModules(specFile, { ...this.#args, ...options }, this.#options);
+    return parseModules(
+      specFile,
+      { ...this.#args, ...options },
+      {
+        ...this.#options,
+        ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
+        ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
+      },
+    );
   }
 }

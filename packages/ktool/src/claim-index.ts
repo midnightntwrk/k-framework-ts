@@ -132,6 +132,18 @@ export function resolveClaimLabel(
 }
 
 /**
+ * Drop the module qualifier K writes before a sentence label.
+ *
+ * This is intentionally just the inverse-shaped string operation beside
+ * {@link resolveClaimLabel}: labels may be qualified by a module other than
+ * the sentence's owning module, and only the first dot is the separator.
+ */
+export function unqualifyLabel(label: string): string {
+  const separator = label.indexOf(".");
+  return separator === -1 ? label : label.slice(separator + 1);
+}
+
+/**
  * `_resolve_depends` (`claim_index.py:51-87`): rewrite every claim's `depends`
  * relative to the module the claim belongs to.
  *

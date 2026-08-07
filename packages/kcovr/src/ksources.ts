@@ -30,17 +30,18 @@
  *
  * So both verdicts gate trust.  Neither is downgraded to a warning.
  *
- * # What this check does not cover
+ * # Submodule and delegated authorities
  *
  * `io.cpp` — see `version.ts`'s `IO_CPP_IDENTITY`.  It lives in the
- * `llvm-backend` submodule, which fetching from `runtimeverification/k` at a tag
- * cannot reach, so its hash is recorded and checked by nothing.  And
- * `allRules.txt`'s producer, `Kompile.java`, is pinned by
+ * `llvm-backend` submodule, so the checker resolves the gitlink K records at
+ * the requested tag before fetching it from llvm-backend at that exact commit.
+ * `allRules.txt`'s producer, `Kompile.java`, is deliberately absent: it is pinned by
  * `@kframework-ts/kompiled`'s manifest instead of duplicated here: this package
  * does not parse that file, it delegates.
  */
 
 import {
+  IO_CPP_IDENTITY,
   K_RELEASE,
   TRANSCRIBED_FROM,
   type KcovrSourceRepo,
@@ -54,6 +55,8 @@ export type KcovrSourceStatus = "unchanged" | "changed" | "missing";
 export interface KcovrSourceOutcome {
   readonly repo: KcovrSourceRepo;
   readonly path: string;
+  /** The repository revision from which `path` was actually fetched. */
+  readonly revision: string;
   readonly tier: KcovrSourceTier;
   readonly status: KcovrSourceStatus;
   /** The sha256 recorded in this package. */
@@ -62,6 +65,13 @@ export interface KcovrSourceOutcome {
   readonly actual?: string;
   /** Why the file is in the manifest — carried through so a report is readable. */
   readonly why: string;
+  /** Present for `io.cpp`: K repo/release and exact gitlink used to resolve it. */
+  readonly resolvedFrom?: {
+    readonly repo: "runtimeverification/k";
+    readonly release: string;
+    readonly path: "llvm-backend/src/main/native/llvm-backend";
+    readonly commit?: string;
+  };
 }
 
 /**
@@ -91,16 +101,34 @@ export interface KcovrSourcesReport {
 }
 
 /**
- * Fetches one file from one repository at one release.  Returns `undefined`
- * when the path does not exist at that tag — which must be distinguished from a
- * network failure, so an implementation should throw for anything that is not a
- * clean 404.
+ * The two read-only operations a source checker needs.  `gitlink` reads a
+ * submodule entry from a repository tree, rather than looking for a matching
+ * tag in the submodule repository.  `undefined` is a clean 404/missing entry;
+ * a transport failure must throw so it is never reported as source drift.
  */
-export type KcovrSourceFetcher = (
-  repo: KcovrSourceRepo,
-  path: string,
-  release: string,
-) => Promise<Uint8Array | undefined>;
+export interface KcovrSourceFetcher {
+  file(repo: KcovrSourceRepo, path: string, revision: string): Promise<Uint8Array | undefined>;
+  gitlink(
+    repo: "runtimeverification/k",
+    path: "llvm-backend/src/main/native/llvm-backend",
+    revision: string,
+  ): Promise<string | undefined>;
+}
+
+/** A malformed submodule gitlink cannot safely be treated as a missing file. */
+export class InvalidKcovrGitlinkError extends Error {
+  readonly repo = "runtimeverification/k" as const;
+  readonly path = "llvm-backend/src/main/native/llvm-backend" as const;
+  readonly release: string;
+  readonly gitlink: string;
+
+  constructor(release: string, gitlink: string) {
+    super(`Invalid llvm-backend gitlink at runtimeverification/k@${release}: ${gitlink}`);
+    this.name = "InvalidKcovrGitlinkError";
+    this.release = release;
+    this.gitlink = gitlink;
+  }
+}
 
 /**
  * Web Crypto, reached through `globalThis` rather than named directly — the
@@ -145,11 +173,12 @@ export async function checkKcovrSources(
 ): Promise<KcovrSourcesReport> {
   const files: KcovrSourceOutcome[] = await Promise.all(
     sources.map(async (source): Promise<KcovrSourceOutcome> => {
-      const bytes = await fetcher(source.repo, source.path, release);
+      const bytes = await fetcher.file(source.repo, source.path, release);
       if (bytes === undefined) {
         return {
           repo: source.repo,
           path: source.path,
+          revision: release,
           tier: source.tier,
           status: "missing",
           expected: source.sha256,
@@ -160,6 +189,7 @@ export async function checkKcovrSources(
       return {
         repo: source.repo,
         path: source.path,
+        revision: release,
         tier: source.tier,
         status: actual === source.sha256 ? "unchanged" : "changed",
         expected: source.sha256,
@@ -168,6 +198,54 @@ export async function checkKcovrSources(
       };
     }),
   );
+
+  const gitlink = await fetcher.gitlink("runtimeverification/k", IO_CPP_IDENTITY.gitlinkPath, release);
+  if (gitlink === undefined) {
+    files.push({
+      repo: IO_CPP_IDENTITY.repo,
+      path: IO_CPP_IDENTITY.path,
+      revision: "",
+      tier: "reference",
+      status: "missing",
+      expected: IO_CPP_IDENTITY.sha256,
+      why: IO_CPP_IDENTITY.why,
+      resolvedFrom: { repo: "runtimeverification/k", release, path: IO_CPP_IDENTITY.gitlinkPath },
+    });
+  } else {
+    if (!/^[0-9a-f]{40}$/u.test(gitlink)) throw new InvalidKcovrGitlinkError(release, gitlink);
+    const bytes = await fetcher.file(IO_CPP_IDENTITY.repo, IO_CPP_IDENTITY.path, gitlink);
+    const resolvedFrom = {
+      repo: "runtimeverification/k" as const,
+      release,
+      path: IO_CPP_IDENTITY.gitlinkPath,
+      commit: gitlink,
+    };
+    if (bytes === undefined) {
+      files.push({
+        repo: IO_CPP_IDENTITY.repo,
+        path: IO_CPP_IDENTITY.path,
+        revision: gitlink,
+        tier: "reference",
+        status: "missing",
+        expected: IO_CPP_IDENTITY.sha256,
+        why: IO_CPP_IDENTITY.why,
+        resolvedFrom,
+      });
+    } else {
+      const actual = await sha256Hex(bytes);
+      files.push({
+        repo: IO_CPP_IDENTITY.repo,
+        path: IO_CPP_IDENTITY.path,
+        revision: gitlink,
+        tier: "reference",
+        status: actual === IO_CPP_IDENTITY.sha256 ? "unchanged" : "changed",
+        expected: IO_CPP_IDENTITY.sha256,
+        actual,
+        why: IO_CPP_IDENTITY.why,
+        resolvedFrom,
+      });
+    }
+  }
 
   return {
     release,

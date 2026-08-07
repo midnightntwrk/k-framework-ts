@@ -22,6 +22,7 @@ import {
   kVersion,
   parseKVersion,
   resolveOnPath,
+  tryParseKVersion,
 } from "../src/distribution.ts";
 
 const scratchDirs: string[] = [];
@@ -211,6 +212,18 @@ describe("parseKVersion", () => {
   });
 });
 
+describe("tryParseKVersion", () => {
+  test("discriminates a strict parse from an observed spelling it does not recognise", () => {
+    expect(tryParseKVersion("v7.1.337")).toEqual({
+      kind: "parsed",
+      version: { major: 7, minor: 1, patch: 337, git: undefined, text: "v7.1.337" },
+    });
+    for (const text of ["7.1.337", "v7.1.337-dirty", "v7.1.337 (custom)"]) {
+      expect(tryParseKVersion(text)).toEqual({ kind: "unrecognized", text });
+    }
+  });
+});
+
 describe("kVersion", () => {
   test("strips the 'K version:' label off the first line and parses the rest", async () => {
     // `k_version` slices the first line at column 14 (`kbuild/utils.py:76`),
@@ -219,7 +232,11 @@ describe("kVersion", () => {
     // change nobody would think to announce.
     const dir = await scratch();
     const bin = await fakeBin(dir, "kompile", "echo 'K version:    v7.1.337'; echo 'Build date: whenever'");
-    expect((await kVersion([bin])).text).toBe("v7.1.337");
+    expect(await kVersion([bin])).toMatchObject({
+      text: "v7.1.337",
+      line: "K version:    v7.1.337",
+      banner: "K version:    v7.1.337\nBuild date: whenever\n",
+    });
   });
 
   test("tolerates padding the column-14 slice would not", async () => {

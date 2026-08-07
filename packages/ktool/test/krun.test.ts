@@ -84,6 +84,7 @@ const ROWS: readonly Row[] = [
   { id: "statistics", apply: (a) => ({ ...a, statistics: true }), expected: ["--statistics"] },
   { id: "noExpandMacros", apply: (a) => ({ ...a, noExpandMacros: true }), expected: ["--no-expand-macros"] },
   { id: "searchFinal", apply: (a) => ({ ...a, searchFinal: true }), expected: ["--search-final"] },
+  { id: "search", apply: (a) => ({ ...a, search: true }), expected: ["--search"] },
   { id: "noPattern", apply: (a) => ({ ...a, noPattern: true }), expected: ["--no-pattern"] },
   { id: "debugger", apply: (a) => ({ ...a, debugger: true }), expected: ["--debugger"] },
   { id: "proofHint", apply: (a) => ({ ...a, proofHint: true }), expected: ["--proof-hint"] },
@@ -288,6 +289,31 @@ describe("KRun.runProcess — the three things it never lets you change", () => 
 });
 
 describe("KRun.run — the four rendering routes (`krun.py:248-258`)", () => {
+  test("forwards call controls into a binary JSON conversion child", async () => {
+    const { pattern, text } = await sumKore();
+    const conversionCalls: { readonly timeoutMs: number | undefined; readonly killGraceMs: number | undefined }[] = [];
+    const kprint = await KPrint.load(IMP_LLVM, {
+      conversionStrategy: "binary",
+      runner: async (args, options) => {
+        conversionCalls.push({ timeoutMs: options.timeoutMs, killGraceMs: options.killGraceMs });
+        return {
+          args,
+          returncode: 0,
+          stdout: JSON.stringify(kastTermToDict(readTerm("sum.imp.json"))),
+          stderr: "",
+          signal: undefined,
+        };
+      },
+    });
+    const krun = new KRun(kprint, {
+      runner: async (args) => ({ args, returncode: 0, stdout: text, stderr: "", signal: undefined }),
+    });
+
+    await krun.run(pattern, { output: "json", timeoutMs: 23, killGraceMs: 5 });
+
+    expect(conversionCalls).toEqual([{ timeoutMs: 23, killGraceMs: 5 }]);
+  });
+
   test("json renders in-process, as the KAST v4 envelope", async () => {
     const term = readTerm("sum.imp.json");
     const { pattern, text } = await sumKore();

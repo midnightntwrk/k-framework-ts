@@ -30,7 +30,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { caught } from "./caught.ts";
-import { ClaimIndex, ClaimIndexError, resolveClaimDepends, staticOrder } from "../src/claim-index.ts";
+import {
+  ClaimIndex,
+  ClaimIndexError,
+  resolveClaimDepends,
+  resolveClaimLabel,
+  staticOrder,
+  unqualifyLabel,
+} from "../src/claim-index.ts";
 import { decodeModuleList } from "../src/parse-modules.ts";
 
 //////////////////////////////
@@ -205,6 +212,21 @@ describe("resolve", () => {
     // order is upstream's and it is observable.
     expect(index.resolveAll(["dep", "dep"])).toEqual(["MULTI-CLAIM-SPEC.dep"]);
     expect(index.resolveAll(["dep", "MULTI-CLAIM-SPEC.dep"])).toEqual(["MULTI-CLAIM-SPEC.dep", "MULTI-CLAIM-SPEC.dep"]);
+  });
+});
+
+describe("unqualifyLabel", () => {
+  test("removes only the first module separator", () => {
+    expect(unqualifyLabel("MODULE.label.with.dots")).toBe("label.with.dots");
+  });
+
+  test("leaves an already-unqualified label unchanged", () => {
+    expect(unqualifyLabel("reject-div-operands-not-int")).toBe("reject-div-operands-not-int");
+  });
+
+  test("is the inverse of claim-label resolution beside the resolver", () => {
+    const labels = new Set(["MODULE.claim"]);
+    expect(unqualifyLabel(resolveClaimLabel(labels, "MODULE", "claim"))).toBe("claim");
   });
 });
 

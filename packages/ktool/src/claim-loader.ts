@@ -59,6 +59,7 @@ import { readFile, writeFile } from "node:fs/promises";
 
 import { ClaimIndex } from "./claim-index.js";
 import type { TypeInferenceMode } from "./kompile.js";
+import type { ProcessControlOptions } from "./proc.js";
 
 //////////////////////////////
 // The parser seam          //
@@ -72,7 +73,7 @@ import type { TypeInferenceMode } from "./kompile.js";
  * exactly the arguments upstream forwards (`claim_loader.py:72-78`), and a
  * field here that `loadClaims` does not forward would be dead.
  */
-export interface ParseModulesOptions {
+export interface ParseModulesOptions extends ProcessControlOptions {
   /** `--spec-module`.  Omitted means K picks the file's last module. */
   readonly specModuleName?: string;
   /** `-I`, one per directory, in order. */
@@ -298,6 +299,9 @@ export class ClaimLoader {
         ...(options.includeDirs === undefined ? {} : { includeDirs: options.includeDirs }),
         ...(options.mdSelector === undefined ? {} : { mdSelector: options.mdSelector }),
         ...(options.typeInferenceMode === undefined ? {} : { typeInferenceMode: options.typeInferenceMode }),
+        ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
+        ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
       });
       this.#log(`Writing claim file: ${claimFile}`);
       await writeFile(claimFile, JSON.stringify(claimModuleListToDict({ moduleList, digest })), "utf8");

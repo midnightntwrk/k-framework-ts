@@ -130,6 +130,20 @@ field, a wrongly-typed field — all of it degrades to an inert `KOther` that
 still exposes `args` and `items`, so a traversal passing _through_ an
 unmodelled node still reaches the modelled nodes beneath it.
 
+### Compare decoded terms
+
+`termEq` and `termDifference` compare every modelled field without converting
+the tolerant `KTerm` into another term representation. `termDifference` is
+iterative and returns the first mismatch as `{path, left, right}`; a path is a
+readonly array of child indices in `children()` order, with `[]` for the root.
+Use `subtermAt` to read a path and `pathEq` to compare paths.
+
+The comparison policy for an unreadable `KOther` is required at every call
+site: use `{ unreadable: "distinct" }` when an unreadable term cannot prove
+program equality (this is intentionally non-reflexive), or
+`{ unreadable: "structural" }` when equality of its retained children is the
+useful answer. Neither policy is assumed by default.
+
 Note: there is no depth limit for parsing.
 
 This helps projects using this library to do error handling themselves on the final result.
@@ -274,6 +288,10 @@ decodeTerm(u: unknown): KTerm
 flattenSort(sort: SortShape): string                   // "Map{Int,Int}", per ADT.scala
 unflattenSort(flat: string): StructuredSort | undefined // its exact inverse
 children(t) / find(t, label) / findAll(t, label)
+termEq(left, right, { unreadable }): boolean
+termDifference(left, right, { unreadable }): TermDifference | undefined
+subtermAt(term, path): KTerm | undefined // path is readonly child indices; [] is root
+pathEq(left, right): boolean
 cell(t, name): CellRead        // "yes" | "absent" | "malformed"
 head(t) / firstArg(t) / token(t)
 canonicalKey(t): string        // stable across v3/v4 for equivalent terms

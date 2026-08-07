@@ -276,6 +276,8 @@ export class OuterParser {
   private readonly lexer: Iterator<Token, void, undefined>;
   private la: Token;
   private la2: Token;
+  /** The token most recently consumed, retained to form exact end positions. */
+  private lastConsumed: Token | undefined;
   /** The path errors and {@link module}/{@link stringSentence} locations name. */
   private readonly source: string | undefined;
 
@@ -320,10 +322,24 @@ export class OuterParser {
 
   /** `_consume` (`:74-77`) — the current token's text, advancing by one. */
   private consume(): string {
-    const text = this.la.text;
+    const token = this.la;
+    const text = token.text;
+    this.lastConsumed = token;
     this.la = this.la2;
     this.la2 = this.next();
     return text;
+  }
+
+  /** The position immediately after the token most recently consumed. */
+  private endOfLast(): Loc {
+    if (this.lastConsumed === undefined) throw new Error("no token has been consumed");
+    return locAdd(this.lastConsumed.loc, this.lastConsumed.text);
+  }
+
+  /** A source span from `begin` through the last consumed token. */
+  private spanFrom(begin: Loc): Location {
+    const end = this.endOfLast();
+    return [begin.line, begin.col, end.line, end.col];
   }
 
   /**
@@ -365,9 +381,10 @@ export class OuterParser {
 
   /** `require` (`:121-124`) — the path is dequoted, quotes and escapes gone. */
   require(): Require {
+    const beginLoc = this.la.loc;
     this.match("KW_REQUIRES");
     const path = dequoteStringToken(this.match("STRING"));
-    return makeRequire(path);
+    return makeRequire(path, { span: this.spanFrom(beginLoc) });
   }
 
   /**
@@ -396,7 +413,7 @@ export class OuterParser {
     this.consume();
 
     const location: Location = [beginLoc.line, beginLoc.col, endLoc.line, endLoc.col];
-    return makeModule(name, { sentences, imports, att: attributes, source: this.source, location });
+    return makeModule(name, { sentences, imports, att: attributes, source: this.source, location, span: location });
   }
 
   /**
@@ -405,6 +422,7 @@ export class OuterParser {
    * An import with no visibility keyword is public.
    */
   importt(): Import {
+    const beginLoc = this.la.loc;
     this.match("KW_IMPORTS");
 
     let isPublic = true;
@@ -417,7 +435,7 @@ export class OuterParser {
 
     const moduleName = this.match("MODNAME");
 
-    return importt(moduleName, { public: isPublic });
+    return importt(moduleName, { public: isPublic, span: this.spanFrom(beginLoc) });
   }
 
   /** `sentence` (`:161-165`) — `syntax` or a bubble, decided by one token. */
@@ -436,6 +454,7 @@ export class OuterParser {
    * `::=` are checked before falling through to a bare declaration.
    */
   syntaxSentence(): SyntaxSentence {
+    const beginLoc = this.la.loc;
     this.match("KW_SYNTAX");
 
     if (SORT_DECL_TOKENS.includes(this.laType())) {
@@ -445,7 +464,7 @@ export class OuterParser {
         this.consume();
         const oldSort = this.sort();
         const attributes = this.maybeAtt();
-        return syntaxSynonym(decl, oldSort, { att: attributes });
+        return syntaxSynonym(decl, oldSort, { att: attributes, span: this.spanFrom(beginLoc) });
       }
 
       if (this.laType() === "DCOLONEQ") {
@@ -455,11 +474,11 @@ export class OuterParser {
           this.consume();
           blocks.push(this.priorityBlock());
         }
-        return syntaxDefn(decl, { blocks });
+        return syntaxDefn(decl, { blocks, span: this.spanFrom(beginLoc) });
       }
 
       const attributes = this.maybeAtt();
-      return syntaxDecl(decl, { att: attributes });
+      return syntaxDecl(decl, { att: attributes, span: this.spanFrom(beginLoc) });
     }
 
     if (this.laType() === "KW_PRIORITY") {
@@ -474,14 +493,14 @@ export class OuterParser {
         while (this.laType() === "KLABEL") group.push(this.consume());
         groups.push(group);
       }
-      return syntaxPriority(groups);
+      return syntaxPriority(groups, { span: this.spanFrom(beginLoc) });
     }
 
     if (ASSOC_TOKENS.includes(this.laType())) {
       const assoc = this.assoc();
       const klabels: string[] = [this.match("KLABEL")];
       while (this.laType() === "KLABEL") klabels.push(this.consume());
-      return syntaxAssoc(assoc, klabels);
+      return syntaxAssoc(assoc, klabels, { span: this.spanFrom(beginLoc) });
     }
 
     if (this.laType() === "KW_LEXICAL") {
@@ -489,7 +508,7 @@ export class OuterParser {
       const name = this.match("ID_UPPER");
       this.match("EQ");
       const regex = dequoteRegexToken(this.match("REGEX"));
-      return syntaxLexical(name, regex);
+      return syntaxLexical(name, regex, { span: this.spanFrom(beginLoc) });
     }
 
     throw this.unexpectedToken(this.la);
@@ -586,6 +605,7 @@ export class OuterParser {
 
   /** `_priority_block` (`:273-286`) — `(assoc ':')? prod ('|' prod)*`. */
   private priorityBlock(): PriorityBlock {
+    const beginLoc = this.la.loc;
     let assoc: Assoc | undefined;
     if (ASSOC_TOKENS.includes(this.laType())) {
       assoc = this.assoc();
@@ -599,7 +619,7 @@ export class OuterParser {
       this.consume();
       productions.push(this.productionLike());
     }
-    return priorityBlock(productions, { assoc });
+    return priorityBlock(productions, { assoc, span: this.spanFrom(beginLoc) });
   }
 
   /**
@@ -619,6 +639,7 @@ export class OuterParser {
    * §0(c), §4 deviations) and it is kept, with a test by name.
    */
   private productionLike(): ProductionLike {
+    const beginLoc = this.la.loc;
     if (this.la2Type() === "LBRACE" && this.laType() === "ID_UPPER" && USER_LIST_IDS.includes(this.la.text)) {
       // `List` → false, `NeList` → true.
       const nonEmpty = this.la.text[0] === "N";
@@ -629,7 +650,7 @@ export class OuterParser {
       const sep = dequoteStringToken(this.match("STRING"));
       this.match("RBRACE");
       const attributes = this.maybeAtt();
-      return userList(sortName, sep, { nonEmpty, att: attributes });
+      return userList(sortName, sep, { nonEmpty, att: attributes, span: this.spanFrom(beginLoc) });
     }
 
     const items: ProductionItem[] = [];
@@ -656,7 +677,7 @@ export class OuterParser {
     }
 
     const attributes = this.maybeAtt();
-    return production(items, { att: attributes });
+    return production(items, { att: attributes, span: this.spanFrom(beginLoc) });
   }
 
   /** `_production_item` (`:325-332`). */
@@ -700,6 +721,7 @@ export class OuterParser {
    * header.
    */
   stringSentence(): StringSentence {
+    const beginLoc = this.la.loc;
     let clsKey: StringSentenceKeyword;
 
     if (this.laType() === "KW_CONTEXT") {
@@ -742,8 +764,9 @@ export class OuterParser {
           att: attributes,
           source: this.source,
           location: [bubbleLoc.line, bubbleLoc.col, bubbleLoc.line, bubbleLoc.col],
+          span: this.spanFrom(beginLoc),
         }
-      : { label, att: attributes };
+      : { label, att: attributes, span: this.spanFrom(beginLoc) };
     return make(bubble, options);
   }
 
@@ -761,9 +784,12 @@ export class OuterParser {
 
     if (this.laType() !== "LBRACK") return EMPTY_ATT;
 
+    const beginLoc = this.la.loc;
     this.consume();
+    const itemSpans: Location[] = [];
 
     for (;;) {
+      const itemBegin = this.la.loc;
       const key = this.match("ATTR_KEY");
 
       let value: string;
@@ -786,6 +812,7 @@ export class OuterParser {
       }
 
       items.push([key, value]);
+      itemSpans.push(this.spanFrom(itemBegin));
 
       if (this.laType() !== "COMMA") break;
       this.consume();
@@ -793,6 +820,6 @@ export class OuterParser {
 
     this.match("RBRACK");
 
-    return att(items);
+    return att(items, { span: this.spanFrom(beginLoc), itemSpans });
   }
 }

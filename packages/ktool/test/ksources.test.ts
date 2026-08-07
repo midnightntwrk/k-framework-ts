@@ -11,7 +11,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { caughtAsync } from "./caught.ts";
-import { checkKtoolSources, sha256Hex, type KtoolSourceFetcher } from "../src/ksources.ts";
+import {
+  checkKtoolSources,
+  sha256Hex,
+  type KtoolGitlinkAwareFetcher,
+  type KtoolSourceFetcher,
+} from "../src/ksources.ts";
 import { K_COMMIT, K_RELEASE, TRANSCRIBED_FROM, type KtoolTranscribedSource } from "../src/version.ts";
 
 const encoder = new TextEncoder();
@@ -57,6 +62,34 @@ describe("sha256Hex", () => {
 });
 
 describe("checkKtoolSources", () => {
+  test("resolves backend files through the requested K tag's gitlinks", async () => {
+    const fetcher = Object.assign((async (): Promise<Uint8Array> => encoder.encode("changed")) as KtoolSourceFetcher, {
+      gitlink: async (_repo: "runtimeverification/k", path: string): Promise<string | undefined> =>
+        path.startsWith("llvm")
+          ? "f02284f09858cd2b9f310ad0142b3e04054295ec"
+          : "38afc81fc9414f1e11e609b01a43a436b613bd2d",
+    }) as KtoolGitlinkAwareFetcher;
+    const report = await checkKtoolSources("vX", fetcher, SOURCES);
+    const backend = report.files.filter((file) => file.resolvedFrom !== undefined);
+    expect(backend).toHaveLength(2);
+    expect(backend.map((file) => file.revision)).toEqual([
+      "f02284f09858cd2b9f310ad0142b3e04054295ec",
+      "38afc81fc9414f1e11e609b01a43a436b613bd2d",
+    ]);
+    expect(backend.every((file) => file.status === "changed")).toBe(true);
+  });
+
+  test("a missing gitlink remains a located-source failure, not a false backend path", async () => {
+    const fetcher = Object.assign(serving({ "pyk/ktool/kompile.py": "abc", "kf/KompileOptions.java": "" }), {
+      gitlink: async (): Promise<undefined> => undefined,
+    }) as KtoolGitlinkAwareFetcher;
+    const report = await checkKtoolSources("vX", fetcher, SOURCES);
+    expect(
+      report.files
+        .filter((file) => file.resolvedFrom !== undefined)
+        .every((file) => file.status === "missing" && file.revision === ""),
+    ).toBe(true);
+  });
   test("unchanged in both tiers when every file hashes to what was recorded", async () => {
     const report = await checkKtoolSources(
       "v9.9.9",
@@ -162,8 +195,33 @@ describe("the manifest", () => {
       "k-distribution/include/kframework/cparser/main.c",
       "k-distribution/src/main/scripts/bin/kore-print",
       "k-distribution/src/main/scripts/bin/krun",
+      "k-distribution/src/main/scripts/lib/k-util.sh",
+      "k-frontend/src/main/java/org/kframework/kast/KastFrontEnd.java",
       "k-frontend/src/main/java/org/kframework/kast/KastOptions.java",
+      "k-frontend/src/main/java/org/kframework/kompile/Kompile.java",
       "k-frontend/src/main/java/org/kframework/kompile/KompileOptions.java",
+      "k-frontend/src/main/java/org/kframework/main/FrontEnd.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/ParseInModule.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/RuleGrammarGenerator.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/AddEmptyLists.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/AmbFilterError.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/CollapseRecordProdsVisitor.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/KAppToTermConsVisitor.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/PriorityVisitor.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/ResolveOverloadedTerminators.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/TypeInferenceVisitor.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/TypeInferencer.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/disambiguation/inference/SortInferenceError.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/kernel/EarleyParser.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/kernel/KSyntax2Bison.java",
+      "k-frontend/src/main/java/org/kframework/parser/inner/kernel/Scanner.java",
+      "k-frontend/src/main/java/org/kframework/unparser/KPrint.java",
+      "k-frontend/src/main/java/org/kframework/utils/StringUtil.java",
+      "k-frontend/src/main/java/org/kframework/utils/errorsystem/KEMException.java",
+      "k-frontend/src/main/java/org/kframework/utils/errorsystem/KException.java",
+      "k-frontend/src/main/java/org/kframework/utils/errorsystem/KExceptionManager.java",
+      "k-frontend/src/main/scala/org/kframework/definition/outer-to-string.scala",
+      "k-frontend/src/main/scala/org/kframework/unparser/KOREToTreeNodes.scala",
       "pyk/src/tests/integration/kprove/test_get_claims.py",
       "pyk/src/tests/integration/test_kprint.py",
       "pyk/src/tests/integration/test_krun.py",

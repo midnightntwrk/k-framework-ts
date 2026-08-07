@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   collectSymbols,
   conjuncts,
+  disjuncts,
   eliminateAliases,
   freeOccurrences,
   substituteVariables,
@@ -9,7 +10,21 @@ import {
   variableKey,
 } from "../src/manip.ts";
 import type { EVar, Pattern } from "../src/syntax.ts";
-import { and, app, dv, evar, exists, equals, koreString, koreText, sortApp, top } from "../src/syntax.ts";
+import {
+  and,
+  app,
+  bottom,
+  dv,
+  evar,
+  exists,
+  equals,
+  koreString,
+  koreText,
+  multiOr,
+  or,
+  sortApp,
+  top,
+} from "../src/syntax.ts";
 
 const INT = sortApp("SortInt");
 const TOP_CELL = sortApp("SortGeneratedTopCell");
@@ -50,6 +65,32 @@ describe("conjuncts", () => {
     }
     expect(conjuncts(left)).toHaveLength(100_001);
     expect(conjuncts(right)).toHaveLength(100_001);
+  });
+});
+
+describe("disjuncts", () => {
+  test("flattens nested, unary, and n-ary disjunctions in document order", () => {
+    const other = app("other");
+    const chain = or(TOP_CELL, [eq, or(TOP_CELL, [bottom(TOP_CELL), other]), eq]);
+    expect(disjuncts(chain)).toEqual([eq, other, eq]);
+    expect(disjuncts(or(TOP_CELL, [eq]))).toEqual([eq]);
+    expect(disjuncts(or(TOP_CELL, []))).toEqual([]);
+  });
+
+  test("does not flatten an inner disjunction of another sort", () => {
+    const otherSort = sortApp("SortOther");
+    const inner = or(otherSort, [app("a"), app("b")]);
+    expect(disjuncts(or(TOP_CELL, [eq, inner]))).toEqual([eq, inner]);
+  });
+
+  test("also accepts KORE-JSON MultiOr sugar", () => {
+    expect(disjuncts(multiOr("Left", TOP_CELL, [eq, or(TOP_CELL, [eq])]))).toEqual([eq, eq]);
+  });
+
+  test("a 100k-deep nested disjunction does not exhaust the call stack", () => {
+    let deep: Pattern = eq;
+    for (let i = 0; i < 100_000; i += 1) deep = or(TOP_CELL, [deep]);
+    expect(disjuncts(deep)).toEqual([eq]);
   });
 });
 

@@ -51,6 +51,7 @@ import {
   runProcess,
   signalNumber,
   type CompletedProcess,
+  type ProcessControlOptions,
   type ProcessLogger,
 } from "./proc.js";
 
@@ -83,7 +84,12 @@ function entriesOf(vars: KRunConfigVars | undefined): readonly (readonly [string
 // Pure argv construction   //
 //////////////////////////////
 
-/** Everything `krun`'s argv can carry — `_build_arg_list` (`ktool/krun.py:371-390`). */
+/**
+ * Everything `krun`'s argv can carry — `_build_arg_list` (`ktool/krun.py:371-390`).
+ * `pretty` and `program` remain K printer routes, not round-trip promises;
+ * ktool preserves the stored/readable/re-derived artifact boundary and never
+ * fabricates parser names or repairs generated/bison-list output.
+ */
 export interface KrunArgs {
   /** Defaults to `['krun']`.  Only `command[0]` is ever executed. */
   readonly command?: readonly string[];
@@ -113,8 +119,12 @@ export interface KrunArgs {
   readonly noExpandMacros?: boolean;
   /** `--search-final`. */
   readonly searchFinal?: boolean;
+  /** `--search`, K's non-final search spelling.  It is not inferred from {@link searchFinal}. */
+  readonly search?: boolean;
   /** `--no-pattern`. */
   readonly noPattern?: boolean;
+  /** The shell wrapper consumes this before the JVM; it only unwraps wrapper failures. */
+  readonly noExcWrap?: boolean;
   /** `--debugger`.  See {@link KRunOptions.debugger} for what it does to the spawn. */
   readonly debugger?: boolean;
   /** `--proof-hint`.  Reachable here; `run_proof_hint` itself is not ported. */
@@ -153,7 +163,9 @@ export function krunArgs(options: KrunArgs = {}): string[] {
   if (options.statistics === true) argv.push("--statistics");
   if (options.noExpandMacros === true) argv.push("--no-expand-macros");
   if (options.searchFinal === true) argv.push("--search-final");
+  if (options.search === true) argv.push("--search");
   if (options.noPattern === true) argv.push("--no-pattern");
+  if (options.noExcWrap === true) argv.push("--no-exc-wrap");
   if (options.debugger === true) argv.push("--debugger");
   if (options.proofHint === true) argv.push("--proof-hint");
 
@@ -182,7 +194,7 @@ export class KRunArgumentError extends Error {
 // Spawning                 //
 //////////////////////////////
 
-export interface KRunOptions extends KrunArgs {
+export interface KRunOptions extends KrunArgs, ProcessControlOptions {
   /** The child's working directory.  Checked before the spawn. */
   readonly cwd?: string;
   /** The child's whole environment, replacing this process's. */
@@ -232,6 +244,9 @@ export async function runKrun(options: KRunOptions = {}): Promise<CompletedProce
     ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
     ...(options.env === undefined ? {} : { env: options.env }),
     ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
+    ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
     teeStderr: options.teeStderr === true,
     check,
   });
@@ -277,6 +292,7 @@ function runInherited(argv: readonly string[], options: KRunOptions, check: bool
         stdout: "",
         stderr: "",
         signal: signal ?? undefined,
+        cancelledBy: undefined,
       };
       if (check && result.returncode !== 0) reject(new ProcessError(result));
       else fulfil(result);
@@ -295,7 +311,7 @@ export interface KRunClassOptions extends KPrintOptions {
 }
 
 /** The per-call options shared by {@link KRun.runProcess}, {@link KRun.run} and {@link KRun.runPattern}. */
-export interface KRunCallOptions {
+export interface KRunCallOptions extends ProcessControlOptions {
   readonly cmap?: KRunConfigVars;
   readonly pmap?: KRunConfigVars;
   /** `--term`.  Set by {@link KRun.runPattern} and never by {@link KRun.runPattern}'s caller. */
@@ -312,6 +328,8 @@ export interface KRunCallOptions {
    */
   readonly expandMacros?: boolean;
   readonly searchFinal?: boolean;
+  /** `--search`; retained separately because K gives it distinct search semantics. */
+  readonly search?: boolean;
   readonly noPattern?: boolean;
   readonly saveTemps?: boolean;
   readonly statistics?: boolean;
@@ -405,7 +423,11 @@ export class KRun {
           statistics: options.statistics === true,
           noExpandMacros: options.expandMacros === false,
           searchFinal: options.searchFinal === true,
+          search: options.search === true,
           noPattern: options.noPattern === true,
+          ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+          ...(options.signal === undefined ? {} : { signal: options.signal }),
+          ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
           debugger: options.debugger === true,
           teeStderr: options.teeStderr === true,
           check: false,
@@ -426,7 +448,7 @@ export class KRun {
    *
    * | output | route |
    * | --- | --- |
-   * | `json` | parse the KORE, convert with {@link KPrint.koreToKast}, serialise the KAST envelope — **in-process** |
+   * | `json` | parse the KORE, then convert with {@link KPrint.koreToKast} and serialise the KAST envelope — in-process when konvert accepts it, otherwise `kore-print --output json` |
    * | `kore` | re-render the parsed pattern's text — in-process, no second child |
    * | `pretty` `program` `kast` `binary` `latex` | hand the KORE to `kore-print --output <mode>` |
    * | `none` | nothing |
@@ -437,6 +459,10 @@ export class KRun {
    *
    * @throws {ProcessError} when `check` is `true` and `krun` exited non-zero —
    *   **after** the output has been rendered, as pyk does (`:260-261`).
+   * Process controls are per spawned child: when rendering invokes kore-print,
+   * the same `timeoutMs`, `signal`, and `killGraceMs` are forwarded to it. A
+   * caller requiring one budget across both children should provide one
+   * deadline-derived AbortSignal rather than assuming timeoutMs is cumulative.
    */
   async run(
     pgm: Pattern,
@@ -451,7 +477,15 @@ export class KRun {
       if (output === "json") {
         // `self.kore_to_kast(output_kore).to_json()` (`krun.py:252`) — the KAST
         // v4 envelope, not the bare term.
-        rendered = JSON.stringify(kastTermToDict(await this.kprint.koreToKast(pattern)));
+        rendered = JSON.stringify(
+          kastTermToDict(
+            await this.kprint.koreToKast(pattern, {
+              ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+              ...(options.signal === undefined ? {} : { signal: options.signal }),
+              ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
+            }),
+          ),
+        );
       } else if (output === "kore") {
         rendered = koreText(pattern);
       } else {
@@ -459,6 +493,9 @@ export class KRun {
           definitionDir: this.definitionDir,
           output,
           command: this.#options.korePrintCommand ?? ["kore-print"],
+          ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+          ...(options.signal === undefined ? {} : { signal: options.signal }),
+          ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
           ...this.#childOptions(),
         });
       }
@@ -516,9 +553,9 @@ export class KRun {
    */
   async krun(
     inputFile: string,
-    options: { readonly parser?: string } = {},
+    options: ProcessControlOptions & { readonly parser?: string } = {},
   ): Promise<{
-    readonly returncode: number;
+    readonly returncode: number | undefined;
     readonly kast: KInner;
   }> {
     const result = await runKrun({
@@ -527,11 +564,21 @@ export class KRun {
       definitionDir: this.definitionDir,
       output: "kore",
       ...(options.parser === undefined ? {} : { parser: options.parser }),
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+      ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
       check: false,
       ...this.#childOptions(),
     });
     const kore = new KoreParser(result.stdout).pattern();
-    return { returncode: result.returncode, kast: await this.kprint.koreToKast(kore) };
+    return {
+      returncode: result.returncode,
+      kast: await this.kprint.koreToKast(kore, {
+        ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
+        ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
+      }),
+    };
   }
 
   /** The env/logger/runner triple every child of this `KRun` inherits. */

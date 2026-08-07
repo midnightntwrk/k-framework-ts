@@ -25,8 +25,20 @@ const SHA_ABC = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015a
 const SHA_EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"; // ""
 
 const SOURCES: readonly KompiledTranscribedSource[] = [
-  { repo: "runtimeverification/k", path: "pyk/ktool/kompile.py", sha256: SHA_ABC, tier: "format", why: "markers" },
-  { repo: "runtimeverification/k", path: "kf/Kompile.java", sha256: SHA_EMPTY, tier: "content", why: "allRules.txt" },
+  {
+    repo: "runtimeverification/k",
+    path: "pyk/ktool/kompile.py",
+    sha256: SHA_ABC,
+    tier: "format",
+    why: "markers",
+  },
+  {
+    repo: "runtimeverification/k",
+    path: "kf/Kompile.java",
+    sha256: SHA_EMPTY,
+    tier: "content",
+    why: "allRules.txt",
+  },
 ];
 
 /** A fetcher serving fixed bodies keyed by path, `undefined` otherwise. */
@@ -54,7 +66,10 @@ describe("checkKompiledSources", () => {
       serving({ "pyk/ktool/kompile.py": "abc", "kf/Kompile.java": "" }),
       SOURCES,
     );
-    expect(report.verdicts).toEqual({ format: "unchanged", content: "unchanged" });
+    expect(report.verdicts).toEqual({
+      format: "unchanged",
+      content: "unchanged",
+    });
     expect(report.release).toBe("v9.9.9");
     expect(report.recordedAt).toBe(K_RELEASE);
     expect(report.files.map((f) => f.status)).toEqual(["unchanged", "unchanged"]);
@@ -68,7 +83,10 @@ describe("checkKompiledSources", () => {
       serving({ "pyk/ktool/kompile.py": "abc", "kf/Kompile.java": "moved" }),
       SOURCES,
     );
-    expect(report.verdicts).toEqual({ format: "unchanged", content: "changed" });
+    expect(report.verdicts).toEqual({
+      format: "unchanged",
+      content: "changed",
+    });
   });
 
   test("a missing path is could-not-locate, not changed", async () => {
@@ -81,7 +99,13 @@ describe("checkKompiledSources", () => {
   test("changed outranks could-not-locate within a tier", async () => {
     const sources: readonly KompiledTranscribedSource[] = [
       ...SOURCES,
-      { repo: "runtimeverification/k", path: "gone.py", sha256: SHA_ABC, tier: "format", why: "gone" },
+      {
+        repo: "runtimeverification/k",
+        path: "gone.py",
+        sha256: SHA_ABC,
+        tier: "format",
+        why: "gone",
+      },
     ];
     const report = await checkKompiledSources("v9.9.9", serving({ "pyk/ktool/kompile.py": "different" }), sources);
     expect(report.verdicts.format).toBe("changed");
@@ -150,10 +174,12 @@ describe("the manifest", () => {
 describe("OBSERVED_LAYOUT", () => {
   test("every artifact this package reads is present in the fixture directory", () => {
     // The layout is recorded in code so drift is visible.
-    // The `read` entries are the contract; `parsed.json` and the
-    // debug dumps were deliberately not vendored, so they are not checked.
+    // `parsed.json` is readable but optional; the debug dumps are deliberately
+    // not vendored either, so only required/readable fixture files are checked.
     const readable = OBSERVED_LAYOUT.filter((a) => a.status === "read").map((a) => a.file);
-    for (const file of readable) expect(() => readFileSync(join(IMP_HASKELL, file))).not.toThrow();
+    for (const artifactFile of readable.filter((candidate) => candidate !== "parsed.json")) {
+      expect(() => readFileSync(join(IMP_HASKELL, artifactFile))).not.toThrow();
+    }
   });
 
   test("nothing refused was vendored — the fixture cannot tempt a reader", () => {

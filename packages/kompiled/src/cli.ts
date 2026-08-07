@@ -19,7 +19,7 @@
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { KompiledError } from "./errors.js";
-import { loadKompiledLayout } from "./fs.js";
+import { inspectBisonParserArtifacts, loadKompiledLayout, type BisonParserArtifactInspection } from "./fs.js";
 import type { KompiledLayout } from "./layout.js";
 import {
   checkKompiledSources,
@@ -102,7 +102,12 @@ export function artifactStatuses(dir: string): Promise<readonly ArtifactStatus[]
 }
 
 /** Render a {@link KompiledLayout} as the `info` command's report. */
-export function renderInfo(dir: string, layout: KompiledLayout, artifacts?: readonly ArtifactStatus[]): string {
+export function renderInfo(
+  dir: string,
+  layout: KompiledLayout,
+  artifacts?: readonly ArtifactStatus[],
+  parserArtifacts?: readonly BisonParserArtifactInspection[],
+): string {
   const lines = [
     `directory          ${dir}`,
     `backend            ${layout.backend}`,
@@ -129,6 +134,27 @@ export function renderInfo(dir: string, layout: KompiledLayout, artifacts?: read
     for (const artifact of artifacts) {
       const size = artifact.bytes === undefined ? "absent" : `${artifact.bytes} B`;
       lines.push(`  ${artifact.file.padEnd(22)} ${size.padStart(10)}  ${artifact.note}`);
+    }
+  }
+
+  if (parserArtifacts !== undefined) {
+    lines.push("", "parser artifacts (expected; passive — not executable checks):");
+    for (const inspection of parserArtifacts) {
+      if ("executablePath" in inspection) {
+        const forms = [
+          inspection.executablePath === undefined ? undefined : inspection.artifact.executable,
+          inspection.libraryPath === undefined ? undefined : inspection.artifact.library,
+        ].filter((name): name is string => name !== undefined);
+        lines.push(
+          `  ${inspection.artifact.executable.padEnd(22)} ${(forms.length === 0 ? inspection.status : forms.join(", ")).padStart(10)}`,
+        );
+      } else {
+        const detail =
+          inspection.status === "target"
+            ? `${inspection.target}${inspection.diagnostic === undefined ? "" : ` (unexpected; expected ${inspection.diagnostic.expected.join(" or ")})`}`
+            : inspection.status;
+        lines.push(`  ${inspection.artifact.file.padEnd(22)} ${detail}`);
+      }
     }
   }
 
@@ -217,7 +243,14 @@ async function mainInfo(
 
   try {
     const layout = await loadKompiledLayout(dir);
-    out(renderInfo(dir, layout, wantArtifacts ? await artifactStatuses(dir) : undefined));
+    out(
+      renderInfo(
+        dir,
+        layout,
+        wantArtifacts ? await artifactStatuses(dir) : undefined,
+        wantArtifacts ? await inspectBisonParserArtifacts(dir, layout) : undefined,
+      ),
+    );
     return 0;
   } catch (error) {
     // A KompiledError already says what to do about it; anything else is a

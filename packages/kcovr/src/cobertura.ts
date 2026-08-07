@@ -351,15 +351,23 @@ export function createRuleMap(definitions: Iterable<CoverageDefinition>, sourceF
 
   for (const definition of definitions) {
     const where = definition.name === undefined ? "" : ` (in ${definition.name})`;
-    const { allRules } = parseAllRules(definition.allRulesTxt);
+    const parsed = parseAllRules(definition.allRulesTxt);
+    const { allRules } = parsed;
 
-    // pyk's `all_rules` is a set of whole *lines*, so two lines sharing an id
-    // trip its assert even within one file — but `parseAllRules` is keyed by id
-    // and silently keeps the last.  Comparing the two sizes detects that case
-    // without adding a fifth parser; only then is the (slower) per-line pass
-    // run, and only to name the conflict in the message.
-    if (distinctLineCount(definition.allRulesTxt) !== allRules.size) {
-      throw duplicateWithinText(definition.allRulesTxt, where);
+    // The shared parser keeps all rows for a complete audit, while the public
+    // maps intentionally retain pyk's last-write-wins compatibility. Keep this
+    // report builder's historical contract: byte-identical repeated rows are
+    // pyk-set-compatible; different locations for one id are contradictory.
+    for (const duplicate of parsed.duplicateRuleIds) {
+      const first = duplicate.locations[0];
+      const conflicting = duplicate.locations.find((location) => location.location !== first?.location);
+      if (first !== undefined && conflicting !== undefined) {
+        throw new DuplicateRuleIdError(
+          duplicate.ruleId,
+          `${first.location}${where}`,
+          `${conflicting.location}${where}`,
+        );
+      }
     }
 
     for (const [ruleId, location] of allRules) {
@@ -384,39 +392,6 @@ export function createRuleMap(definitions: Iterable<CoverageDefinition>, sourceF
     ruleMap.set(ruleId, location);
   }
   return ruleMap;
-}
-
-/** The size of pyk's `all_rules` set — distinct non-blank stripped lines. */
-function distinctLineCount(allRulesTxt: string): number {
-  const seen = new Set<string>();
-  for (const rawLine of allRulesTxt.split("\n")) {
-    const line = rawLine.trim();
-    if (line !== "") seen.add(line);
-  }
-  return seen.size;
-}
-
-/** Find and describe the id claimed twice inside a single `allRules.txt`. */
-function duplicateWithinText(allRulesTxt: string, where: string): DuplicateRuleIdError {
-  const seen = new Map<RuleId, string>();
-  for (const rawLine of allRulesTxt.split("\n")) {
-    const line = rawLine.trim();
-    if (line === "") continue;
-    // One line at a time, still through kompiled's parser: this is a diagnostic
-    // path, run once per report at most, and it must split locations the same
-    // way the fast path does.
-    for (const [ruleId, location] of parseAllRules(line).allRules) {
-      const first = seen.get(ruleId);
-      if (first !== undefined && first !== location.location) {
-        return new DuplicateRuleIdError(ruleId, `${first}${where}`, `${location.location}${where}`);
-      }
-      seen.set(ruleId, location.location);
-    }
-  }
-  // Unreachable: the caller only calls this when the two counts disagree, and
-  // the only way they can is a repeated id.  A wrong-but-honest message beats a
-  // thrown `undefined` if that reasoning is ever wrong.
-  return new DuplicateRuleIdError("(unknown)", `two lines in one allRules.txt${where}`, "share a UNIQUE_ID");
 }
 
 //////////////////////////////

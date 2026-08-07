@@ -51,13 +51,14 @@
  * These are properties of the *input*, not choices made here.  Each is a named
  * normalization in `test/astToKast.test.ts`.
  *
- * 1. **No `Location`/`Source` on syntax sentences.**  pyk's outer parser sets
+ * 1. **No serialized `Location`/`Source` on syntax sentences.**  pyk's outer parser sets
  *    `source`/`location` on exactly two node types — `Module`
  *    (`outer_parser.py:145`) and `StringSentence` (`:373`).  A `Production`,
  *    `SyntaxDecl` or `PriorityBlock` carries neither, so there is nothing to
  *    put in the att.  Java puts both on all 485 productions of `imp.json`.
- *    Fixing this means changing `parser.ts` away from pyk, which would break
- *    the 88 transcribed parser cases and the nine `.outer.json` goldens.
+ *    Additive surface spans now retain those source extents in memory, but are
+ *    intentionally ignored here to preserve the 89 transcribed parser cases
+ *    and the nine `.outer.json` goldens.
  * 2. **`KBubble`'s `Location` is the content start, not the sentence span.**
  *    pyk stores `(line, col, line, col)` of the *bubble text* start
  *    (`outer_parser.py:373`); Java stores the span from the `rule` keyword to
@@ -180,6 +181,13 @@ export interface AstToKastOptions {
    * that wants pyk's exact failure mode can have it.
    */
   readonly strictAtts?: boolean;
+
+  /**
+   * Emit the left-recursive `NeList` shape selected by K's `--bison-lists`
+   * kompile option. K rejects a possibly-empty `List` in that mode, so this
+   * converter rejects it too rather than inventing an unsupported grammar.
+   */
+  readonly bisonLists?: boolean;
 
   /**
    * The tag index resolves `syntax priority` / `syntax left` tag names
@@ -443,8 +451,14 @@ function prefixLabel(production: ProductionLike, sort: KSort, moduleName: string
  */
 function declaredLabel(att: Att): string | undefined {
   const symbol = attText(att, "symbol");
+  const deprecatedKLabel = attText(att, "klabel");
+  // K 7.1.337 rejects this input rather than choosing a precedence. Keep the
+  // refusal in the one label path shared by user-list and heat/cool derivation.
+  if (symbol !== undefined && symbol !== "" && deprecatedKLabel !== undefined && deprecatedKLabel !== "") {
+    throw new TypeError("A production cannot carry both value-bearing symbol(...) and klabel(...) attributes");
+  }
   if (symbol !== undefined && symbol !== "") return symbol;
-  return attText(att, "klabel");
+  return deprecatedKLabel;
 }
 
 /** Whether this production is a bare subsort — `Production.isSyntacticSubsort`. */
@@ -498,7 +512,7 @@ function productionBracketLabel(production: ProductionLike, sort: KSort, moduleN
  * `.List{"<the list's klabel>"}`, suffixed with the sort in `kore` mode unless
  * the production declared a `symbol`.
  */
-function terminatorSymbol(production: ProductionLike, sort: KSort, moduleName: string, kore: boolean): string {
+export function terminatorSymbol(production: ProductionLike, sort: KSort, moduleName: string, kore: boolean): string {
   const declared = attText(production.att, "terminator-symbol");
   if (declared !== undefined) return declared.replaceAll(" ", "");
   const inner = productionKLabel(production, sort, moduleName, kore) ?? "";
@@ -750,7 +764,7 @@ function syntaxDefnToKSentences(
     }
     for (const production of block.productions) {
       if (production.node === "UserList") {
-        out.push(...userListToKProductions(production, sort, params, moduleName, context));
+        out.push(...userListToKProductionsWithContext(production, sort, params, moduleName, context));
         continue;
       }
 
@@ -814,19 +828,43 @@ function blockTags(block: PriorityBlock, sort: KSort, moduleName: string): reado
  * it is a `kompile` flag this package has no input for, and the default is
  * `false`.
  */
-function userListToKProductions(
+/**
+ * Expand one source-level user list as KILtoKORE does.
+ *
+ * `bisonLists` is the write-side mirror of K's `--bison-lists`: it accepts
+ * only `NeList`, and reverses the recursive production's item order.
+ */
+export function userListToKProductions(
+  production: UserList,
+  sort: KSort,
+  params: readonly KSort[],
+  moduleName: string,
+  options: AstToKastOptions = {},
+): readonly KSentence[] {
+  const context: SentenceContext = { ...options, tags: options.tags ?? buildTagIndex([]) };
+  return userListToKProductionsWithContext(production, sort, params, moduleName, context);
+}
+
+/** The converter-internal spelling, which keeps a shared tag index intact. */
+function userListToKProductionsWithContext(
   production: UserList,
   sort: KSort,
   params: readonly KSort[],
   moduleName: string,
   context: SentenceContext,
 ): readonly KSentence[] {
+  if (context.bisonLists === true && !production.nonEmpty) {
+    throw new TypeError("Cannot use List with --bison-lists");
+  }
   const elementSort = ksort(production.sort);
   const userList = attEntry(Atts.USER_LIST, production.nonEmpty ? "+" : "*");
   const listLabel = productionKLabel(production, sort, moduleName, true) ?? "";
 
   const element = kproduction(sort, {
-    items: [knonterminal(elementSort), kterminal(production.sep), knonterminal(sort)],
+    items:
+      context.bisonLists === true
+        ? [knonterminal(sort), kterminal(production.sep), knonterminal(elementSort)]
+        : [knonterminal(elementSort), kterminal(production.sep), knonterminal(sort)],
     params,
     klabel: klabel(listLabel, params),
     att: attFor(production.att, [userList], context),

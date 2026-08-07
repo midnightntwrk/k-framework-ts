@@ -12,6 +12,13 @@ verbatim into this package, but a transcription this close — including
 transcribed test-case tables, which copy expression and not just interface —
 is fairly regarded as a derivative work, so pyk's notices travel with it.
 
+The package also derives its source-level user-list recognizer from the Java
+frontend's `definition/UserList.java`, and records Java frontend sources plus
+K's builtin `domains.md`, `kast.md`, and `substitution.md` as content
+authorities for production attribution and sort facts. Those files are from the
+same K repository and release, so are covered by the same notices and BSD
+3-Clause terms.
+
 The repository is also the source of the 19 test-data files vendored
 byte-for-byte under `fixtures/kast-text/` (from
 `k-distribution/tests/regression-new/`, same tag, catalogued in

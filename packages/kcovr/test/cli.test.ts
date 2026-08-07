@@ -45,9 +45,16 @@ const GOLDEN_SOURCES = [
   "/fix/sem/panopticon-syntax.md",
 ];
 
+/* oxlint-disable unicorn/no-useless-undefined -- fetcher contract reserves undefined for a clean 404. */
+
 /** The fetcher every non-`check-k` case gets: reaching GitHub here is a bug. */
-const OFFLINE: KcovrSourceFetcher = () => {
-  throw new Error("no test may reach the network");
+const OFFLINE: KcovrSourceFetcher = {
+  file: () => {
+    throw new Error("no test may reach the network");
+  },
+  gitlink: () => {
+    throw new Error("no test may reach the network");
+  },
 };
 
 /**
@@ -55,17 +62,22 @@ const OFFLINE: KcovrSourceFetcher = () => {
  * not on the menu, so this reads as `changed` everywhere — which is what
  * exercises the DIFF rendering.
  */
-const standInFetcher: KcovrSourceFetcher = (repo, path) => {
-  const source = TRANSCRIBED_FROM.find((s) => s.repo === repo && s.path === path);
-  return Promise.resolve(source === undefined ? undefined : new TextEncoder().encode(`stand-in for ${path}`));
+const standInFetcher: KcovrSourceFetcher = {
+  file: (repo, path) => {
+    const source = TRANSCRIBED_FROM.find((s) => s.repo === repo && s.path === path);
+    return Promise.resolve(source === undefined ? undefined : new TextEncoder().encode(`stand-in for ${path}`));
+  },
+  gitlink: () => Promise.resolve("f02284f09858cd2b9f310ad0142b3e04054295ec"),
 };
 
 /**
  * Upstream has none of the declared paths at this tag.  `undefined` is the
  * fetcher's contract for a clean 404, not a stray value.
  */
-// oxlint-disable-next-line unicorn/no-useless-undefined
-const goneFetcher: KcovrSourceFetcher = () => Promise.resolve(undefined);
+const goneFetcher: KcovrSourceFetcher = {
+  file: () => Promise.resolve(undefined),
+  gitlink: () => Promise.resolve(undefined),
+};
 
 /** Run the CLI, collecting both streams.  The clock is fixed at 2001-09-09. */
 function run(...argv: string[]): Promise<{ code: number; out: string; err: string }> {
@@ -433,7 +445,7 @@ describe("kcovr kore-log", () => {
   });
 });
 
-describe("kcovr check-k", () => {
+describe("kcovr-ts check-k", () => {
   test("renders both tiers and exits 1 when either changed", async () => {
     const { code, out, err } = await runWith(standInFetcher, "check-k", "v9.9.9");
     expect(code).toBe(1);
@@ -471,7 +483,11 @@ describe("kcovr check-k", () => {
   });
 
   test("a fetcher failure exits 2 — could not ask is not a verdict", async () => {
-    const { code, out, err } = await runWith(() => Promise.reject(new Error("offline")), "check-k", "v9.9.9");
+    const { code, out, err } = await runWith(
+      { file: () => Promise.reject(new Error("offline")), gitlink: () => Promise.reject(new Error("offline")) },
+      "check-k",
+      "v9.9.9",
+    );
     expect(code).toBe(2);
     expect(out).toBe("");
     expect(err).toInclude("could not check v9.9.9");
@@ -486,7 +502,7 @@ describe("kcovr check-k", () => {
   });
 
   test("--help lists it, and nothing is left unimplemented", () => {
-    expect(USAGE).toInclude("kcovr check-k <k-release>");
+    expect(USAGE).toInclude("kcovr-ts check-k <k-release>");
     expect(USAGE).not.toInclude("Not implemented yet");
   });
 });

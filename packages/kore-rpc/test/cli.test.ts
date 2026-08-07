@@ -1,5 +1,5 @@
 /**
- * The three `kore-rpc` subcommands, exercised offline and off-disk.
+ * The three `kore-rpc-ts` subcommands, exercised offline and off-disk.
  *
  * Every effect is injected: the fetcher and the submodule resolver, so nothing
  * touches the network, and a {@link FileSystem} over a plain map, so
@@ -75,6 +75,8 @@ describe("main", () => {
     expect(out.text()).toContain("check-k");
     expect(out.text()).toContain("rpc-print");
     expect(out.text()).toContain("rpc-kast");
+    expect(out.text()).toContain("kore-rpc-ts check-k");
+    expect(out.text()).not.toContain("kore-rpc check-k");
   });
 
   test("unknown command exits 2", async () => {

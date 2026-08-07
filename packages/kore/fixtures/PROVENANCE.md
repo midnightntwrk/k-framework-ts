@@ -1,11 +1,11 @@
 # Fixture provenance
 
-Every file here is **byte-for-byte what the upstream repositories carry** —
-none of it is hand-authored, reformatted, or trimmed. This package is a
-hand-transcription of upstream KORE sources, and a hand-transcription is not
-self-verifying; these fixtures are the evidence. `SHA256SUMS` (in this
-directory) records a checksum for every fixture file; regenerate with the
-command at the bottom of this document.
+Every file here is **byte-for-byte what the upstream repositories carry**,
+except the explicitly identified `ambiguity/` pattern extraction — none is
+hand-authored. This package is a hand-transcription of upstream
+KORE sources, and a hand-transcription is not self-verifying; these fixtures
+are the evidence. `SHA256SUMS` (in this directory) records a checksum for every
+fixture file; regenerate with the command at the bottom of this document.
 
 ## Where everything was read from
 
@@ -13,6 +13,7 @@ command at the bottom of this document.
 | --- | --- |
 | `runtimeverification/k` | tag `v7.1.337`, commit `4a46d1231473b599c699160132fd6e76a5c46406` |
 | `runtimeverification/haskell-backend` (the `haskell-backend` submodule that k tag pins, at `haskell-backend/src/main/native/haskell-backend`) | tag `v0.1.155`, commit `38afc81fc9414f1e11e609b01a43a436b613bd2d` |
+| `runtimeverification/llvm-backend` (the `llvm-backend` gitlink at `llvm-backend/src/main/native/llvm-backend` in K `v7.1.337`) | commit `f02284f09858cd2b9f310ad0142b3e04054295ec` |
 
 Copied 2026-08-05 out of local checkouts at exactly those commits, with `cp`
 (no `git show` needed — the checkouts were verified clean at those SHAs).
@@ -90,6 +91,46 @@ Deliberately **not** vendored:
   llvm-backend's *printer*, which formats differently from both writers this
   package transcribes; adopting it would pin us to a third format. Revisit if
   an unparser-conformance need appears.
+
+## `ambiguity/` — frontend GLR evidence (1 file)
+
+`llvm-amb-rule.kore` is the pattern on lines 412–413 of
+`runtimeverification/llvm-backend:test/defn/amb.kore` at the exact gitlink
+commit above (source-file sha256
+`5a063d11a7f4aeae0bf3dc424002af4a368ef6ce861565b66cabdf0c3357b91d`). It
+contains the frontend's real `Lblamb{SortExp{}}` application underneath an
+`inj`, as used by the LLVM backend's own ambiguity definition test. The fixture
+is a deliberately narrow extraction so it can be read as one `Pattern`: four
+spaces of enclosing alias indentation and the alias declaration's trailing
+`[]` are removed. It is not presented as a complete generated parser output.
+
+It was extracted on 2026-08-07 from the repository root. The operation is
+platform-independent; `curl`, `sed`, and `sha256sum` are the only tools. K was
+identified as v7.1.337 (build date 2026-08-06), whose nested gitlink resolves to
+the commit above. The exact command is:
+
+```sh
+curl -fsSL \
+  https://raw.githubusercontent.com/runtimeverification/llvm-backend/f02284f09858cd2b9f310ad0142b3e04054295ec/test/defn/amb.kore \
+  | sed -n '412,413p' \
+  | sed -e 's/^    //' -e 's/ \[\]$/' \
+  > packages/kore/fixtures/ambiguity/llvm-amb-rule.kore
+sha256sum packages/kore/fixtures/ambiguity/llvm-amb-rule.kore
+```
+
+The expected fixture sha256 is
+`5783ee32cd85d6fc44e9a7be79fde17cba66922bae87e3a9b96c40ca04eca641`.
+Ordinary CI only consumes the checked-in pattern and byte-checks
+`fixtures/SHA256SUMS`; it does not contact GitHub or regenerate the excerpt.
+
+The behavioral claim is separately watched through content-tier source pins:
+`k-distribution/include/kframework/builtin/kast.md` (sha256
+`42c815ea80ed522dde962e231bdacc3d0d7e643016f8d649eab8d4be1d570040`) declares
+`amb`, and `k-distribution/include/kframework/cparser/main.c` (sha256
+`27b4e784542a732a7cb3699f6b78f1e25500ec38a8eae22bc1c05faa83a27201`) emits
+binary `Lblamb` nodes. `check-k` reports drift in either as advisory content
+drift; re-run the recorded source extraction or a GLR parser before changing
+the projection.
 
 ## `kore-schema.json`
 

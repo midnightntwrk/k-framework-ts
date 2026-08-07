@@ -1,20 +1,20 @@
 /**
- * The `kore-rpc` command: three subcommands, each a pure function of its
+ * The `kore-rpc-ts` command: three subcommands, each a pure function of its
  * arguments plus injected effects, so each is tested without spawning a
  * process, a network or a disk. `bin.ts` is the only file here that touches
  * `process`.
  *
- * - `kore-rpc rpc-print <file>` — describe one recorded request or response in
+ * - `kore-rpc-ts rpc-print <file>` — describe one recorded request or response in
  *   readable form. pyk's `pyk rpc-print` (`k/pyk/src/pyk/__main__.py:136-216`),
  *   minus the `definition_dir` argument: terms come out as KORE rather than as
  *   pretty-printed K, because this package has no KAST layer. The reasoning,
  *   and the four response shapes pyk cannot read and this can, are in
  *   `inspect.ts`'s header.
- * - `kore-rpc rpc-kast <reference-request> <response>` — build the next request
+ * - `kore-rpc-ts rpc-kast <reference-request> <response>` — build the next request
  *   from a recorded `execute` response by grafting its state into a request you
  *   already have. pyk's `pyk rpc-kast` (`__main__.py:218-236`); the manual
  *   RPC-debugging loop, and the natural companion to a `BugReport` tar.
- * - `kore-rpc check-k <k-release> [<haskell-backend-release>]` — the house
+ * - `kore-rpc-ts check-k <k-release> [<haskell-backend-release>]` — the house
  *   drift check: does this transcription still hold at that K release?
  *
  * # `check-k`'s two KORE-specific twists
@@ -57,22 +57,22 @@ const RAW = "https://raw.githubusercontent.com";
 const API = "https://api.github.com";
 const SUBMODULE_PATH = "haskell-backend/src/main/native/haskell-backend";
 
-export const USAGE = `kore-rpc <command>
+export const USAGE = `kore-rpc-ts <command>
 
-  kore-rpc rpc-print <file> [--output-file F]
+  kore-rpc-ts rpc-print <file> [--output-file F]
       Describe one recorded kore-rpc request or response — the method, the
       halt reason, the depth, the parameters, and every term as KORE. Reads
       the JSON files a bug-report tarball is made of.
 
-  kore-rpc rpc-kast <reference-request> <response> [--output-file F]
+  kore-rpc-ts rpc-kast <reference-request> <response> [--output-file F]
       Turn an 'execute' response into the next request to send, by copying a
       reference request's envelope and parameters and replacing its state with
       the response's. The reference's method decides whether the result is an
       'execute' or a 'simplify'. Prints one line of JSON.
 
-  kore-rpc check-k <k-release> [<haskell-backend-release>]
+  kore-rpc-ts check-k <k-release> [<haskell-backend-release>]
       Check whether the upstream sources this package was transcribed from are
-      unchanged at a given K release, e.g. kore-rpc check-k ${K_RELEASE}.
+      unchanged at a given K release, e.g. kore-rpc-ts check-k ${K_RELEASE}.
       The haskell-backend tree is checked at the submodule commit that k
       release pins, unless a second release/commit is given explicitly.
 

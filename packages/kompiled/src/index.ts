@@ -39,4 +39,5 @@ export * from "./fs.js";
 export * from "./kompiled.js";
 export * from "./ksources.js";
 export * from "./layout.js";
+export * from "./parser-artifacts.js";
 export * from "./version.js";

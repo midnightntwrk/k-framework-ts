@@ -972,6 +972,26 @@ export function productionAsSubsort(prod: KProduction): readonly [KSort, KSort] 
   return [prod.sort, item.sort];
 }
 
+/**
+ * One declared (not transitively closed) subsort edge.
+ *
+ * `from` is the child/subsort and `to` is the parent/supersort, the direction
+ * a KAST term must be injected when it occupies a `to` position.
+ */
+export interface SubsortEdge {
+  readonly production: KProduction;
+  readonly from: KSort;
+  readonly to: KSort;
+}
+
+/** The direct subsort edge declared by `prod`, if it has the subsort shape. */
+export function productionSubsortEdge(prod: KProduction): SubsortEdge | undefined {
+  const pair = productionAsSubsort(prod);
+  if (pair === undefined) return undefined;
+  const [to, from] = pair;
+  return Object.freeze({ production: prod, from, to });
+}
+
 /** `KProduction.non_terminals` (`outer.py:287-290`). */
 export function productionNonTerminals(prod: KProduction): readonly KNonTerminal[] {
   return prod.items.filter((item): item is KNonTerminal => item.node === "KNonTerminal");
@@ -1409,6 +1429,16 @@ export function moduleProductions(module: KFlatModule): readonly KProduction[] {
   return module.sentences.filter((s): s is KProduction => s.node === "KProduction");
 }
 
+/** The direct subsort edges declared locally in `module`, in sentence order. */
+export function moduleSubsortEdges(module: KFlatModule): readonly SubsortEdge[] {
+  return Object.freeze(
+    moduleProductions(module).flatMap((production) => {
+      const edge = productionSubsortEdge(production);
+      return edge === undefined ? [] : [edge];
+    }),
+  );
+}
+
 /** `KFlatModule.syntax_productions` (`outer.py:841-844`) — the ones with a label. */
 export function moduleSyntaxProductions(module: KFlatModule): readonly KProduction[] {
   return moduleProductions(module).filter((prod) => prod.klabel !== undefined);
@@ -1779,8 +1809,7 @@ export class KDefinition implements WithKAtt {
       const symbol = prod.klabel.name;
       const other = symbols.get(symbol);
       if (other !== undefined) {
-        const att = prod.att.dropSource();
-        if (!eqProduction(letKProduction(prod, { att }), letKProduction(other, { att }))) {
+        if (!sameSymbolProduction(prod, other)) {
           throw new TypeError(`Found multiple productions for ${symbol}`);
         }
         continue;
@@ -2654,6 +2683,46 @@ export interface KDefinitionChanges {
   readonly att?: KAtt;
 }
 
+/**
+ * The names in an arbitrary module's import closure, breadth-first and
+ * including the named module itself.
+ *
+ * This deliberately does not reuse {@link KDefinition.moduleNames}: that
+ * getter is, and remains, specifically the main module's closure.
+ */
+export function moduleImportClosureNames(definition: KDefinition, moduleName: string): readonly string[] {
+  const queue = [moduleName];
+  const names: string[] = [];
+  const seen = new Set<string>();
+  while (queue.length > 0) {
+    const name = queue.shift();
+    if (name === undefined || seen.has(name)) continue;
+    const module = definition.module(name);
+    seen.add(name);
+    names.push(name);
+    for (const imported of module.imports) queue.push(imported.name);
+  }
+  return Object.freeze(names);
+}
+
+/** The modules in an arbitrary named module's import closure. */
+export function moduleImportClosure(definition: KDefinition, moduleName: string): readonly KFlatModule[] {
+  return Object.freeze(moduleImportClosureNames(definition, moduleName).map((name) => definition.module(name)));
+}
+
+/** The productions declared locally by an arbitrary named module. */
+export function moduleLocalProductions(definition: KDefinition, moduleName: string): readonly KProduction[] {
+  return moduleProductions(definition.module(moduleName));
+}
+
+/**
+ * The direct subsort edges available to an arbitrary named module, retaining
+ * their declaring productions rather than collapsing them into a closure.
+ */
+export function moduleImportSubsortEdges(definition: KDefinition, moduleName: string): readonly SubsortEdge[] {
+  return Object.freeze(moduleImportClosure(definition, moduleName).flatMap((module) => moduleSubsortEdges(module)));
+}
+
 /** `KDefinition.let_att` (`outer.py:1078-1079`) as an `att.ts` `LetAtt`. */
 export function letDefinitionAtt(definition: KDefinition, att: KAtt): KDefinition {
   return definition.letAtt(att);
@@ -2690,6 +2759,20 @@ export function sortKey(sort: KSort): string {
  */
 function eqProduction(a: KProduction, b: KProduction): boolean {
   return canonicalJson(sentenceToDict(a)) === canonicalJson(sentenceToDict(b));
+}
+
+/**
+ * Whether two productions can denote the same K symbol.
+ *
+ * This is the deliberately asymmetric `KDefinition.symbols` parity rule from
+ * pyk: source attribution is ignored by applying the first production's
+ * source-stripped attributes to both sides.  Consumers that index labels over
+ * an import closure must use this rule too, or they reject definitions whose
+ * own `symbols` index accepts them.
+ */
+export function sameSymbolProduction(a: KProduction, b: KProduction): boolean {
+  const att = a.att.dropSource();
+  return eqProduction(letKProduction(a, { att }), letKProduction(b, { att }));
 }
 
 /** {@link eqProduction} for any sentence — `sent != unique_id_map[unique_id]` (`outer.py:1190`). */

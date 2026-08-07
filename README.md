@@ -80,6 +80,16 @@ resolves through machine-local state, so a fresh clone or a CI job fails until
 the two commands above have been run there. Rebuild after changing a linked
 package: the symlink exposes sources immediately, but consumers import `dist/`.
 
+### Checker-bin migration
+
+The TypeScript checker bins are named `kast-ts`, `kcovr-ts`, and `kore-rpc-ts`
+so they cannot shadow K's `kast`, `kcovr`, or `kore-rpc` executables. An
+existing Bun-linked checkout can retain the old project-local `.bin` symlinks:
+after updating its lockfile and installing, remove any stale `kast`, `kcovr`,
+and `kore-rpc` entries from that checkout's `node_modules/.bin`. Fresh
+checkouts are unaffected. The library APIs that launch K still default to the
+official bare command names on `PATH`.
+
 [`docs/distribution.md`](docs/distribution.md) defines the supported release,
 prerelease, and local-development channels.
 

@@ -14,9 +14,9 @@
  *   `pyk parse-outer` (`__main__.py:429-444`), except that it works on
  *   definitions that contain sentences — which pyk's cannot, because
  *   `_ast_to_kast.py:57-60` is a stub that raises.
- * - `k-parser check-k <k-release>` — the house drift check.  It fetches the six
- *   files recorded in `TRANSCRIBED_FROM` from GitHub at the requested tag and
- *   compares hashes.  It works for any tag, including releases published after
+ * - `k-parser check-k <k-release>` — the house drift check.  It fetches every
+ *   declared source authority from GitHub at the requested tag and compares
+ *   hashes. It works for any tag, including releases published after
  *   this package was, which is the whole point: `docs/versioning.md` records why
  *   a declared "verified through vX" range was rejected in favour of asking on
  *   demand.
@@ -76,8 +76,8 @@ export const USAGE = `k-parser <command>
       upper-cased. -I/--include repeats.
 
   k-parser check-k <k-release>
-      Check whether the six pyk outer-parser sources this package was
-      transcribed from are unchanged at a given K release, e.g.
+      Check whether this package's transcribed sources are unchanged at a
+      given K release; advisory content authorities are reported too, e.g.
       k-parser check-k ${K_RELEASE}.
 
 A .md file is fence-selected before parsing, gated purely on the suffix; the
@@ -272,12 +272,16 @@ export function render(report: KSourcesReport): string {
         : file.status === "changed"
           ? `expected ${file.expected.slice(0, 12)}…, got ${(file.actual ?? "").slice(0, 12)}…`
           : `no such path at ${report.release}`;
-    return `  ${mark}  ${file.path}\n        ${detail}`;
+    const advisory = file.tier === "content" ? " (advisory content)" : "";
+    return `  ${mark}  ${file.path}${advisory}\n        ${detail}`;
   });
 
   const summary =
     report.verdict === "unchanged"
-      ? `This package's transcription is current for K ${report.release}.`
+      ? `This package's transcription is current for K ${report.release}.` +
+        (report.verdicts.content === "unchanged"
+          ? ""
+          : ` Content-authority drift is advisory (${report.verdicts.content}); inspect it before relying on those shapes.`)
       : report.verdict === "changed"
         ? `A source this package transcribes changed between ${report.recordedAt} and ${report.release}.\n` +
           `Diff it before trusting this package at that release.`

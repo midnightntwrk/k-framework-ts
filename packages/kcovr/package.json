@@ -23,7 +23,7 @@
     "directory": "packages/kcovr"
   },
   "bin": {
-    "kcovr": "./dist/bin.js"
+    "kcovr-ts": "./dist/bin.js"
   },
   "files": [
     "dist",

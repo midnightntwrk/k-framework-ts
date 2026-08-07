@@ -88,6 +88,7 @@
 export * from "./claim-index.js";
 export * from "./claim-loader.js";
 export * from "./definition-cache.js";
+export * from "./diagnostics.js";
 export * from "./distribution.js";
 export * from "./interpreter.js";
 export * from "./kast-cli.js";
@@ -100,5 +101,7 @@ export * from "./kserver.js";
 export * from "./ksources.js";
 export * from "./parse-modules.js";
 export * from "./proc.js";
+export * from "./search.js";
 export * from "./stdio.js";
+export * from "./term-conversion.js";
 export * from "./version.js";

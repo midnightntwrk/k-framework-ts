@@ -1,0 +1,9 @@
+[Error] Inner Parser: Parsing ambiguity.
+1: syntax Exp ::= Exp "+" Exp
+    `_+__AMBIGUITY_Exp_Exp_Exp`(#token("1","Int"),`_+__AMBIGUITY_Exp_Exp_Exp`(#token("2","Int"),#token("3","Int")))
+2: syntax Exp ::= Exp "+" Exp
+    `_+__AMBIGUITY_Exp_Exp_Exp`(`_+__AMBIGUITY_Exp_Exp_Exp`(#token("1","Int"),#token("2","Int")),#token("3","Int"))
+	Source(/home/sebdev20/Documents/git/workspaces/starstream-fv/k-framework-ts/./packages/ktool/fixtures/diagnostics/ambiguity.pgm)
+	Location(1,1,1,10)
+	1 |	1 + 2 + 3
+	  .	^~~~~~~~~

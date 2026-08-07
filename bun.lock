@@ -68,6 +68,9 @@
       "bin": {
         "kast-json": "./dist/bin.js",
       },
+      "devDependencies": {
+        "@kframework-ts/kast": "workspace:*",
+      },
       "peerDependencies": {
         "zod": "^4.4.3",
       },
