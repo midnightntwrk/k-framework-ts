@@ -49,6 +49,7 @@ export interface KDiagnostic {
  * `version.ts` for the pinned Java files.
  */
 export type KInnerParserMessageTag =
+  | "non-lr-grammar"
   | "parse-unexpected-eof"
   | "parse-unexpected-token"
   | "scanner-unexpected-character"
@@ -96,7 +97,8 @@ export interface KAmbiguityAlternative {
   readonly term: string | null;
 }
 
-const JVM = /^\[(Error|Warning)\] (Compiler|Outer Parser|Inner Parser|Internal|Critical|Prover):\s?(.*)$/u;
+const JVM =
+  /^(?:org\.kframework\.utils\.errorsystem\.KEMException: )?\[(Error|Warning)\] (Compiler|Outer Parser|Inner Parser|Internal|Critical|Prover):\s?(.*)$/u;
 const WRAPPER = /^\[Error\] (krun|kparse|kparse-gen|kore-print):\s?(.*)$/u;
 const SCANNER = /^(\d+):(\d+):(\d+):(\d+):syntax error:\s*(.*)$/u;
 const PARSER = /^(.*):(\d+):(\d+):(\d+):(\d+):(syntax error,.*)$/u;
@@ -128,7 +130,10 @@ export function parseKDiagnostics(text: string): readonly KDiagnostic[] {
         end = j;
         if (next.startsWith("\tSource(")) source = next.slice("\tSource(".length, -1);
         else if (next.startsWith("\tLocation(")) location = next.slice("\tLocation(".length, -1);
-        else if (next.startsWith("\t")) snippet = snippet === null ? next.slice(1) : `${snippet}\n${next.slice(1)}`;
+        else if (next.startsWith("\tat ")) {
+          // `--debug` renders a promoted warning as a KEMException stack. It
+          // belongs to the raw diagnostic record, not the source snippet.
+        } else if (next.startsWith("\t")) snippet = snippet === null ? next.slice(1) : `${snippet}\n${next.slice(1)}`;
         else if (next !== "") body.push(next);
       }
       const rawLines = lines.slice(i, end + 1);
@@ -221,6 +226,8 @@ export function classifyKDiagnostic(diagnostic: KDiagnostic): KMessageClass {
 }
 
 function classifyInnerParser(message: string, raw: string): KMessageClass {
+  if (/^Skipping modules \[[^\r\n]+\] tagged as not-lr1 which are not supported by Bison\.$/u.test(message))
+    return inner("non-lr-grammar");
   if (message.startsWith("Parse error: unexpected end of file")) return inner("parse-unexpected-eof");
   if (message.startsWith("Parse error: unexpected token")) return inner("parse-unexpected-token");
   if (message.startsWith("Scanner error: unexpected character sequence '"))

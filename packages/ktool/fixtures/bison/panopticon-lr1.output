@@ -1,0 +1,384 @@
+Terminals unused in grammar
+
+    "\\/\\/[^\\n\\r]*"
+    "\\/\\*([^*]|\\*+[^*/])*\\*+\\/"
+    "[\\ \\n\\r\\t]"
+
+
+Grammar
+
+    0 $accept: top $end
+
+    1 top: SortPgm__
+
+    2 SortExpr__: SortId__
+    3           | SortValue__
+
+    4 Sort_Hash_UpperId__: "[A-Z][a-zA-Z0-9]*"
+
+    5 SortBool__: "true"
+    6           | "false"
+
+    7 SortValueType__: "bool"
+    8                | "int"
+
+    9 SortPgm__: SortExpr__
+   10          | "let" SortId__ ":" SortValueType__ "=" SortExpr__ ";" SortPgm__
+
+   11 SortId__: Sort_Hash_LowerId__
+   12         | Sort_Hash_UpperId__
+   13         | "[A-Za-z_][A-Za-z0-9_]*"
+
+   14 SortValue__: SortBool__
+   15            | SortInt__
+
+   16 SortInt__: "[0-9]+"
+
+   17 Sort_Hash_LowerId__: "[a-z][a-zA-Z0-9]*"
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    ":" (2) 10
+    ";" (3) 10
+    "=" (4) 10
+    "bool" (5) 7
+    "false" (6) 6
+    "int" (7) 8
+    "let" (8) 10
+    "true" (9) 5
+    "\\/\\/[^\\n\\r]*" (10)
+    "\\/\\*([^*]|\\*+[^*/])*\\*+\\/" (11)
+    "[\\ \\n\\r\\t]" (12)
+    "[0-9]+" (13) 16
+    "[A-Z][a-zA-Z0-9]*" (14) 4
+    "[A-Za-z_][A-Za-z0-9_]*" (15) 13
+    "[a-z][a-zA-Z0-9]*" (16) 17
+    error (256)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (18)
+        on left: 0
+    top (19)
+        on left: 1
+        on right: 0
+    SortExpr__ (20)
+        on left: 2 3
+        on right: 9 10
+    Sort_Hash_UpperId__ (21)
+        on left: 4
+        on right: 12
+    SortBool__ (22)
+        on left: 5 6
+        on right: 14
+    SortValueType__ (23)
+        on left: 7 8
+        on right: 10
+    SortPgm__ (24)
+        on left: 9 10
+        on right: 1 10
+    SortId__ (25)
+        on left: 11 12 13
+        on right: 2 10
+    SortValue__ (26)
+        on left: 14 15
+        on right: 3
+    SortInt__ (27)
+        on left: 16
+        on right: 15
+    Sort_Hash_LowerId__ (28)
+        on left: 17
+        on right: 11
+
+
+State 0
+
+    0 $accept: • top $end
+    1 top: • SortPgm__
+    2 SortExpr__: • SortId__
+    3           | • SortValue__
+    4 Sort_Hash_UpperId__: • "[A-Z][a-zA-Z0-9]*"
+    5 SortBool__: • "true"
+    6           | • "false"
+    9 SortPgm__: • SortExpr__
+   10          | • "let" SortId__ ":" SortValueType__ "=" SortExpr__ ";" SortPgm__
+   11 SortId__: • Sort_Hash_LowerId__
+   12         | • Sort_Hash_UpperId__
+   13         | • "[A-Za-z_][A-Za-z0-9_]*"
+   14 SortValue__: • SortBool__
+   15            | • SortInt__
+   16 SortInt__: • "[0-9]+"
+   17 Sort_Hash_LowerId__: • "[a-z][a-zA-Z0-9]*"
+
+    "false"                   shift, and go to state 1
+    "let"                     shift, and go to state 2
+    "true"                    shift, and go to state 3
+    "[0-9]+"                  shift, and go to state 4
+    "[A-Z][a-zA-Z0-9]*"       shift, and go to state 5
+    "[A-Za-z_][A-Za-z0-9_]*"  shift, and go to state 6
+    "[a-z][a-zA-Z0-9]*"       shift, and go to state 7
+
+    top                  go to state 8
+    SortExpr__           go to state 9
+    Sort_Hash_UpperId__  go to state 10
+    SortBool__           go to state 11
+    SortPgm__            go to state 12
+    SortId__             go to state 13
+    SortValue__          go to state 14
+    SortInt__            go to state 15
+    Sort_Hash_LowerId__  go to state 16
+
+
+State 1
+
+    6 SortBool__: "false" •
+
+    $default  reduce using rule 6 (SortBool__)
+
+
+State 2
+
+    4 Sort_Hash_UpperId__: • "[A-Z][a-zA-Z0-9]*"
+   10 SortPgm__: "let" • SortId__ ":" SortValueType__ "=" SortExpr__ ";" SortPgm__
+   11 SortId__: • Sort_Hash_LowerId__
+   12         | • Sort_Hash_UpperId__
+   13         | • "[A-Za-z_][A-Za-z0-9_]*"
+   17 Sort_Hash_LowerId__: • "[a-z][a-zA-Z0-9]*"
+
+    "[A-Z][a-zA-Z0-9]*"       shift, and go to state 5
+    "[A-Za-z_][A-Za-z0-9_]*"  shift, and go to state 6
+    "[a-z][a-zA-Z0-9]*"       shift, and go to state 7
+
+    Sort_Hash_UpperId__  go to state 10
+    SortId__             go to state 17
+    Sort_Hash_LowerId__  go to state 16
+
+
+State 3
+
+    5 SortBool__: "true" •
+
+    $default  reduce using rule 5 (SortBool__)
+
+
+State 4
+
+   16 SortInt__: "[0-9]+" •
+
+    $default  reduce using rule 16 (SortInt__)
+
+
+State 5
+
+    4 Sort_Hash_UpperId__: "[A-Z][a-zA-Z0-9]*" •
+
+    $default  reduce using rule 4 (Sort_Hash_UpperId__)
+
+
+State 6
+
+   13 SortId__: "[A-Za-z_][A-Za-z0-9_]*" •
+
+    $default  reduce using rule 13 (SortId__)
+
+
+State 7
+
+   17 Sort_Hash_LowerId__: "[a-z][a-zA-Z0-9]*" •
+
+    $default  reduce using rule 17 (Sort_Hash_LowerId__)
+
+
+State 8
+
+    0 $accept: top • $end
+
+    $end  shift, and go to state 18
+
+
+State 9
+
+    9 SortPgm__: SortExpr__ •
+
+    $default  reduce using rule 9 (SortPgm__)
+
+
+State 10
+
+   12 SortId__: Sort_Hash_UpperId__ •
+
+    $default  reduce using rule 12 (SortId__)
+
+
+State 11
+
+   14 SortValue__: SortBool__ •
+
+    $default  reduce using rule 14 (SortValue__)
+
+
+State 12
+
+    1 top: SortPgm__ •
+
+    $default  reduce using rule 1 (top)
+
+
+State 13
+
+    2 SortExpr__: SortId__ •
+
+    $default  reduce using rule 2 (SortExpr__)
+
+
+State 14
+
+    3 SortExpr__: SortValue__ •
+
+    $default  reduce using rule 3 (SortExpr__)
+
+
+State 15
+
+   15 SortValue__: SortInt__ •
+
+    $default  reduce using rule 15 (SortValue__)
+
+
+State 16
+
+   11 SortId__: Sort_Hash_LowerId__ •
+
+    $default  reduce using rule 11 (SortId__)
+
+
+State 17
+
+   10 SortPgm__: "let" SortId__ • ":" SortValueType__ "=" SortExpr__ ";" SortPgm__
+
+    ":"  shift, and go to state 19
+
+
+State 18
+
+    0 $accept: top $end •
+
+    $default  accept
+
+
+State 19
+
+    7 SortValueType__: • "bool"
+    8                | • "int"
+   10 SortPgm__: "let" SortId__ ":" • SortValueType__ "=" SortExpr__ ";" SortPgm__
+
+    "bool"  shift, and go to state 20
+    "int"   shift, and go to state 21
+
+    SortValueType__  go to state 22
+
+
+State 20
+
+    7 SortValueType__: "bool" •
+
+    $default  reduce using rule 7 (SortValueType__)
+
+
+State 21
+
+    8 SortValueType__: "int" •
+
+    $default  reduce using rule 8 (SortValueType__)
+
+
+State 22
+
+   10 SortPgm__: "let" SortId__ ":" SortValueType__ • "=" SortExpr__ ";" SortPgm__
+
+    "="  shift, and go to state 23
+
+
+State 23
+
+    2 SortExpr__: • SortId__
+    3           | • SortValue__
+    4 Sort_Hash_UpperId__: • "[A-Z][a-zA-Z0-9]*"
+    5 SortBool__: • "true"
+    6           | • "false"
+   10 SortPgm__: "let" SortId__ ":" SortValueType__ "=" • SortExpr__ ";" SortPgm__
+   11 SortId__: • Sort_Hash_LowerId__
+   12         | • Sort_Hash_UpperId__
+   13         | • "[A-Za-z_][A-Za-z0-9_]*"
+   14 SortValue__: • SortBool__
+   15            | • SortInt__
+   16 SortInt__: • "[0-9]+"
+   17 Sort_Hash_LowerId__: • "[a-z][a-zA-Z0-9]*"
+
+    "false"                   shift, and go to state 1
+    "true"                    shift, and go to state 3
+    "[0-9]+"                  shift, and go to state 4
+    "[A-Z][a-zA-Z0-9]*"       shift, and go to state 5
+    "[A-Za-z_][A-Za-z0-9_]*"  shift, and go to state 6
+    "[a-z][a-zA-Z0-9]*"       shift, and go to state 7
+
+    SortExpr__           go to state 24
+    Sort_Hash_UpperId__  go to state 10
+    SortBool__           go to state 11
+    SortId__             go to state 13
+    SortValue__          go to state 14
+    SortInt__            go to state 15
+    Sort_Hash_LowerId__  go to state 16
+
+
+State 24
+
+   10 SortPgm__: "let" SortId__ ":" SortValueType__ "=" SortExpr__ • ";" SortPgm__
+
+    ";"  shift, and go to state 25
+
+
+State 25
+
+    2 SortExpr__: • SortId__
+    3           | • SortValue__
+    4 Sort_Hash_UpperId__: • "[A-Z][a-zA-Z0-9]*"
+    5 SortBool__: • "true"
+    6           | • "false"
+    9 SortPgm__: • SortExpr__
+   10          | • "let" SortId__ ":" SortValueType__ "=" SortExpr__ ";" SortPgm__
+   10          | "let" SortId__ ":" SortValueType__ "=" SortExpr__ ";" • SortPgm__
+   11 SortId__: • Sort_Hash_LowerId__
+   12         | • Sort_Hash_UpperId__
+   13         | • "[A-Za-z_][A-Za-z0-9_]*"
+   14 SortValue__: • SortBool__
+   15            | • SortInt__
+   16 SortInt__: • "[0-9]+"
+   17 Sort_Hash_LowerId__: • "[a-z][a-zA-Z0-9]*"
+
+    "false"                   shift, and go to state 1
+    "let"                     shift, and go to state 2
+    "true"                    shift, and go to state 3
+    "[0-9]+"                  shift, and go to state 4
+    "[A-Z][a-zA-Z0-9]*"       shift, and go to state 5
+    "[A-Za-z_][A-Za-z0-9_]*"  shift, and go to state 6
+    "[a-z][a-zA-Z0-9]*"       shift, and go to state 7
+
+    SortExpr__           go to state 9
+    Sort_Hash_UpperId__  go to state 10
+    SortBool__           go to state 11
+    SortPgm__            go to state 26
+    SortId__             go to state 13
+    SortValue__          go to state 14
+    SortInt__            go to state 15
+    Sort_Hash_LowerId__  go to state 16
+
+
+State 26
+
+   10 SortPgm__: "let" SortId__ ":" SortValueType__ "=" SortExpr__ ";" SortPgm__ •
+
+    $default  reduce using rule 10 (SortPgm__)

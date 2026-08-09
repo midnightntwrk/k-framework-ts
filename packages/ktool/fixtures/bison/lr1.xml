@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+
+<bison-xml-report version="3.8.2" bug-report="bug-bison@gnu.org" url="https://www.gnu.org/software/bison/">
+
+  <filename>lr1.y</filename>
+
+  <grammar>
+    <rules>
+      <rule number="0" usefulness="useful">
+        <lhs>$accept</lhs>
+        <rhs>
+          <symbol>start</symbol>
+          <symbol>$end</symbol>
+        </rhs>
+      </rule>
+      <rule number="1" usefulness="useful">
+        <lhs>start</lhs>
+        <rhs>
+          <symbol>ID</symbol>
+        </rhs>
+      </rule>
+    </rules>
+    <terminals>
+      <terminal symbol-number="0" token-number="0" name="$end" type="" usefulness="useful"/>
+      <terminal symbol-number="1" token-number="256" name="error" type="" usefulness="useful"/>
+      <terminal symbol-number="3" token-number="258" name="ID" type="" usefulness="useful"/>
+    </terminals>
+    <nonterminals>
+      <nonterminal symbol-number="4" name="$accept" type="" usefulness="useful"/>
+      <nonterminal symbol-number="5" name="start" type="" usefulness="useful"/>
+    </nonterminals>
+  </grammar>
+
+  <automaton>
+
+    <state number="0">
+      <itemset>
+        <item rule-number="0" dot="0"/>
+        <item rule-number="1" dot="0"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="ID" state="1"/>
+          <transition type="goto" symbol="start" state="2"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="1">
+      <itemset>
+        <item rule-number="1" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="1" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="2">
+      <itemset>
+        <item rule-number="0" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="$end" state="3"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="3">
+      <itemset>
+        <item rule-number="0" dot="2"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="accept" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+  </automaton>
+</bison-xml-report>

@@ -1,0 +1,12 @@
+org.kframework.utils.errorsystem.KEMException: [Error] Inner Parser: Skipping modules [GENERATED-BISON-EXCLUDED] tagged as not-lr1 which are not supported by Bison.
+	at org.kframework.utils.errorsystem.KExceptionManager.registerInternal(KExceptionManager.java:142)
+	at org.kframework.utils.errorsystem.KExceptionManager.register(KExceptionManager.java:119)
+	at org.kframework.utils.errorsystem.KExceptionManager.registerInnerParserWarning(KExceptionManager.java:109)
+	at org.kframework.parser.inner.kernel.KSyntax2Bison.writeParser(KSyntax2Bison.java:157)
+	at org.kframework.parser.KRead.createBisonParser(KRead.java:84)
+	at org.kframework.kompile.Kompile.run(Kompile.java:262)
+	at org.kframework.kompile.KompileFrontEnd.run(KompileFrontEnd.java:91)
+	at org.kframework.main.FrontEnd.main(FrontEnd.java:60)
+	at org.kframework.main.Main.runApplication(Main.java:127)
+	at org.kframework.main.Main.runApplication(Main.java:117)
+	at org.kframework.main.Main.main(Main.java:58)

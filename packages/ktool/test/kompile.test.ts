@@ -11,7 +11,7 @@
 
 import { afterEach, describe, expect, test } from "bun:test";
 import { KompiledDirNotFoundError } from "@kframework-ts/kompiled";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -24,6 +24,7 @@ import {
   HASKELL_ARG_KEYS,
   isKompileBackend,
   kompile,
+  kompileDetailed,
   KompileArgumentError,
   KompileNotFoundError,
   kompileFromDict,
@@ -306,6 +307,86 @@ describe("kompile() stops before spawning", () => {
   test("an empty command is an argument error, not a not-found", async () => {
     const { mainFile } = await withMainFile();
     await caughtAsync(kompile({ backend: "llvm", mainFile }, { command: [] }), KompileArgumentError);
+  });
+});
+
+describe("kompileDetailed", () => {
+  async function fakeKompile(): Promise<{ command: string; mainFile: string; dir: string }> {
+    const dir = await scratch();
+    const command = join(dir, "kompile");
+    const mainFile = join(dir, "imp.k");
+    await writeFile(mainFile, "module IMP endmodule\n");
+    await writeFile(
+      command,
+      `#!/bin/bash
+if [[ "\${KTOOL_FAKE_EXIT:-0}" != 0 ]]; then
+  echo "fake failure" >&2
+  exit "\${KTOOL_FAKE_EXIT}"
+fi
+output=""
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "--output-definition" ]]; then output="$2"; shift 2; else shift; fi
+done
+/bin/mkdir -p "$output"
+echo "fake stdout"
+echo "successful stderr" >&2
+`,
+    );
+    await chmod(command, 0o755);
+    return { command, mainFile, dir };
+  }
+
+  test("returns the definition directory and complete process record while kompile() remains the projection", async () => {
+    const fixture = await fakeKompile();
+    const detailedOutput = join(fixture.dir, "detailed-output");
+    const detailed = await kompileDetailed(
+      { backend: "llvm", mainFile: fixture.mainFile },
+      { command: [fixture.command], outputDir: detailedOutput, env: { PATH: "" } },
+    );
+    expect(detailed.definitionDir).toBe(detailedOutput);
+    expect(detailed.definitionDirExists).toBe(true);
+    expect(detailed.process.returncode).toBe(0);
+    expect(detailed.process.stdout).toBe("fake stdout\n");
+    expect(detailed.process.stderr).toBe("successful stderr\n");
+    expect(detailed.process.args).toContain("--output-definition");
+
+    const projectedOutput = join(fixture.dir, "projected-output");
+    expect(
+      await kompile(
+        { backend: "llvm", mainFile: fixture.mainFile },
+        { command: [fixture.command], outputDir: projectedOutput, env: { PATH: "" } },
+      ),
+    ).toBe(projectedOutput);
+  });
+
+  test("check:false preserves a failed CompletedProcess even when no definition directory exists", async () => {
+    const fixture = await fakeKompile();
+    const outputDir = join(fixture.dir, "missing-output");
+    const detailed = await kompileDetailed(
+      { backend: "llvm", mainFile: fixture.mainFile },
+      {
+        command: [fixture.command],
+        outputDir,
+        check: false,
+        env: { PATH: "", KTOOL_FAKE_EXIT: "7" },
+      },
+    );
+    expect(detailed.definitionDir).toBe(outputDir);
+    expect(detailed.definitionDirExists).toBe(false);
+    expect(detailed.process.returncode).toBe(7);
+    expect(detailed.process.stderr).toBe("fake failure\n");
+
+    expect(
+      kompile(
+        { backend: "llvm", mainFile: fixture.mainFile },
+        {
+          command: [fixture.command],
+          outputDir,
+          check: false,
+          env: { PATH: "", KTOOL_FAKE_EXIT: "7" },
+        },
+      ),
+    ).rejects.toThrow("is not a directory");
   });
 });
 

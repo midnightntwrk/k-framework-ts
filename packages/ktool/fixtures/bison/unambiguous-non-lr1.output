@@ -1,0 +1,150 @@
+Rules useless in parser due to conflicts
+
+    4 right: "c"
+
+
+State 3 conflicts: 1 reduce/reduce
+
+
+Grammar
+
+    0 $accept: start $end
+
+    1 start: "a" left "d" "d"
+    2      | "a" right "d" "e"
+
+    3 left: "c"
+
+    4 right: "c"
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256)
+    "a" (258) 1 2
+    "c" (259) 3 4
+    "d" (260) 1 2
+    "e" (261) 2
+
+
+Nonterminals, with rules where they appear
+
+    $accept (7)
+        on left: 0
+    start (8)
+        on left: 1 2
+        on right: 0
+    left (9)
+        on left: 3
+        on right: 1
+    right (10)
+        on left: 4
+        on right: 2
+
+
+State 0
+
+    0 $accept: • start $end
+    1 start: • "a" left "d" "d"
+    2      | • "a" right "d" "e"
+
+    "a"  shift, and go to state 1
+
+    start  go to state 2
+
+
+State 1
+
+    1 start: "a" • left "d" "d"
+    2      | "a" • right "d" "e"
+    3 left: • "c"
+    4 right: • "c"
+
+    "c"  shift, and go to state 3
+
+    left   go to state 4
+    right  go to state 5
+
+
+State 2
+
+    0 $accept: start • $end
+
+    $end  shift, and go to state 6
+
+
+State 3
+
+    3 left: "c" •  ["d"]
+    4 right: "c" •  ["d"]
+
+    "d"       reduce using rule 3 (left)
+    "d"       [reduce using rule 4 (right)]
+    $default  reduce using rule 3 (left)
+
+    reduce/reduce conflict on token "d":
+        3 left: "c" •
+        4 right: "c" •
+      First example: "a" "c" • "d" "d" $end
+      First reduce derivation
+        $accept
+        ↳ 0: start                       $end
+             ↳ 1: "a" left       "d" "d"
+                      ↳ 3: "c" •
+      Second example: "a" "c" • "d" "e" $end
+      Second reduce derivation
+        $accept
+        ↳ 0: start                       $end
+             ↳ 2: "a" right      "d" "e"
+                      ↳ 4: "c" •
+
+
+
+State 4
+
+    1 start: "a" left • "d" "d"
+
+    "d"  shift, and go to state 7
+
+
+State 5
+
+    2 start: "a" right • "d" "e"
+
+    "d"  shift, and go to state 8
+
+
+State 6
+
+    0 $accept: start $end •
+
+    $default  accept
+
+
+State 7
+
+    1 start: "a" left "d" • "d"
+
+    "d"  shift, and go to state 9
+
+
+State 8
+
+    2 start: "a" right "d" • "e"
+
+    "e"  shift, and go to state 10
+
+
+State 9
+
+    1 start: "a" left "d" "d" •
+
+    $default  reduce using rule 1 (start)
+
+
+State 10
+
+    2 start: "a" right "d" "e" •
+
+    $default  reduce using rule 2 (start)

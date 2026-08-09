@@ -52,6 +52,7 @@ import {
   checkDirPath,
   checkFilePath,
   runProcess,
+  type CompletedProcess,
   type ProcessControlOptions,
   type ProcessLogger,
 } from "./proc.js";
@@ -645,6 +646,31 @@ export function defaultDirectory(cwd: string = process.cwd()): Promise<string> {
  *   when the run finished but the output directory did not appear.
  */
 export async function kompile(spec: KompileSpec, options: KompileCallOptions = {}): Promise<string> {
+  const result = await kompileDetailed(spec, options);
+  await requireDefinitionDirectory(result.definitionDir, options.outputDir === undefined);
+  return result.definitionDir;
+}
+
+/** The complete observable result of one `kompile` process. */
+export interface KompileResult {
+  /** The directory spelling `kompile()` would return. */
+  readonly definitionDir: string;
+  /** Whether that spelling named a directory immediately after the process. */
+  readonly definitionDirExists: boolean;
+  /** Exact argv, status, stdout, stderr, signal, and cancellation outcome. */
+  readonly process: CompletedProcess;
+}
+
+/**
+ * Compile while retaining the complete process record.
+ *
+ * Unlike {@link kompile}, a non-zero run under `check: false` is returned even
+ * when it created no definition directory. This is the diagnostic-preserving
+ * boundary for callers that need to classify K failures. Successful callers
+ * should still require `definitionDirExists`; {@link kompile} does so and keeps
+ * its historical return and error behavior unchanged.
+ */
+export async function kompileDetailed(spec: KompileSpec, options: KompileCallOptions = {}): Promise<KompileResult> {
   const base = options.cwd ?? ".";
   await checkFilePath(absOrRelTo(spec.mainFile, base));
   for (const dir of spec.includeDirs ?? []) await checkDirPath(absOrRelTo(dir, base));
@@ -658,7 +684,7 @@ export async function kompile(spec: KompileSpec, options: KompileCallOptions = {
     throw new KompileNotFoundError(executable);
   }
 
-  await runProcess(buildKompileArgv(spec, options), {
+  const processResult = await runProcess(buildKompileArgv(spec, options), {
     ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
     ...(options.env === undefined ? {} : { env: options.env }),
     ...(options.logger === undefined ? {} : { logger: options.logger }),
@@ -671,17 +697,24 @@ export async function kompile(spec: KompileSpec, options: KompileCallOptions = {
   });
 
   const definitionDir = options.outputDir ?? defaultOutputDir(spec.mainFile);
+  return Object.freeze({
+    definitionDir,
+    definitionDirExists: await isDirectory(definitionDir),
+    process: processResult,
+  });
+}
+
+async function requireDefinitionDirectory(definitionDir: string, usedDefault: boolean): Promise<void> {
   // pyk `assert`s this (`:348`) — i.e. it vanishes under `python -O`.  A thrown
   // error is the same claim, made unconditionally.
   if (!(await isDirectory(definitionDir))) {
     throw new Error(
       `kompile reported success but ${definitionDir} is not a directory. ` +
-        (options.outputDir === undefined
+        (usedDefault
           ? "The default output directory is resolved against this process's working directory, not `cwd` — pass `outputDir` explicitly."
           : ""),
     );
   }
-  return definitionDir;
 }
 
 async function isDirectory(path: string): Promise<boolean> {

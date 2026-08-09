@@ -87,9 +87,11 @@
 
 export * from "./claim-index.js";
 export * from "./claim-loader.js";
+export * from "./bison.js";
 export * from "./definition-cache.js";
 export * from "./diagnostics.js";
 export * from "./distribution.js";
+export * from "./generated-bison.js";
 export * from "./interpreter.js";
 export * from "./kast-cli.js";
 export * from "./kompile.js";

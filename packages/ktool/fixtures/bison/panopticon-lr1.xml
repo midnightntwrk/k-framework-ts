@@ -1,0 +1,636 @@
+<?xml version="1.0"?>
+
+<bison-xml-report version="3.8.2" bug-report="bug-bison@gnu.org" url="https://www.gnu.org/software/bison/">
+
+  <filename>panopticon-lr1.y</filename>
+
+  <grammar>
+    <rules>
+      <rule number="0" usefulness="useful">
+        <lhs>$accept</lhs>
+        <rhs>
+          <symbol>top</symbol>
+          <symbol>$end</symbol>
+        </rhs>
+      </rule>
+      <rule number="1" usefulness="useful">
+        <lhs>top</lhs>
+        <rhs>
+          <symbol>SortPgm__</symbol>
+        </rhs>
+      </rule>
+      <rule number="2" usefulness="useful">
+        <lhs>SortExpr__</lhs>
+        <rhs>
+          <symbol>SortId__</symbol>
+        </rhs>
+      </rule>
+      <rule number="3" usefulness="useful">
+        <lhs>SortExpr__</lhs>
+        <rhs>
+          <symbol>SortValue__</symbol>
+        </rhs>
+      </rule>
+      <rule number="4" usefulness="useful">
+        <lhs>Sort_Hash_UpperId__</lhs>
+        <rhs>
+          <symbol>&quot;[A-Z][a-zA-Z0-9]*&quot;</symbol>
+        </rhs>
+      </rule>
+      <rule number="5" usefulness="useful">
+        <lhs>SortBool__</lhs>
+        <rhs>
+          <symbol>&quot;true&quot;</symbol>
+        </rhs>
+      </rule>
+      <rule number="6" usefulness="useful">
+        <lhs>SortBool__</lhs>
+        <rhs>
+          <symbol>&quot;false&quot;</symbol>
+        </rhs>
+      </rule>
+      <rule number="7" usefulness="useful">
+        <lhs>SortValueType__</lhs>
+        <rhs>
+          <symbol>&quot;bool&quot;</symbol>
+        </rhs>
+      </rule>
+      <rule number="8" usefulness="useful">
+        <lhs>SortValueType__</lhs>
+        <rhs>
+          <symbol>&quot;int&quot;</symbol>
+        </rhs>
+      </rule>
+      <rule number="9" usefulness="useful">
+        <lhs>SortPgm__</lhs>
+        <rhs>
+          <symbol>SortExpr__</symbol>
+        </rhs>
+      </rule>
+      <rule number="10" usefulness="useful">
+        <lhs>SortPgm__</lhs>
+        <rhs>
+          <symbol>&quot;let&quot;</symbol>
+          <symbol>SortId__</symbol>
+          <symbol>&quot;:&quot;</symbol>
+          <symbol>SortValueType__</symbol>
+          <symbol>&quot;=&quot;</symbol>
+          <symbol>SortExpr__</symbol>
+          <symbol>&quot;;&quot;</symbol>
+          <symbol>SortPgm__</symbol>
+        </rhs>
+      </rule>
+      <rule number="11" usefulness="useful">
+        <lhs>SortId__</lhs>
+        <rhs>
+          <symbol>Sort_Hash_LowerId__</symbol>
+        </rhs>
+      </rule>
+      <rule number="12" usefulness="useful">
+        <lhs>SortId__</lhs>
+        <rhs>
+          <symbol>Sort_Hash_UpperId__</symbol>
+        </rhs>
+      </rule>
+      <rule number="13" usefulness="useful">
+        <lhs>SortId__</lhs>
+        <rhs>
+          <symbol>&quot;[A-Za-z_][A-Za-z0-9_]*&quot;</symbol>
+        </rhs>
+      </rule>
+      <rule number="14" usefulness="useful">
+        <lhs>SortValue__</lhs>
+        <rhs>
+          <symbol>SortBool__</symbol>
+        </rhs>
+      </rule>
+      <rule number="15" usefulness="useful">
+        <lhs>SortValue__</lhs>
+        <rhs>
+          <symbol>SortInt__</symbol>
+        </rhs>
+      </rule>
+      <rule number="16" usefulness="useful">
+        <lhs>SortInt__</lhs>
+        <rhs>
+          <symbol>&quot;[0-9]+&quot;</symbol>
+        </rhs>
+      </rule>
+      <rule number="17" usefulness="useful">
+        <lhs>Sort_Hash_LowerId__</lhs>
+        <rhs>
+          <symbol>&quot;[a-z][a-zA-Z0-9]*&quot;</symbol>
+        </rhs>
+      </rule>
+    </rules>
+    <terminals>
+      <terminal symbol-number="0" token-number="0" name="$end" type="" usefulness="useful"/>
+      <terminal symbol-number="3" token-number="2" name="&quot;:&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="4" token-number="3" name="&quot;;&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="5" token-number="4" name="&quot;=&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="6" token-number="5" name="&quot;bool&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="7" token-number="6" name="&quot;false&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="8" token-number="7" name="&quot;int&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="9" token-number="8" name="&quot;let&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="10" token-number="9" name="&quot;true&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="11" token-number="10" name="&quot;\\/\\/[^\\n\\r]*&quot;" type="" usefulness="unused-in-grammar"/>
+      <terminal symbol-number="12" token-number="11" name="&quot;\\/\\*([^*]|\\*+[^*/])*\\*+\\/&quot;" type="" usefulness="unused-in-grammar"/>
+      <terminal symbol-number="13" token-number="12" name="&quot;[\\ \\n\\r\\t]&quot;" type="" usefulness="unused-in-grammar"/>
+      <terminal symbol-number="14" token-number="13" name="&quot;[0-9]+&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="15" token-number="14" name="&quot;[A-Z][a-zA-Z0-9]*&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="16" token-number="15" name="&quot;[A-Za-z_][A-Za-z0-9_]*&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="17" token-number="16" name="&quot;[a-z][a-zA-Z0-9]*&quot;" type="" usefulness="useful"/>
+      <terminal symbol-number="1" token-number="256" name="error" type="" usefulness="useful"/>
+    </terminals>
+    <nonterminals>
+      <nonterminal symbol-number="18" name="$accept" type="" usefulness="useful"/>
+      <nonterminal symbol-number="19" name="top" type="" usefulness="useful"/>
+      <nonterminal symbol-number="20" name="SortExpr__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="21" name="Sort_Hash_UpperId__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="22" name="SortBool__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="23" name="SortValueType__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="24" name="SortPgm__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="25" name="SortId__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="26" name="SortValue__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="27" name="SortInt__" type="" usefulness="useful"/>
+      <nonterminal symbol-number="28" name="Sort_Hash_LowerId__" type="" usefulness="useful"/>
+    </nonterminals>
+  </grammar>
+
+  <automaton>
+
+    <state number="0">
+      <itemset>
+        <item rule-number="0" dot="0"/>
+        <item rule-number="1" dot="0"/>
+        <item rule-number="2" dot="0"/>
+        <item rule-number="3" dot="0"/>
+        <item rule-number="4" dot="0"/>
+        <item rule-number="5" dot="0"/>
+        <item rule-number="6" dot="0"/>
+        <item rule-number="9" dot="0"/>
+        <item rule-number="10" dot="0"/>
+        <item rule-number="11" dot="0"/>
+        <item rule-number="12" dot="0"/>
+        <item rule-number="13" dot="0"/>
+        <item rule-number="14" dot="0"/>
+        <item rule-number="15" dot="0"/>
+        <item rule-number="16" dot="0"/>
+        <item rule-number="17" dot="0"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;false&quot;" state="1"/>
+          <transition type="shift" symbol="&quot;let&quot;" state="2"/>
+          <transition type="shift" symbol="&quot;true&quot;" state="3"/>
+          <transition type="shift" symbol="&quot;[0-9]+&quot;" state="4"/>
+          <transition type="shift" symbol="&quot;[A-Z][a-zA-Z0-9]*&quot;" state="5"/>
+          <transition type="shift" symbol="&quot;[A-Za-z_][A-Za-z0-9_]*&quot;" state="6"/>
+          <transition type="shift" symbol="&quot;[a-z][a-zA-Z0-9]*&quot;" state="7"/>
+          <transition type="goto" symbol="top" state="8"/>
+          <transition type="goto" symbol="SortExpr__" state="9"/>
+          <transition type="goto" symbol="Sort_Hash_UpperId__" state="10"/>
+          <transition type="goto" symbol="SortBool__" state="11"/>
+          <transition type="goto" symbol="SortPgm__" state="12"/>
+          <transition type="goto" symbol="SortId__" state="13"/>
+          <transition type="goto" symbol="SortValue__" state="14"/>
+          <transition type="goto" symbol="SortInt__" state="15"/>
+          <transition type="goto" symbol="Sort_Hash_LowerId__" state="16"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="1">
+      <itemset>
+        <item rule-number="6" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="6" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="2">
+      <itemset>
+        <item rule-number="4" dot="0"/>
+        <item rule-number="10" dot="1"/>
+        <item rule-number="11" dot="0"/>
+        <item rule-number="12" dot="0"/>
+        <item rule-number="13" dot="0"/>
+        <item rule-number="17" dot="0"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;[A-Z][a-zA-Z0-9]*&quot;" state="5"/>
+          <transition type="shift" symbol="&quot;[A-Za-z_][A-Za-z0-9_]*&quot;" state="6"/>
+          <transition type="shift" symbol="&quot;[a-z][a-zA-Z0-9]*&quot;" state="7"/>
+          <transition type="goto" symbol="Sort_Hash_UpperId__" state="10"/>
+          <transition type="goto" symbol="SortId__" state="17"/>
+          <transition type="goto" symbol="Sort_Hash_LowerId__" state="16"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="3">
+      <itemset>
+        <item rule-number="5" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="5" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="4">
+      <itemset>
+        <item rule-number="16" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="16" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="5">
+      <itemset>
+        <item rule-number="4" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="4" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="6">
+      <itemset>
+        <item rule-number="13" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="13" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="7">
+      <itemset>
+        <item rule-number="17" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="17" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="8">
+      <itemset>
+        <item rule-number="0" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="$end" state="18"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="9">
+      <itemset>
+        <item rule-number="9" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="9" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="10">
+      <itemset>
+        <item rule-number="12" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="12" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="11">
+      <itemset>
+        <item rule-number="14" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="14" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="12">
+      <itemset>
+        <item rule-number="1" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="1" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="13">
+      <itemset>
+        <item rule-number="2" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="2" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="14">
+      <itemset>
+        <item rule-number="3" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="3" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="15">
+      <itemset>
+        <item rule-number="15" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="15" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="16">
+      <itemset>
+        <item rule-number="11" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="11" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="17">
+      <itemset>
+        <item rule-number="10" dot="2"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;:&quot;" state="19"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="18">
+      <itemset>
+        <item rule-number="0" dot="2"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="accept" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="19">
+      <itemset>
+        <item rule-number="7" dot="0"/>
+        <item rule-number="8" dot="0"/>
+        <item rule-number="10" dot="3"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;bool&quot;" state="20"/>
+          <transition type="shift" symbol="&quot;int&quot;" state="21"/>
+          <transition type="goto" symbol="SortValueType__" state="22"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="20">
+      <itemset>
+        <item rule-number="7" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="7" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="21">
+      <itemset>
+        <item rule-number="8" dot="1"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="8" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="22">
+      <itemset>
+        <item rule-number="10" dot="4"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;=&quot;" state="23"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="23">
+      <itemset>
+        <item rule-number="2" dot="0"/>
+        <item rule-number="3" dot="0"/>
+        <item rule-number="4" dot="0"/>
+        <item rule-number="5" dot="0"/>
+        <item rule-number="6" dot="0"/>
+        <item rule-number="10" dot="5"/>
+        <item rule-number="11" dot="0"/>
+        <item rule-number="12" dot="0"/>
+        <item rule-number="13" dot="0"/>
+        <item rule-number="14" dot="0"/>
+        <item rule-number="15" dot="0"/>
+        <item rule-number="16" dot="0"/>
+        <item rule-number="17" dot="0"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;false&quot;" state="1"/>
+          <transition type="shift" symbol="&quot;true&quot;" state="3"/>
+          <transition type="shift" symbol="&quot;[0-9]+&quot;" state="4"/>
+          <transition type="shift" symbol="&quot;[A-Z][a-zA-Z0-9]*&quot;" state="5"/>
+          <transition type="shift" symbol="&quot;[A-Za-z_][A-Za-z0-9_]*&quot;" state="6"/>
+          <transition type="shift" symbol="&quot;[a-z][a-zA-Z0-9]*&quot;" state="7"/>
+          <transition type="goto" symbol="SortExpr__" state="24"/>
+          <transition type="goto" symbol="Sort_Hash_UpperId__" state="10"/>
+          <transition type="goto" symbol="SortBool__" state="11"/>
+          <transition type="goto" symbol="SortId__" state="13"/>
+          <transition type="goto" symbol="SortValue__" state="14"/>
+          <transition type="goto" symbol="SortInt__" state="15"/>
+          <transition type="goto" symbol="Sort_Hash_LowerId__" state="16"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="24">
+      <itemset>
+        <item rule-number="10" dot="6"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;;&quot;" state="25"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="25">
+      <itemset>
+        <item rule-number="2" dot="0"/>
+        <item rule-number="3" dot="0"/>
+        <item rule-number="4" dot="0"/>
+        <item rule-number="5" dot="0"/>
+        <item rule-number="6" dot="0"/>
+        <item rule-number="9" dot="0"/>
+        <item rule-number="10" dot="0"/>
+        <item rule-number="10" dot="7"/>
+        <item rule-number="11" dot="0"/>
+        <item rule-number="12" dot="0"/>
+        <item rule-number="13" dot="0"/>
+        <item rule-number="14" dot="0"/>
+        <item rule-number="15" dot="0"/>
+        <item rule-number="16" dot="0"/>
+        <item rule-number="17" dot="0"/>
+      </itemset>
+      <actions>
+        <transitions>
+          <transition type="shift" symbol="&quot;false&quot;" state="1"/>
+          <transition type="shift" symbol="&quot;let&quot;" state="2"/>
+          <transition type="shift" symbol="&quot;true&quot;" state="3"/>
+          <transition type="shift" symbol="&quot;[0-9]+&quot;" state="4"/>
+          <transition type="shift" symbol="&quot;[A-Z][a-zA-Z0-9]*&quot;" state="5"/>
+          <transition type="shift" symbol="&quot;[A-Za-z_][A-Za-z0-9_]*&quot;" state="6"/>
+          <transition type="shift" symbol="&quot;[a-z][a-zA-Z0-9]*&quot;" state="7"/>
+          <transition type="goto" symbol="SortExpr__" state="9"/>
+          <transition type="goto" symbol="Sort_Hash_UpperId__" state="10"/>
+          <transition type="goto" symbol="SortBool__" state="11"/>
+          <transition type="goto" symbol="SortPgm__" state="26"/>
+          <transition type="goto" symbol="SortId__" state="13"/>
+          <transition type="goto" symbol="SortValue__" state="14"/>
+          <transition type="goto" symbol="SortInt__" state="15"/>
+          <transition type="goto" symbol="Sort_Hash_LowerId__" state="16"/>
+        </transitions>
+        <errors/>
+        <reductions/>
+      </actions>
+      <solved-conflicts/>
+    </state>
+
+    <state number="26">
+      <itemset>
+        <item rule-number="10" dot="8"/>
+      </itemset>
+      <actions>
+        <transitions/>
+        <errors/>
+        <reductions>
+          <reduction symbol="$default" rule="10" enabled="true"/>
+        </reductions>
+      </actions>
+      <solved-conflicts/>
+    </state>
+  </automaton>
+</bison-xml-report>

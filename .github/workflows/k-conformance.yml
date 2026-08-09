@@ -4,9 +4,22 @@
 name: K conformance
 
 on:
-  # This is opt-in because it downloads and installs the complete K toolchain.
-  # Enable a required check only after this lane has proven stable enough for
-  # the repository's branch-protection policy.
+  pull_request:
+    paths:
+      - ".github/workflows/k-conformance.yml"
+      - "bun.lock"
+      - "package.json"
+      - "packages/ktool/package.json"
+      - "packages/ktool/src/**"
+      - "packages/ktool/test/**"
+  push:
+    paths:
+      - ".github/workflows/k-conformance.yml"
+      - "bun.lock"
+      - "package.json"
+      - "packages/ktool/package.json"
+      - "packages/ktool/src/**"
+      - "packages/ktool/test/**"
   workflow_dispatch:
 
 permissions:
@@ -19,19 +32,17 @@ concurrency:
 jobs:
   cterm-and-kcfg:
     name: CTerm and KCFG against K 7.1.337
-    # The pinned K artifact is specifically an Ubuntu Noble package.  Do not
-    # change this to ubuntu-latest: a runner-image transition must be paired
-    # with selecting and verifying a new K package.
+    # Bison is pinned to Ubuntu Noble's exact package version. Do not change
+    # this to ubuntu-latest: a runner-image transition must be paired with a
+    # newly selected and verified external toolchain.
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
+      K_SOURCE_REVISION: 4a46d1231473b599c699160132fd6e76a5c46406
       K_RELEASE: v7.1.337
-      K_DEB: kframework_7.1.337_amd64_ubuntu_noble.deb
-      K_DEB_SHA256: 3692997e6bfa4be490d24bd9201289d4a05872889c9da725dda21e99d03d6990
-      # The Debian release package installs K's executables under /usr/bin.
-      # Live tests take this explicit bin directory so a host-installed K
-      # cannot silently satisfy a conformance run.
-      KFRAMEWORK_TS_K_BIN: /usr/bin
+      BISON_RELEASE: 3.8.2
+      BISON_APT_VERSION: 2:3.8.2+dfsg-1build2
+      KFRAMEWORK_TS_BISON_BIN: /usr/bin/bison
       # `kompileCached` owns this directory.  It is deliberately outside the
       # checkout: no generated K definition can appear as a working-tree edit.
       # `runner.temp` is not available in job-level `env` (it evaluated to
@@ -40,22 +51,50 @@ jobs:
       KFRAMEWORK_TS_KOMPILE_CACHE: ${{ github.workspace }}/../kframework-ts-kompile-cache
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:
           bun-version: 1.3.14
 
-      - name: Install the pinned K Framework distribution
+      - uses: DeterminateSystems/nix-installer-action@90bb610b90bf290cad97484ba341453bd1cbefea
+
+      - name: Install the exact external toolchain
         shell: bash
         run: |
           set -euo pipefail
-          package="$RUNNER_TEMP/$K_DEB"
-          curl --fail --location --retry 3 --output "$package" \
-            "https://github.com/runtimeverification/k/releases/download/$K_RELEASE/$K_DEB"
-          printf '%s  %s\n' "$K_DEB_SHA256" "$package" | sha256sum --check --strict
           sudo apt-get update
-          sudo apt-get install --yes "$package"
+          sudo apt-get install --yes "bison=$BISON_APT_VERSION" flex gcc g++
+
+          k_store=$(nix build \
+            --no-link \
+            --print-out-paths \
+            "github:runtimeverification/k/$K_SOURCE_REVISION#k.openssl")
+          test -x "$k_store/bin-unwrapped/kompile"
+          test ! -e "$k_store/bin/bison"
+
+          # K's packaged wrappers prepend their own tool directories. That is
+          # appropriate for ordinary commands, but it would bypass the
+          # single-use Bison attestation at the head of PATH. Select only the
+          # exact unwrapped kompile entry point while retaining wrapped peers
+          # for the other live conformance scenarios.
+          selected_bin="$RUNNER_TEMP/kframework-ts-selected-bin"
+          mkdir "$selected_bin"
+          for tool in "$k_store"/bin/*; do
+            name=$(basename "$tool")
+            if test "$name" != kompile; then
+              ln -s "$tool" "$selected_bin/$name"
+            fi
+          done
+          printf '#!/bin/sh\nexec "%s" "$@"\n' "$k_store/bin-unwrapped/kompile" > "$selected_bin/kompile"
+          chmod 0555 "$selected_bin/kompile"
+          printf 'KFRAMEWORK_TS_K_BIN=%s\n' "$selected_bin" >> "$GITHUB_ENV"
+          printf 'KFRAMEWORK_TS_K_WRAPPED_BIN=%s\n' "$k_store/bin" >> "$GITHUB_ENV"
+          # Distribution discovery intentionally sees the real K prefix so the
+          # kserver lane can locate lib/kframework/bin/ng. Generated-Bison
+          # calls the explicitly selected unwrapped compiler, whose shim is
+          # prepended ahead of this directory in its child environment.
+          printf '%s\n' "$k_store/bin" >> "$GITHUB_PATH"
 
       - name: Verify the selected K tools
         shell: bash
@@ -64,8 +103,12 @@ jobs:
           test -x "$KFRAMEWORK_TS_K_BIN/kompile"
           test -x "$KFRAMEWORK_TS_K_BIN/kore-rpc"
           test -x "$KFRAMEWORK_TS_K_BIN/kore-rpc-booster"
+          test "$(command -v kompile)" = "$KFRAMEWORK_TS_K_WRAPPED_BIN/kompile"
+          test -x "$KFRAMEWORK_TS_BISON_BIN"
           actual=$("$KFRAMEWORK_TS_K_BIN/kompile" --version | sed -n 's/^K version:[[:space:]]*//p' | head -n 1)
           test "$actual" = "$K_RELEASE"
+          actual_bison=$("$KFRAMEWORK_TS_BISON_BIN" --version | sed -n 's/^bison (GNU Bison) //p' | head -n 1)
+          test "$actual_bison" = "$BISON_RELEASE"
 
       - run: bun install --frozen-lockfile
 
@@ -80,7 +123,7 @@ jobs:
       # intentionally does not attempt to discover arbitrary files below an
       # include directory.
       - name: Restore cached K definitions
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: ${{ env.KFRAMEWORK_TS_KOMPILE_CACHE }}
           key: >-
@@ -117,3 +160,12 @@ jobs:
       # all from Node or Bun with pyk's argv, and no unit test can show that.
       - name: Run the ktool throughput conformance scenario
         run: bun test packages/ktool/test/live-throughput.test.ts
+
+      # The deterministic grammar lane binds the exact Bison executable into
+      # K's PATH, then analyzes K's retained parser.y with the same immutable
+      # executable snapshot.
+      - name: Run the ktool Bison conformance scenarios
+        run: >-
+          bun test
+          packages/ktool/test/bison.test.ts
+          packages/ktool/test/generated-bison-live.test.ts

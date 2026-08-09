@@ -48,8 +48,10 @@ the functions that spawn one — see [Guarantees](#guarantees).
 | module                       | what it is                                                                                                                                |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `proc.ts`                    | `runProcess` — pyk's `run_process_2` semantics — plus `ProcessError`, `checkDirPath`/`checkFilePath`, `absOrRelTo`, `formatCommand`       |
+| `bison.ts`                   | pure IELR source policy, strict conflict-as-error Bison invocation, version-bound XML automaton decoding, and evidence-rich verdicts      |
+| `generated-bison.ts`         | deterministic K Bison generation with exact warning policy, retained source/process evidence, parser identity checks, and bound versions  |
 | `distribution.ts`            | `getKDistribution()`, `resolveOnPath`, `kVersion`/`parseKVersion`/`tryParseKVersion`                                                      |
-| `kompile.ts`                 | the enums, `KompileSpec`, the argv builders, `kompile()`, `boosterKompile()`, `kompileFromDict()`, `defaultDirectory()`                   |
+| `kompile.ts`                 | the enums, `KompileSpec`, argv builders, `kompile()`/`kompileDetailed()`, `boosterKompile()`, `kompileFromDict()`, `defaultDirectory()`   |
 | `kore-print.ts`              | `PrintOutput`, `korePrintArgs`, `korePrint` — pyk's `kore/tools.py`, housed here so `@kframework-ts/kore` stays process-free              |
 | `kparse.ts`                  | `bisonParserName`, `resolveKparseTarget`, `findBisonParser`, `kparse` — the K distribution's native-parser lookup rule                    |
 | `kserver.ts`                 | `spawnKserver`, `stopKserver`, `resetKserver`, `kserverRunning`, `kserverEnv`, `KSERVER_SOCKET_ENV` — the warm-JVM lifecycle              |
@@ -95,10 +97,104 @@ rather than throwing. It accepts a missing JSON `KLabel.params` field as an
 empty list; `kast.fromDict` is stricter, so use that reader when validating
 adversarial JSON.
 
+### Generated deterministic Bison grammar
+
+```ts
+import { generateBisonGrammar } from "@kframework-ts/ktool";
+
+const generated = await generateBisonGrammar({
+  spec: {
+    backend: "haskell",
+    mainFile: "/src/language.k",
+    mainModule: "LANGUAGE",
+    syntaxModule: "LANGUAGE-SYNTAX",
+  },
+  startSort: "Pgm",
+  syntaxModule: "LANGUAGE-SYNTAX",
+  expectedKVersion: "v7.1.337",
+  expectedBisonVersion: "3.8.2",
+  kompileExecutable: "/opt/k/bin/kompile",
+  bisonExecutable: "/opt/bison/bin/bison",
+  tempDir: "/build/k-retained",
+  outputDir: "/build/language-kompiled",
+  env: resolvedToolchainEnv,
+});
+```
+
+The caller selects absolute K, Bison, temporary, and output identities and owns
+both directories; the generator never deletes them. The output path must be
+fresh. Because K invokes the literal command `bison`, the selected Bison
+directory is prepended to the caller's exact `PATH`, then K's generated C and
+header markers are required to identify that same expected version.
+
+Generation always requests the deterministic PGM parser, checked type
+inference, all warnings as errors, debug retention, and suppresses only K's
+`unused-symbol` warning. It rejects GLR, parser libraries, additional generated
+parsers, a mismatched start production, zero or multiple retained `parser.y`
+files, and unknown version-marker shapes. The result retains exact source bytes
+and digest, parsed K diagnostics, the complete `kompile` process, resolved
+artifact paths, environment, and all three version observations.
+
+Pinned K always retains one residual `parser.y` for a successful generation and
+reuses that file when parser attributes request more parsers. Consequently,
+zero/multiple residual files and a wrong top production cannot be induced by a
+normal successful pinned-K invocation. Process-backed fake-K tests create those
+filesystem states and prove the wrapper rejects them; the live-K suite covers
+the reachable counterpart by requesting a real additional parser attribute and
+proving the resulting multi-parser output is rejected as unsupported.
+
+This capture does not itself establish LR(1); pass `generated.artifacts.parserSource`
+to the independent analyzer below. It also does not prove that K's source
+grammar and emitted grammar correspond.
+
+### Strict Bison LR(1) analysis
+
+```ts
+import { analyzeBisonGrammarPolicy, analyzeBisonLr1 } from "@kframework-ts/ktool";
+
+analyzeBisonGrammarPolicy(parserY); // pure: requires one IELR declaration and no escape hatch
+
+const verdict = await analyzeBisonLr1({
+  bisonExecutable: "/opt/bison-3.8.2/bin/bison",
+  grammarPath: "/build/generated/parser.y",
+  expectedVersion: "3.8.2",
+  env: resolvedToolchainEnv,
+});
+```
+
+Both paths must be absolute identities selected by the caller. `env`, when
+present, is the exact child environment and is not merged with the ambient
+environment. The process API always uses a fresh working directory and the
+conflict-as-error command pinned by `buildStrictBisonArgv`.
+It reads the requested grammar once, copies those exact bytes to a read-only
+owned snapshot, and passes only that snapshot to Bison. The normative argv maps
+the fresh snapshot directory to `/ktool-bison-input` with Bison's
+`--file-prefix-map` and opens `parser.y` relative to that directory. (Bison
+3.8.2 applies the mapping to generated source locations but not XML's
+`<filename>`, so the relative input spelling is also necessary.) Raw XML/text
+report bytes are therefore deterministic before their SHA-256 digests are
+computed. Evidence distinguishes
+the caller's requested path from the analyzed snapshot path and retains the
+reconstructed normative argv, which must exactly equal the observed process
+argv.
+
+An `lr1` verdict means the exact input declares IELR, contains no GLR,
+expected-conflict, or precedence policy, Bison exits successfully, and the
+version-matched XML automaton has no disabled action or solved conflict. XML,
+the full text report, stdout, stderr, exit status, exact argv, decoded grammar
+and automaton, and SHA-256 digests remain in evidence. Malformed bytes, unknown
+XML shapes, unconsumed or reordered Bison 3.8.2 text-report sections,
+diagnostics on an otherwise clean run, or inconsistent representations yield
+`inconsistent`, never `lr1`.
+
+This proves a property of the emitted token grammar. It does not prove that a K
+source grammar and K's emitted Bison grammar correspond, nor does it establish
+scanner determinism. Those are separate proof obligations for callers.
+
 ### kompile
 
 ```ts
-import { buildKompileArgv, kompile } from "@kframework-ts/ktool";
+import { buildKompileArgv, kompile, kompileDetailed } from "@kframework-ts/ktool";
 
 const spec = { backend: "haskell", mainFile: "imp.k", mainModule: "IMP" } as const;
 
@@ -109,6 +205,12 @@ buildKompileArgv(spec, { outputDir: "out" });
 
 // The spawn. Returns the definition directory, verified to exist.
 const dir = await kompile(spec, { outputDir: "out" });
+
+// The evidence-preserving sibling. With check:false, even a failed process and
+// a missing output directory are returned instead of projected away.
+const detailed = await kompileDetailed(spec, { outputDir: "out-2", check: false });
+detailed.process.stderr;
+detailed.definitionDirExists;
 ```
 
 `KompileSpec` is a union discriminated on `backend`, so `concreteRules` on an

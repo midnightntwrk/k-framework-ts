@@ -64,7 +64,8 @@
     "@kframework-ts/kast-json": "workspace:*",
     "@kframework-ts/kompiled": "workspace:*",
     "@kframework-ts/konvert": "workspace:*",
-    "@kframework-ts/kore": "workspace:*"
+    "@kframework-ts/kore": "workspace:*",
+    "@xmldom/xmldom": "^0.9.8"
   },
   "devDependencies": {
     "@kframework-ts/wasm-fixtures": "workspace:*",

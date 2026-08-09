@@ -208,6 +208,23 @@ describe("frontend diagnostics", () => {
     expect(K_NATIVE_PARSER_EXIT_CODES).toEqual({ failure: 1, stackExhaustion: 2 });
   });
 
+  test("classifies K's pinned warnings-to-errors envelope for a not-lr1 module", async () => {
+    const stderr = await readFile(join(DIAGNOSTICS, "non-lr-grammar.stderr"), "utf8");
+    const diagnostics = parseKDiagnostics(stderr);
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]).toMatchObject({
+      severity: "error",
+      group: "Inner Parser",
+      message: "Skipping modules [GENERATED-BISON-EXCLUDED] tagged as not-lr1 which are not supported by Bison.",
+      raw: stderr,
+      snippet: null,
+    });
+    expect(classifyKDiagnostic(diagnostics[0]!)).toEqual({
+      family: "inner-parser",
+      tag: "non-lr-grammar",
+    });
+  });
+
   test("consumes the source-backed taxonomy corpus for every named class and protocol", async () => {
     const diagnostics = parseKDiagnostics(await readFile(join(DIAGNOSTICS, "taxonomy.out"), "utf8"));
     const innerDiagnostics = diagnostics.filter((diagnostic) => diagnostic.group === "Inner Parser");
