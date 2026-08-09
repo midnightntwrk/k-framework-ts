@@ -1,0 +1,57 @@
+{
+  "imports": ["Demo.Prelude"],
+  "commands": [
+    {
+      "tag": "definition",
+      "identifier": { "text": "lookup" },
+      "modifiers": {
+        "attributes": [{ "text": "simp", "kind": "local" }],
+        "noncomputable": true
+      },
+      "signature": {
+        "binders": [
+          { "tag": "implicit", "identifiers": ["α"], "type": "Type" },
+          { "tag": "explicit", "identifiers": ["xs"], "type": "List α" }
+        ],
+        "type": "Option α"
+      },
+      "value": {
+        "tag": "alternatives",
+        "alternatives": [
+          { "patterns": ["[]"], "rhs": "none" },
+          { "patterns": ["x :: _"], "rhs": "some x" }
+        ]
+      }
+    },
+    {
+      "tag": "mutual",
+      "commands": [
+        {
+          "tag": "inductive",
+          "identifier": { "text": "Even" },
+          "constructors": [{ "identifier": "zero" }]
+        },
+        {
+          "tag": "inductive",
+          "identifier": { "text": "Odd" },
+          "constructors": [{ "identifier": "one" }]
+        }
+      ]
+    },
+    {
+      "tag": "structure",
+      "identifier": { "text": "Pair" },
+      "signature": {
+        "binders": [{ "tag": "explicit", "identifiers": ["α"], "type": "Type" }]
+      },
+      "extends": ["Prod α α"],
+      "constructor": {
+        "identifier": { "text": "mk" },
+        "fields": [
+          { "tag": "explicit", "identifiers": ["left"], "type": "α" },
+          { "tag": "explicit", "identifiers": ["right"], "type": "α" }
+        ]
+      }
+    }
+  ]
+}

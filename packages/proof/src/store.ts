@@ -45,6 +45,7 @@ import { APRProof } from "./apr.js";
 import { EqualityProof, ImpliesProof, RefutationProof } from "./implies.js";
 import { decodeProofLogs } from "./logs.js";
 import { PROOF_TYPES, Proof, ProofError } from "./proof.js";
+import { aprProofDataSchema, impliesProofDictSchema, type AprProofData } from "./schemas.js";
 
 /** `Proof.proof_subdir` (`proof.py:55-59`) — where one proof's files live. */
 export function proofSubdir(proofDir: string, id: string): string {
@@ -88,58 +89,65 @@ async function readProofDataInner(proofDir: string, id: string, stack: readonly 
     throw new ProofError(`Could not load Proof from file ${id}: ${proofPath}`);
   }
 
-  const subproofIds = dct["subproof_ids"];
-  if (!Array.isArray(subproofIds) || !subproofIds.every((entry) => typeof entry === "string")) {
+  if (!("subproof_ids" in dct)) {
     throw new ProofError(`Proof ${id} has no subproof_ids array: ${proofPath}`);
   }
-  const subproofs: Proof[] = [];
-  for (const subproofId of subproofIds) {
-    subproofs.push(await readProofDataInner(proofDir, subproofId, [...stack, id]));
+  if (type === "APRProof") {
+    const decoded = aprProofDataSchema.parse(dct);
+    const subproofs = await readProofSubproofs(proofDir, decoded.subproof_ids, [...stack, id]);
+    return readAprProofData(proofDir, id, decoded, subproofs);
   }
-  const options = { proofDir, subproofs, subproofIds };
 
-  if (type === "EqualityProof") return EqualityProof.fromDict(dct, options);
-  if (type === "RefutationProof") return RefutationProof.fromDict(dct, options);
-  return readAprProofData(proofDir, id, dct, subproofs);
+  const decoded = impliesProofDictSchema.parse(dct);
+  const subproofs = await readProofSubproofs(proofDir, decoded.subproof_ids, [...stack, id]);
+  const options = { proofDir, subproofs, subproofIds: decoded.subproof_ids };
+  if (type === "EqualityProof") return EqualityProof.fromDict(decoded, options);
+  return RefutationProof.fromDict(decoded, options);
+}
+
+async function readProofSubproofs(
+  proofDir: string,
+  ids: readonly string[],
+  stack: readonly string[],
+): Promise<Proof[]> {
+  const subproofs: Proof[] = [];
+  for (const subproofId of ids) subproofs.push(await readProofDataInner(proofDir, subproofId, stack));
+  return subproofs;
 }
 
 /** `APRProof.read_proof_data` (`reachability.py:577-616`). */
 async function readAprProofData(
   proofDir: string,
   id: string,
-  dct: Readonly<Record<string, unknown>>,
+  dct: AprProofData,
   subproofs: readonly Proof[],
 ): Promise<APRProof> {
   const kcfg = await readKcfgStore(proofKcfgDir(proofDir, id));
   const nodeRefutations = new Map<number, string>();
-  for (const [key, proofId] of Object.entries(requiredObject(dct, "node_refutations", id))) {
-    if (typeof proofId !== "string") throw new ProofError(`Proof ${id}: node_refutations[${key}] must be a proof id`);
-    nodeRefutations.set(kcfg.resolve(Number(key)), proofId);
+  for (const [nodeId, proofId] of dct.node_refutations) {
+    nodeRefutations.set(kcfg.resolve(nodeId), proofId);
   }
   const priorLoopsCache = new Map<number, readonly number[]>();
-  for (const [key, loops] of Object.entries(optionalObject(dct["loops_cache"], `${id}.loops_cache`))) {
-    if (!Array.isArray(loops) || !loops.every((entry) => typeof entry === "number")) {
-      throw new ProofError(`Proof ${id}: loops_cache[${key}] must be an array of node ids`);
-    }
-    priorLoopsCache.set(Number(key), Object.freeze([...loops]));
+  for (const [nodeId, loops] of dct.loops_cache) {
+    priorLoopsCache.set(nodeId, Object.freeze([...loops]));
   }
 
   return new APRProof(
     id,
     kcfg,
-    numbers(required(dct, "terminal", id), `${id}.terminal`),
-    integer(required(dct, "init", id), `${id}.init`),
-    integer(required(dct, "target", id), `${id}.target`),
-    decodeProofLogs(required(dct, "logs", id), `${id}.logs`),
+    dct.terminal,
+    integer(dct.init, `${id}.init`),
+    integer(dct.target, `${id}.target`),
+    decodeProofLogs(dct.logs, `${id}.logs`),
     {
       proofDir,
       subproofs,
-      subproofIds: strings(required(dct, "subproof_ids", id), `${id}.subproof_ids`),
-      bounded: numbers(required(dct, "bounded", id), `${id}.bounded`),
-      ...("bmc_depth" in dct ? { bmcDepth: integer(dct["bmc_depth"], `${id}.bmc_depth`) } : {}),
-      circularity: required(dct, "circularity", id) === true,
-      admitted: required(dct, "admitted", id) === true,
-      execTime: "execution_time" in dct ? Number(dct["execution_time"]) : 0,
+      subproofIds: dct.subproof_ids,
+      bounded: dct.bounded,
+      ...(dct.bmc_depth === undefined ? {} : { bmcDepth: integer(dct.bmc_depth, `${id}.bmc_depth`) }),
+      circularity: dct.circularity,
+      admitted: dct.admitted,
+      execTime: dct.execution_time ?? 0,
       nodeRefutations,
       priorLoopsCache,
     },
@@ -268,43 +276,6 @@ async function writeStagedJson(path: string, value: unknown): Promise<void> {
     await rm(staged, { force: true });
     throw error;
   }
-}
-
-function required(dct: Readonly<Record<string, unknown>>, key: string, id: string): unknown {
-  if (!(key in dct)) throw new ProofError(`Proof ${id} proof.json is missing ${key}`);
-  return dct[key];
-}
-
-function optionalObject(value: unknown, where: string): Readonly<Record<string, unknown>> {
-  if (value === undefined) return {};
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ProofError(`Expected an object for ${where}`);
-  }
-  // The three checks above are the entire structural guarantee this decoder needs.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return value as Readonly<Record<string, unknown>>;
-}
-
-function requiredObject(
-  dct: Readonly<Record<string, unknown>>,
-  key: string,
-  id: string,
-): Readonly<Record<string, unknown>> {
-  return optionalObject(required(dct, key, id), `${id}.${key}`);
-}
-
-function numbers(value: unknown, where: string): readonly number[] {
-  if (!Array.isArray(value) || !value.every((entry) => typeof entry === "number")) {
-    throw new ProofError(`Expected an array of numbers for ${where}`);
-  }
-  return value;
-}
-
-function strings(value: unknown, where: string): readonly string[] {
-  if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
-    throw new ProofError(`Expected an array of strings for ${where}`);
-  }
-  return value;
 }
 
 function integer(value: unknown, where: string): number {

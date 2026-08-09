@@ -54,6 +54,7 @@
  */
 
 import { type JsonValue, type KoreJson, decodeKoreJson, koreText } from "@kframework-ts/kore";
+import { z } from "zod";
 import { asJson, asObject, asString, describe, isArray, isRecord, rpcError } from "./internal.js";
 
 //////////////////////
@@ -71,8 +72,34 @@ import { asJson, asObject, asString, describe, isArray, isRecord, rpcError } fro
 export interface JsonRpcErrorObject {
   readonly code: number;
   readonly message: string;
-  readonly data?: JsonValue;
+  readonly data?: JsonValue | undefined;
 }
+
+const JsonRpcErrorObjectWireInputSchema = z
+  .object({
+    code: z.number().int(),
+    message: z.string(),
+    data: z
+      .json()
+      .transform((value): JsonValue => value)
+      .nullable()
+      .optional(),
+  })
+  .transform(
+    ({ code, message, data }): JsonRpcErrorObject =>
+      data === undefined || data === null ? { code, message } : { code, message, data },
+  );
+
+/**
+ * A JSON-RPC error object on the wire.
+ *
+ * JSON-RPC uses `null` for absent error data; the decoded representation uses
+ * an omitted property, matching {@link decodeErrorObject}.
+ */
+export const JsonRpcErrorObjectWireSchema: z.ZodType<
+  JsonRpcErrorObject,
+  z.input<typeof JsonRpcErrorObjectWireInputSchema>
+> = JsonRpcErrorObjectWireInputSchema;
 
 /**
  * The `{error, context?, term?}` payload of codes 1, 2, 4, 5 and 8 —

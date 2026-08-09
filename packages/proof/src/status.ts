@@ -1,5 +1,8 @@
 /** `ProofStatus` and the status composition over subproofs (`proof/proof.py:32-213`). */
 
+import { proofStatusSchema } from "./schemas.js";
+import type { z } from "zod";
+
 /**
  * `ProofStatus` (`proof.py:32-35`).
  *
@@ -8,7 +11,7 @@
  * itself. Status is *never* serialized by either proof schema — it is always
  * derived — so this type appears only in memory and in rendered summaries.
  */
-export type ProofStatus = "passed" | "failed" | "pending";
+export type ProofStatus = z.infer<typeof proofStatusSchema>;
 
 /** pyk-shaped namespace, so `ProofStatus.PASSED` reads the way the source does. */
 export const ProofStatus = {

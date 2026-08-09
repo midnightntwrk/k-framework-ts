@@ -57,21 +57,28 @@ and a deeper path fails to bind (see `src/kserver.ts`).
 
 ## Deterministic generated-Bison lane
 
-The five `generated-bison-*` definitions are the independent cases consumed by
+The six `generated-bison-*` definitions are the independent cases consumed by
 `../../generated-bison-live.test.ts`:
 
 1. `lr1` is the smallest conflict-free PGM grammar;
 2. `ambiguous` deliberately has `Pgm ::= Pgm Pgm`, so K generation succeeds
    while the independent conflict-as-error invocation reports shift/reduce;
-3. `unused` has one sort unreachable from Pgm, proving that `unused-symbol` is
+3. `unambiguous-non-lr1` recognizes exactly `{acdd, acde}`. The final `d` or
+   `e` uniquely determines the production, so the language is unambiguous. At
+   the reduction after the shared prefix `ac`, one-token lookahead is the same
+   `d` for both alternatives; the following `d`/`e` is required to choose
+   `Left` or `Right`. It is therefore LR(2), not LR(1), and independently
+   produces a reduce/reduce conflict. This is the K-generated equivalent of
+   `../../../fixtures/bison/unambiguous-non-lr1.y`;
+4. `unused` has one sort unreachable from Pgm, proving that `unused-symbol` is
    the sole necessary suppression; and
-4. `not-lr1` imports a module carrying `[not-lr1]`, proving that suppression
+5. `not-lr1` imports a module carrying `[not-lr1]`, proving that suppression
    remains fatal as `non-lr-grammar`; and
-5. `additional-parser` uses a real configuration-cell parser attribute, proving
+6. `additional-parser` uses a real configuration-cell parser attribute, proving
    that the capture API rejects K's multi-parser output rather than guessing
    which grammar its single reused residual `parser.y` represents.
 
-All five were exercised on 2026-08-09 with K v7.1.337 (commit
+All six were exercised on 2026-08-10 with K v7.1.337 (commit
 `4a46d1231473b599c699160132fd6e76a5c46406`) and GNU Bison 3.8.2. Generated
 definition directories and retained `.kompile-*` directories are not checked
 in because their paths and native binaries are machine-specific. The lane is

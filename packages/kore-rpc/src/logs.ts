@@ -49,6 +49,7 @@ import {
   decodeKoreJson,
   encodeKoreJsonValue,
 } from "@kframework-ts/kore";
+import { z } from "zod";
 import {
   type MutableJsonObject,
   asEnum,
@@ -435,7 +436,8 @@ export const SIMPLE_CONTEXTS = [
 ] as const;
 
 /** One of the 30 {@link SIMPLE_CONTEXTS}. */
-export type SimpleContext = (typeof SIMPLE_CONTEXTS)[number];
+export const SimpleContextSchema = z.enum(SIMPLE_CONTEXTS);
+export type SimpleContext = z.infer<typeof SimpleContextSchema>;
 
 /**
  * `UniqueId` (`ContextLog.hs:108-137`).
@@ -446,10 +448,12 @@ export type SimpleContext = (typeof SIMPLE_CONTEXTS)[number];
  * everything else. `kind` records which, so a caller can tell a truncated hash
  * from a full one without measuring.
  */
-export interface UniqueId {
-  readonly kind: "short" | "long" | "unknown";
-  readonly value: string;
-}
+export const UniqueIdSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("short"), value: z.string() }),
+  z.object({ kind: z.literal("long"), value: z.string() }),
+  z.object({ kind: z.literal("unknown"), value: z.string() }),
+]);
+export type UniqueId = z.infer<typeof UniqueIdSchema>;
 
 /** `parseUId` (`ContextLog.hs:119-124`). Returns `undefined` where upstream returns `Nothing`. */
 export function parseUniqueId(text: string): UniqueId | undefined {
@@ -465,14 +469,27 @@ export const ID_CONTEXT_KINDS = ["rewrite", "simplification", "function", "ceil"
 /** The three `IdContext` constructors carrying a plain name (`ContextLog.hs:82-85`). */
 export const NAME_CONTEXT_KINDS = ["hook", "request", "cached"] as const;
 
-export type IdContextKind = (typeof ID_CONTEXT_KINDS)[number];
-export type NameContextKind = (typeof NAME_CONTEXT_KINDS)[number];
+export const IdContextKindSchema = z.enum(ID_CONTEXT_KINDS);
+export type IdContextKind = z.infer<typeof IdContextKindSchema>;
+export const NameContextKindSchema = z.enum(NAME_CONTEXT_KINDS);
+export type NameContextKind = z.infer<typeof NameContextKindSchema>;
 
 /** `CLNullary` (`ContextLog.hs:149`) — a bare string on the wire. */
 export interface SimpleCLContext {
   readonly tag: "simple";
   readonly context: SimpleContext;
 }
+
+/** Structural decoded nullary context frame. */
+export const SimpleCLContextSchema: z.ZodType<SimpleCLContext, SimpleCLContext> = z.object({
+  tag: z.literal("simple"),
+  context: SimpleContextSchema,
+});
+
+/** A recognized nullary context frame, transformed from its wire string. */
+export const SimpleCLContextWireSchema: z.ZodType<SimpleCLContext, SimpleContext> = SimpleContextSchema.transform(
+  (context): SimpleCLContext => ({ tag: "simple" as const, context }),
+).pipe(SimpleCLContextSchema);
 
 /** `CLWithId (CtxRewrite …)` and friends — `{"rewrite": "0123abc"}`, one key. */
 export interface IdCLContext {
@@ -481,12 +498,68 @@ export interface IdCLContext {
   readonly id: UniqueId;
 }
 
+const UniqueIdWireSchema = z.union([z.literal("UNKNOWN"), z.string().length(7), z.string().length(64)]);
+
+/** Structural decoded one-key id context frame. */
+export const IdCLContextSchema: z.ZodType<IdCLContext, IdCLContext> = z.object({
+  tag: z.literal("id"),
+  kind: IdContextKindSchema,
+  id: UniqueIdSchema,
+});
+
+const IdCLContextWireInputSchema = z.union([
+  z.object({ rewrite: UniqueIdWireSchema }).strict(),
+  z.object({ simplification: UniqueIdWireSchema }).strict(),
+  z.object({ function: UniqueIdWireSchema }).strict(),
+  z.object({ ceil: UniqueIdWireSchema }).strict(),
+  z.object({ term: UniqueIdWireSchema }).strict(),
+]);
+
+/** A recognized one-key id context frame, transformed from its wire object. */
+export const IdCLContextWireSchema: z.ZodType<
+  IdCLContext,
+  z.input<typeof IdCLContextWireInputSchema>
+> = IdCLContextWireInputSchema.transform((frame) => {
+  const [kind, value] = Object.entries(frame)[0] ?? [];
+  if (typeof kind !== "string" || typeof value !== "string") throw new TypeError("invalid id context frame");
+  const id = parseUniqueId(value);
+  const parsedKind = IdContextKindSchema.safeParse(kind);
+  if (id === undefined || !parsedKind.success) throw new TypeError("invalid id context frame");
+  return { tag: "id", kind: parsedKind.data, id } satisfies IdCLContext;
+}).pipe(IdCLContextSchema);
+
 /** `CLWithId (CtxHook …)` and friends — `{"hook": "INT.add"}`, one key. */
 export interface NameCLContext {
   readonly tag: "name";
   readonly kind: NameContextKind;
   readonly name: string;
 }
+
+/** Structural decoded one-key named context frame. */
+export const NameCLContextSchema: z.ZodType<NameCLContext, NameCLContext> = z.object({
+  tag: z.literal("name"),
+  kind: NameContextKindSchema,
+  name: z.string(),
+});
+
+const NameCLContextWireInputSchema = z.union([
+  z.object({ hook: z.string() }).strict(),
+  z.object({ request: z.string() }).strict(),
+  z.object({ cached: z.string() }).strict(),
+]);
+
+/** A recognized one-key named context frame, transformed from its wire object. */
+export const NameCLContextWireSchema: z.ZodType<
+  NameCLContext,
+  z.input<typeof NameCLContextWireInputSchema>
+> = NameCLContextWireInputSchema.transform((frame) => {
+  const [kind, name] = Object.entries(frame)[0] ?? [];
+  const parsedKind = NameContextKindSchema.safeParse(kind);
+  if (typeof name !== "string" || !parsedKind.success) {
+    throw new TypeError("invalid name context frame");
+  }
+  return { tag: "name", kind: parsedKind.data, name } satisfies NameCLContext;
+}).pipe(NameCLContextSchema);
 
 /**
  * A context this package does not recognize, preserved verbatim.
@@ -502,8 +575,29 @@ export interface RawCLContext {
   readonly raw: JsonValue;
 }
 
+/** The forward-compatible decoded form of an unrecognized context frame. */
+export const RawCLContextSchema: z.ZodType<RawCLContext, RawCLContext> = z.object({
+  tag: z.literal("raw"),
+  raw: z.json().transform((value): JsonValue => value),
+});
+
 /** `CLContext` (`ContextLog.hs:148-168`), plus this package's catch-all. */
 export type CLContext = SimpleCLContext | IdCLContext | NameCLContext | RawCLContext;
+
+/** Any JSON frame is valid at the wire boundary; unfamiliar frames are retained raw. */
+export const CLContextWireSchema: z.ZodType<JsonValue, JsonValue> = z.json().transform((value): JsonValue => value);
+
+const RawCLContextWireSchema: z.ZodType<RawCLContext, JsonValue> = CLContextWireSchema.transform(
+  (raw): RawCLContext => ({ tag: "raw", raw }),
+).pipe(RawCLContextSchema);
+
+/** A context frame decoded with the package's forward-compatible context reader. */
+export const CLContextSchema: z.ZodType<CLContext, JsonValue> = z.union([
+  SimpleCLContextWireSchema,
+  IdCLContextWireSchema,
+  NameCLContextWireSchema,
+  RawCLContextWireSchema,
+]);
 
 function isSimpleContext(text: string): text is SimpleContext {
   return (SIMPLE_CONTEXTS as readonly string[]).includes(text);
@@ -573,6 +667,20 @@ export type CLMessage =
   | { readonly tag: "text"; readonly text: string }
   | { readonly tag: "value"; readonly value: JsonValue };
 
+const CLMessageWireSchema: z.ZodType<JsonValue, JsonValue> = z
+  .union([z.string(), z.null(), z.array(z.json()), z.record(z.string(), z.json())])
+  .transform((value): JsonValue => value);
+
+const DecodedCLMessageSchema: z.ZodType<CLMessage, CLMessage> = z.union([
+  z.object({ tag: z.literal("text"), text: z.string() }),
+  z.object({ tag: z.literal("value"), value: z.json().transform((value): JsonValue => value) }),
+]);
+
+/** A decoded context-log message, preserving structured JSON values verbatim. */
+export const CLMessageSchema: z.ZodType<CLMessage, JsonValue> = CLMessageWireSchema.transform(
+  (value): CLMessage => decodeCLMessage(value),
+).pipe(DecodedCLMessageSchema);
+
 export function decodeCLMessage(value: unknown, path = "message"): CLMessage {
   if (typeof value === "string") return { tag: "text", text: value };
   if (value === null || isRecord(value) || isArray(value)) return { tag: "value", value: asJson(value, path) };
@@ -594,10 +702,8 @@ export function encodeCLMessage(message: CLMessage): JsonValue {
  * Kept as the pair rather than as a JS `Date` because `Date` has millisecond
  * resolution, and these logs time simplification steps.
  */
-export interface SystemTime {
-  readonly seconds: number;
-  readonly nanos: number;
-}
+export const SystemTimeSchema = z.object({ seconds: z.number(), nanos: z.number() });
+export type SystemTime = z.infer<typeof SystemTimeSchema>;
 
 /**
  * `timestampFormat` (`ContextLog.hs:267-268`) — `%Y-%m-%dT%H:%M:%S%Q`, i.e.
@@ -698,6 +804,41 @@ export interface LogLine {
   readonly context: readonly CLContext[];
   readonly message: CLMessage;
 }
+
+/** Structural context-log record as it appears in a JSON-RPC result. */
+export const LogLineWireSchema = z.object({
+  timestamp: z.union([z.string(), z.number()]).nullable().optional(),
+  context: z.array(CLContextWireSchema),
+  message: CLMessageWireSchema,
+});
+
+const LogLineTimestampSchema = z
+  .union([z.string(), z.number()])
+  .nullable()
+  .optional()
+  .transform((timestamp): SystemTime | undefined =>
+    timestamp === undefined || timestamp === null ? undefined : decodeTimestamp(timestamp),
+  )
+  .pipe(z.union([SystemTimeSchema, z.undefined()]));
+
+const DecodedLogLineSchema: z.ZodType<LogLine, z.output<typeof LogLineWireSchema>> = z
+  .object({
+    timestamp: LogLineTimestampSchema,
+    context: z.array(CLContextSchema),
+    message: CLMessageSchema,
+  })
+  .transform(
+    (line): LogLine => ({
+      ...(line.timestamp === undefined ? {} : { timestamp: line.timestamp }),
+      context: line.context,
+      message: line.message,
+    }),
+  );
+
+/** A context-log record transformed by the established timestamp/context/message decoders. */
+export const LogLineSchema: z.ZodType<LogLine, z.input<typeof LogLineWireSchema>> = LogLineWireSchema.pipe(
+  DecodedLogLineSchema,
+);
 
 export function decodeLogLine(value: unknown, path = "haskell-log-entries"): LogLine {
   const obj = asObject(value, path);

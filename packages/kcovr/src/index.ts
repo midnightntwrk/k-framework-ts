@@ -40,6 +40,7 @@ export {
   type CoverageOptions,
   type CoverageReport,
   coverageSourceRoot,
+  coverageDefinitionSchema,
   createRuleMap,
   formatPythonFloat,
   relativeSourceName,

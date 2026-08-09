@@ -40,6 +40,10 @@ interface LiveFixture {
 
 const LR1 = { stem: "lr1", module: "GENERATED-BISON-LR1" } as const;
 const AMBIGUOUS = { stem: "ambiguous", module: "GENERATED-BISON-AMBIGUOUS" } as const;
+const UNAMBIGUOUS_NON_LR1 = {
+  stem: "unambiguous-non-lr1",
+  module: "GENERATED-BISON-UNAMBIGUOUS-NON-LR1",
+} as const;
 const UNUSED = { stem: "unused", module: "GENERATED-BISON-UNUSED" } as const;
 const NOT_LR1 = { stem: "not-lr1", module: "GENERATED-BISON-NOT-LR1" } as const;
 const ADDITIONAL_PARSER = {
@@ -88,6 +92,23 @@ describeLive("generated deterministic Bison grammar with real K", () => {
       expect(verdict.conflicts.some((conflict) => conflict.kind === "shift-reduce")).toBe(true);
       expect(verdict.evidence.process.returncode).toBe(1);
       expect(verdict.evidence.report.summary.shiftReduceConflictCount).toBeGreaterThan(0);
+    },
+    LIVE_TIMEOUT_MS,
+  );
+
+  test(
+    "K succeeds on an unambiguous LR(2) grammar while the independent strict pass proves it is not LR(1)",
+    async () => {
+      const generated = await generate(UNAMBIGUOUS_NON_LR1);
+      expect(generated.kompile.process.returncode).toBe(0);
+      expect(generated.kompile.process.stderr).toBe("");
+
+      const verdict = await analyze(generated);
+      expect(verdict.kind).toBe("conflicts");
+      if (verdict.kind !== "conflicts") throw new Error(`expected conflicts, found ${verdict.kind}`);
+      expect(verdict.conflicts.some((conflict) => conflict.kind === "reduce-reduce")).toBe(true);
+      expect(verdict.evidence.process.returncode).toBe(1);
+      expect(verdict.evidence.report.summary.reduceReduceConflictCount).toBeGreaterThan(0);
     },
     LIVE_TIMEOUT_MS,
   );

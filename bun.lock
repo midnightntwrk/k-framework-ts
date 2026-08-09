@@ -34,6 +34,9 @@
     "packages/evm-fixtures": {
       "name": "@kframework-ts/evm-fixtures",
       "version": "0.0.0",
+      "dependencies": {
+        "zod": "^4.4.3",
+      },
       "devDependencies": {
         "@kframework-ts/kast": "workspace:*",
         "@types/node": "^26.1.2",
@@ -47,6 +50,7 @@
       },
       "dependencies": {
         "@kframework-ts/kast": "workspace:*",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@types/node": "^26.1.2",
@@ -56,7 +60,7 @@
       "name": "@kframework-ts/kast",
       "version": "0.1.0",
       "bin": {
-        "kast": "./dist/bin.js",
+        "kast-ts": "./dist/bin.js",
       },
       "devDependencies": {
         "@kframework-ts/wasm-fixtures": "workspace:*",
@@ -95,11 +99,12 @@
       "name": "@kframework-ts/kcovr",
       "version": "0.1.0",
       "bin": {
-        "kcovr": "./dist/bin.js",
+        "kcovr-ts": "./dist/bin.js",
       },
       "dependencies": {
         "@kframework-ts/kast": "workspace:*",
         "@kframework-ts/kompiled": "workspace:*",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@types/node": "^26.1.2",
@@ -115,6 +120,7 @@
         "@kframework-ts/kore": "workspace:*",
         "@kframework-ts/ktool": "workspace:*",
         "fast-check": "^4.9.0",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@types/node": "^26.1.2",
@@ -128,6 +134,7 @@
       },
       "dependencies": {
         "@kframework-ts/kore": "workspace:*",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@kframework-ts/wasm-fixtures": "workspace:*",
@@ -181,10 +188,11 @@
       "name": "@kframework-ts/kore-rpc",
       "version": "0.1.0",
       "bin": {
-        "kore-rpc": "./dist/bin.js",
+        "kore-rpc-ts": "./dist/bin.js",
       },
       "dependencies": {
         "@kframework-ts/kore": "workspace:*",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@types/node": "^26.1.2",
@@ -204,6 +212,7 @@
         "@kframework-ts/konvert": "workspace:*",
         "@kframework-ts/kore": "workspace:*",
         "@xmldom/xmldom": "^0.9.8",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@kframework-ts/wasm-fixtures": "workspace:*",
@@ -213,6 +222,9 @@
     "packages/mir-fixtures": {
       "name": "@kframework-ts/mir-fixtures",
       "version": "0.0.0",
+      "dependencies": {
+        "zod": "^4.4.3",
+      },
       "devDependencies": {
         "@kframework-ts/kast": "workspace:*",
         "@types/node": "^26.1.2",
@@ -230,6 +242,7 @@
         "@kframework-ts/kcfg": "workspace:*",
         "@kframework-ts/kore-rpc": "workspace:*",
         "@kframework-ts/ktool": "workspace:*",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@kframework-ts/konvert": "workspace:*",
@@ -247,6 +260,7 @@
         "@kframework-ts/konvert": "workspace:*",
         "@kframework-ts/kore": "workspace:*",
         "@kframework-ts/ktool": "workspace:*",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@kframework-ts/cterm": "workspace:*",
@@ -256,6 +270,9 @@
     "packages/wasm-fixtures": {
       "name": "@kframework-ts/wasm-fixtures",
       "version": "0.0.0",
+      "dependencies": {
+        "zod": "^4.4.3",
+      },
       "devDependencies": {
         "@kframework-ts/kast": "workspace:*",
         "@types/node": "^26.1.2",

@@ -50,6 +50,7 @@
  */
 
 import { type JsonValue, type KoreJson, type Pattern, KORE_JSON_FORMAT, KORE_JSON_VERSION } from "@kframework-ts/kore";
+import { z } from "zod";
 import type { LogEntry, LogLine } from "./logs.js";
 
 //////////////////////
@@ -106,7 +107,8 @@ export type KoreRpcMethod = (typeof KORE_RPC_METHODS)[number];
 export const CANCEL_METHOD = "cancel";
 
 /** A JSON-RPC request id. kore-rpc never inspects it; it echoes it. */
-export type RequestId = string | number;
+export const RequestIdSchema = z.union([z.string(), z.number()]);
+export type RequestId = z.infer<typeof RequestIdSchema>;
 
 //////////////////////
 // Depth            //
@@ -452,6 +454,13 @@ export interface AddModuleParams {
   readonly nameAsId?: boolean;
   readonly haskellLogging?: readonly string[];
 }
+
+/** Structural `add-module` JSON-RPC parameters, before the kebab-case decoder transforms them. */
+export const AddModuleParamsWireSchema = z.object({
+  module: z.string(),
+  "name-as-id": z.boolean().nullable().optional(),
+  "haskell-logging": z.array(z.string()).nullable().optional(),
+});
 
 /**
  * `AddModuleResult` (`Types.hs:208-215`).

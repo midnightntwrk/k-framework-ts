@@ -57,6 +57,7 @@ import { spawn } from "node:child_process";
 import { stat } from "node:fs/promises";
 import { constants } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
+import { z } from "zod";
 
 //////////////////////////////
 // Types                    //
@@ -73,13 +74,8 @@ export type ProcessLogger = (message: string) => void;
 
 /** What a finished process yielded — Python's `CompletedProcess`, plus {@link signal}. */
 export interface CompletedProcess {
-  /** The argv as spawned, executable first.  Never a shell string. */
+  /** The argv as spawned, executable first. Never a shell string. */
   readonly args: readonly string[];
-  /**
-   * The exit status, or `-signum` when the child was killed by a signal.
-   *
-   * The negative form is Python's, not Node's; see the module header.
-   */
   /** Observed exit status; absent only when forced cancellation settled before exit was observable. */
   readonly returncode?: number;
   /** Everything the child wrote to stdout, concatenated in order. */
@@ -91,6 +87,43 @@ export interface CompletedProcess {
   /** Why this run was stopped by this library, if it was. */
   readonly cancelledBy?: "timeout" | "abort" | undefined;
 }
+
+const CompletedProcessInputSchema = z.object({
+  /** The argv as spawned, executable first. Never a shell string. */
+  args: z.array(z.string()).readonly(),
+  /** Observed exit status; absent only when forced cancellation settled before exit was observable. */
+  returncode: z.number().optional(),
+  /** Everything the child wrote to stdout, concatenated in order. */
+  stdout: z.string(),
+  /** Everything the child wrote to stderr, concatenated in order. */
+  stderr: z.string(),
+  /** The signal that killed the child, if one did. */
+  signal: z.union([
+    z.custom<NodeJS.Signals>((value): value is NodeJS.Signals => typeof value === "string"),
+    z.undefined(),
+  ]),
+  /** Why this run was stopped by this library, if it was. */
+  cancelledBy: z.enum(["timeout", "abort"]).optional(),
+});
+
+/** Structural process evidence. Cancellation and exit chronology stay with the process runner. */
+export const CompletedProcessSchema: z.ZodType<
+  CompletedProcess,
+  z.input<typeof CompletedProcessInputSchema>
+> = CompletedProcessInputSchema.superRefine((result, context) => {
+  if (!Object.hasOwn(result, "signal")) {
+    context.addIssue({ code: "custom", message: "signal must be present, even when undefined" });
+  }
+}).transform(
+  (result): CompletedProcess => ({
+    args: result.args,
+    ...(result.returncode === undefined ? {} : { returncode: result.returncode }),
+    stdout: result.stdout,
+    stderr: result.stderr,
+    signal: result.signal,
+    ...(result.cancelledBy === undefined ? {} : { cancelledBy: result.cancelledBy }),
+  }),
+);
 
 /** Optional controls shared by every non-interactive K-tool invocation. */
 export interface ProcessControlOptions {

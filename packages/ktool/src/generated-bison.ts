@@ -3,11 +3,12 @@
 import { createHash, randomUUID } from "node:crypto";
 import { lstat, mkdir, readFile, readdir, readlink, realpath, writeFile } from "node:fs/promises";
 import { delimiter, dirname, isAbsolute, join, resolve, sep } from "node:path";
+import { z } from "zod";
 
-import { bisonVersion, type BisonVersionResult } from "./bison.js";
-import { parseKDiagnostics, type KDiagnostic } from "./diagnostics.js";
-import { kVersion, resolveOnPath, type KVersionResult } from "./distribution.js";
-import { kompileDetailed, type KompileResult, type KompileSpec } from "./kompile.js";
+import { BisonVersionResultSchema, bisonVersion, type BisonVersionResult } from "./bison.js";
+import { KDiagnosticSchema, parseKDiagnostics, type KDiagnostic } from "./diagnostics.js";
+import { KVersionResultSchema, kVersion, resolveOnPath, type KVersionResult } from "./distribution.js";
+import { KompileResultSchema, kompileDetailed, type KompileResult, type KompileSpec } from "./kompile.js";
 import {
   checkDirPath,
   checkFilePath,
@@ -33,10 +34,11 @@ export interface GenerateBisonGrammarOptions extends ProcessControlOptions {
   readonly logger?: ProcessLogger;
 }
 
-export interface GeneratedBisonVersionMarker {
-  readonly version: string;
-  readonly line: string;
-}
+export const GeneratedBisonVersionMarkerSchema = z.object({
+  version: z.string(),
+  line: z.string(),
+});
+export type GeneratedBisonVersionMarker = z.infer<typeof GeneratedBisonVersionMarkerSchema>;
 
 export interface GeneratedBisonInvocation {
   /** Caller-selected Bison identity before it was snapshotted. */
@@ -50,6 +52,17 @@ export interface GeneratedBisonInvocation {
   readonly cwd: string;
   readonly argv: readonly string[];
 }
+
+/** Structural invocation attestation; executable identity verification remains generation semantics. */
+export const GeneratedBisonInvocationSchema: z.ZodType<GeneratedBisonInvocation> = z.object({
+  requestedExecutable: z.string(),
+  requestedRealPath: z.string(),
+  snapshotExecutable: z.string(),
+  snapshotSha256: z.string(),
+  snapshotSize: z.number().int(),
+  cwd: z.string(),
+  argv: z.array(z.string()),
+});
 
 export interface GeneratedBisonGrammar {
   readonly source: string;
@@ -77,6 +90,30 @@ export interface GeneratedBisonGrammar {
   /** The exact environment passed to K after binding its `bison` lookup. */
   readonly environment: Readonly<Record<string, string>>;
 }
+
+/** Structural retained generation result; artifact existence and digest provenance remain independently verified. */
+export const GeneratedBisonGrammarSchema: z.ZodType<GeneratedBisonGrammar> = z.object({
+  source: z.string(),
+  sourceBytes: z.instanceof(Uint8Array),
+  sourceSha256: z.string(),
+  startSort: z.string(),
+  syntaxModule: z.string(),
+  kVersion: KVersionResultSchema,
+  bisonVersion: BisonVersionResultSchema,
+  generatedBisonVersion: z.string(),
+  bisonInvocation: GeneratedBisonInvocationSchema,
+  versionMarkers: z.object({ c: GeneratedBisonVersionMarkerSchema, header: GeneratedBisonVersionMarkerSchema }),
+  kDiagnostics: z.array(KDiagnosticSchema),
+  kompile: KompileResultSchema,
+  artifacts: z.object({
+    parserSource: z.string(),
+    parserC: z.string(),
+    parserHeader: z.string(),
+    parserExecutable: z.string(),
+    pgmAlias: z.string(),
+  }),
+  environment: z.record(z.string(), z.string()),
+});
 
 export type GeneratedBisonGrammarErrorCode =
   | "invalid-path"

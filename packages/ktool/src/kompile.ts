@@ -45,6 +45,7 @@
 import { LLVM_LIBRARY_DIR, findKompiledDir } from "@kframework-ts/kompiled";
 import { stat } from "node:fs/promises";
 import { basename, extname, join } from "node:path";
+import { z } from "zod";
 
 import { resolveOnPath } from "./distribution.js";
 import {
@@ -52,6 +53,7 @@ import {
   checkDirPath,
   checkFilePath,
   runProcess,
+  CompletedProcessSchema,
   type CompletedProcess,
   type ProcessControlOptions,
   type ProcessLogger,
@@ -660,6 +662,13 @@ export interface KompileResult {
   /** Exact argv, status, stdout, stderr, signal, and cancellation outcome. */
   readonly process: CompletedProcess;
 }
+
+/** Structural detailed `kompile` outcome; filesystem existence semantics remain in `kompileDetailed`. */
+export const KompileResultSchema: z.ZodType<KompileResult> = z.object({
+  definitionDir: z.string(),
+  definitionDirExists: z.boolean(),
+  process: CompletedProcessSchema,
+});
 
 /**
  * Compile while retaining the complete process record.

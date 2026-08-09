@@ -94,6 +94,7 @@
  */
 
 import { parseAllRules, type RuleLocation } from "@kframework-ts/kompiled/core";
+import { z } from "zod";
 
 import { DuplicateRuleIdError } from "./errors.js";
 import { createCoverMap, type CoverMap, type RuleId } from "./hits.js";
@@ -302,20 +303,22 @@ export function relativeSourceName(sourceRoot: string, sourceFile: string): stri
  * `fs.ts` builds one of these per directory; a test, a zip reader or an HTTP
  * client can build one from anything.
  */
-export interface CoverageDefinition {
+export const coverageDefinitionSchema = z.object({
   /**
    * What to call this definition in an error message — normally the directory
    * it was read from.  Purely diagnostic; nothing keys on it.
    */
-  readonly name?: string;
+  name: z.string().optional(),
   /** The contents of `allRules.txt` (`Kompile.java:363-382`). */
-  readonly allRulesTxt: string;
+  allRulesTxt: z.string(),
   /**
    * Every hit log to count, in pyk's order: `coverage.txt` first, then each
    * `*_coverage.txt` (`kcovr.py:205-215`).  Order does not affect the result.
    */
-  readonly coverageLogs: readonly string[];
-}
+  coverageLogs: z.array(z.string()),
+});
+
+export type CoverageDefinition = z.infer<typeof coverageDefinitionSchema>;
 
 /**
  * Where each rule lives — `rule_map` (`kcovr.py:178-194`), keyed by the full

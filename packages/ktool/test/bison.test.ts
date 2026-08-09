@@ -5,13 +5,19 @@ import { dirname, join, resolve } from "node:path";
 
 import {
   BISON_INPUT_VIRTUAL_DIRECTORY,
+  BisonGrammarPolicyAnalysisSchema,
+  BisonLr1EvidenceSchema,
+  BisonLr1VerdictSchema,
+  BisonRunEvidenceSchema,
   BisonXmlDecodeError,
+  BisonXmlReportSchema,
   analyzeBisonGrammarPolicy,
   analyzeBisonLr1,
   bisonAnalysisFingerprint,
   buildStrictBisonArgv,
   classifyBisonRun,
   decodeBisonXml,
+  parseBisonXmlReport,
   normalizeBisonEvidenceText,
   runStrictBison,
   type CompletedProcess,
@@ -51,6 +57,70 @@ async function scratch(): Promise<string> {
   scratchDirs.push(dir);
   return dir;
 }
+
+describe("Bison structural schemas", () => {
+  test("accepts policy analysis and decoded XML while preserving their discriminants", async () => {
+    const policy = analyzeBisonGrammarPolicy("%define lr.type ielr\n%expect 1\n%%\n");
+    expect(BisonGrammarPolicyAnalysisSchema.parse(policy)).toEqual(policy);
+
+    const report = parseBisonXmlReport(await textFixture("lr1", "xml"), BISON_VERSION);
+    expect(BisonXmlReportSchema.parse(report)).toEqual(report);
+    expect(parseBisonXmlReport(await textFixture("shift-reduce", "xml"), BISON_VERSION).conflicts).toHaveLength(1);
+    expect(() => parseBisonXmlReport("<bison-xml-report>", BISON_VERSION)).toThrow(BisonXmlDecodeError);
+  });
+
+  test("keeps incomplete run evidence distinct from complete LR(1) evidence", async () => {
+    const report = decodeBisonXml(await textFixture("lr1", "xml"), BISON_VERSION);
+    const process = completed("lr1");
+    const partial = {
+      sourceSha256: "source",
+      requestedGrammarPath: "/grammar.y",
+      analyzedGrammarPath: "/snapshot/parser.y",
+      normativeArgv: ["/usr/bin/bison", "parser.y"],
+      process,
+    };
+    expect(BisonRunEvidenceSchema.parse(partial)).toEqual(partial);
+    expect(BisonLr1EvidenceSchema.safeParse(partial).success).toBe(false);
+
+    const complete = {
+      ...partial,
+      xmlSha256: "xml",
+      textReportSha256: "report",
+      rawXml: new TextEncoder().encode(await textFixture("lr1", "xml")),
+      rawTextReport: new TextEncoder().encode(await textFixture("lr1", "output")),
+      report,
+    };
+    const verdict = { kind: "lr1" as const, evidence: complete };
+    expect(BisonLr1VerdictSchema.parse(verdict)).toEqual(verdict);
+    expect(BisonLr1VerdictSchema.safeParse({ kind: "lr1", evidence: partial }).success).toBe(false);
+
+    const branches = [
+      {
+        kind: "conflicts" as const,
+        conflicts: [{ kind: "shift-reduce" as const, state: 1, symbol: "TOK", disabledReductionRule: 2 }],
+        evidence: complete,
+      },
+      { kind: "policy-violation" as const, violations: [{ kind: "missing-lr-type" as const }] },
+      {
+        kind: "policy-violation" as const,
+        violations: [{ kind: "missing-lr-type" as const }],
+        evidence: partial,
+      },
+      { kind: "inconsistent" as const, issues: ["partial evidence"], evidence: partial },
+    ];
+    for (const branch of branches) expect(BisonLr1VerdictSchema.safeParse(branch).success).toBe(true);
+    expect(BisonLr1VerdictSchema.safeParse({ kind: "conflicts", conflicts: [], evidence: partial }).success).toBe(
+      false,
+    );
+    expect(
+      BisonLr1VerdictSchema.safeParse({
+        kind: "inconsistent",
+        issues: ["bad process"],
+        evidence: { ...partial, process: { ...process, stdout: 7 } },
+      }).success,
+    ).toBe(false);
+  });
+});
 
 describe("analyzeBisonGrammarPolicy", () => {
   test("accepts the deterministic IELR declaration used by K v7.1.337", async () => {

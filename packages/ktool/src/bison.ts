@@ -19,10 +19,12 @@ import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join } from "node:path";
 
 import { DOMParser, Node as XmlNode, type Element as XmlDomElement, type Node as XmlDomNode } from "@xmldom/xmldom";
+import { z } from "zod";
 
 import {
   checkDirPath,
   checkFilePath,
+  CompletedProcessSchema,
   runProcess,
   type CompletedProcess,
   type ProcessControlOptions,
@@ -33,15 +35,27 @@ import {
 // Declaration policy       //
 //////////////////////////////
 
-export interface BisonDirectiveLocation {
+export type BisonDirectiveLocation = z.infer<typeof BisonDirectiveLocationSchema>;
+
+/** Structural source location attached to a Bison policy directive. */
+export const BisonDirectiveLocationSchema = z.object({
+  line: z.number(),
+  raw: z.string(),
+});
+
+export interface BisonLrTypeDeclaration {
   readonly line: number;
   /** The exact source line, without its line terminator. */
   readonly raw: string;
-}
-
-export interface BisonLrTypeDeclaration extends BisonDirectiveLocation {
   readonly value: string | undefined;
 }
+
+/** One `%define lr.type …` declaration found by the policy lexer. */
+export const BisonLrTypeDeclarationSchema: z.ZodType<BisonLrTypeDeclaration> = z.object({
+  line: z.number(),
+  raw: z.string(),
+  value: z.union([z.string(), z.undefined()]),
+});
 
 export type BisonGrammarPolicyViolation =
   | (BisonDirectiveLocation & { readonly kind: "glr-parser"; readonly directive: "%glr-parser" })
@@ -61,11 +75,43 @@ export type BisonGrammarPolicyViolation =
     })
   | BisonSolvedConflictViolation;
 
+/** Structural policy violations, including solved conflicts decoded from XML. */
+export const BisonGrammarPolicyViolationSchema: z.ZodType<BisonGrammarPolicyViolation> = z.union([
+  BisonDirectiveLocationSchema.extend({
+    kind: z.literal("glr-parser"),
+    directive: z.literal("%glr-parser"),
+  }),
+  BisonDirectiveLocationSchema.extend({
+    kind: z.literal("expected-conflicts"),
+    directive: z.union([z.literal("%expect"), z.literal("%expect-rr")]),
+  }),
+  BisonDirectiveLocationSchema.extend({
+    kind: z.literal("precedence-resolution"),
+    directive: z.union([z.literal("%left"), z.literal("%right"), z.literal("%nonassoc"), z.literal("%precedence")]),
+  }),
+  z.object({ kind: z.literal("missing-lr-type") }),
+  z.object({
+    kind: z.literal("duplicate-lr-type"),
+    declarations: z.array(BisonLrTypeDeclarationSchema),
+  }),
+  BisonDirectiveLocationSchema.extend({
+    kind: z.literal("unsupported-lr-type"),
+    value: z.union([z.string(), z.undefined()]),
+  }),
+  z.lazy(() => BisonSolvedConflictViolationSchema),
+]);
+
 export interface BisonGrammarPolicyAnalysis {
   /** Present only when exactly one supported declaration was found. */
   readonly lrType: "ielr" | undefined;
   readonly violations: readonly BisonGrammarPolicyViolation[];
 }
+
+/** Result of lexically checking the Bison declaration and rule policy. */
+export const BisonGrammarPolicyAnalysisSchema: z.ZodType<BisonGrammarPolicyAnalysis> = z.object({
+  lrType: z.union([z.literal("ielr"), z.undefined()]),
+  violations: z.array(BisonGrammarPolicyViolationSchema),
+});
 
 const FORBIDDEN_DIRECTIVES = Object.freeze({
   "%glr-parser": "glr-parser",
@@ -308,12 +354,15 @@ function skipBracedCode(source: string, index: number, line: number): PolicyCurs
 //////////////////////////////
 
 /** Exact identity reported by a selected GNU Bison executable. */
-export interface BisonVersionResult {
-  readonly version: string;
-  readonly banner: string;
-  readonly line: string;
-  readonly process: CompletedProcess;
-}
+export type BisonVersionResult = z.infer<typeof BisonVersionResultSchema>;
+
+/** Observed GNU Bison version and the process record that supplied it. */
+export const BisonVersionResultSchema = z.object({
+  version: z.string(),
+  banner: z.string(),
+  line: z.string(),
+  process: CompletedProcessSchema,
+});
 
 /** Ask one already-resolved Bison executable for its strict GNU version banner. */
 export async function bisonVersion(
@@ -428,11 +477,23 @@ export interface BisonStrictRun {
   readonly sourceBytes: Uint8Array;
   readonly sourceSha256: string;
   /** Exact report bytes read before cleanup; absent when Bison did not create the artifact. */
-  readonly xml?: Uint8Array;
+  readonly xml?: Uint8Array | undefined;
   /** Exact report bytes read before cleanup; absent when Bison did not create the artifact. */
-  readonly textReport?: Uint8Array;
+  readonly textReport?: Uint8Array | undefined;
   readonly artifactIssues: readonly string[];
 }
+
+/** Artifacts and process evidence retained from one isolated strict Bison run. */
+export const BisonStrictRunSchema: z.ZodType<BisonStrictRun> = z.object({
+  process: CompletedProcessSchema,
+  requestedGrammarPath: z.string(),
+  analyzedGrammarPath: z.string(),
+  sourceBytes: z.instanceof(Uint8Array),
+  sourceSha256: z.string(),
+  xml: z.instanceof(Uint8Array).optional(),
+  textReport: z.instanceof(Uint8Array).optional(),
+  artifactIssues: z.array(z.string()),
+});
 
 /**
  * Read the requested grammar once, analyze an owned read-only snapshot, and
@@ -506,112 +567,153 @@ async function readBisonArtifact(path: string, name: string): Promise<BisonArtif
 // XML model                //
 //////////////////////////////
 
-export interface BisonGrammarRule {
-  readonly number: number;
-  readonly usefulness: "useful" | "useless-in-grammar" | "useless-in-parser";
-  readonly lhs: string;
-  readonly rhs: readonly string[];
-}
+export type BisonGrammarRule = z.infer<typeof BisonGrammarRuleSchema>;
 
-export interface BisonTerminal {
-  readonly symbolNumber: number;
-  readonly tokenNumber: number;
-  readonly name: string;
-  readonly type: string;
-  readonly usefulness: "useful" | "unused-in-grammar";
-  readonly precedence?: number;
-  readonly associativity?: "left" | "right" | "nonassoc" | "precedence";
-}
+/** A grammar production as represented in Bison's XML report. */
+export const BisonGrammarRuleSchema = z.object({
+  number: z.number(),
+  usefulness: z.union([z.literal("useful"), z.literal("useless-in-grammar"), z.literal("useless-in-parser")]),
+  lhs: z.string(),
+  rhs: z.array(z.string()).readonly(),
+});
 
-export interface BisonNonterminal {
-  readonly symbolNumber: number;
-  readonly name: string;
-  readonly type: string;
-  readonly usefulness: "useful" | "useless-in-grammar";
-}
+export type BisonTerminal = z.infer<typeof BisonTerminalSchema>;
 
-export interface BisonItem {
-  readonly ruleNumber: number;
-  readonly dot: number;
-  readonly lookaheads: readonly string[];
-}
+/** A terminal declaration as represented in Bison's XML report. */
+export const BisonTerminalSchema = z.object({
+  symbolNumber: z.number(),
+  tokenNumber: z.number(),
+  name: z.string(),
+  type: z.string(),
+  usefulness: z.union([z.literal("useful"), z.literal("unused-in-grammar")]),
+  precedence: z.number().optional(),
+  associativity: z
+    .union([z.literal("left"), z.literal("right"), z.literal("nonassoc"), z.literal("precedence")])
+    .optional(),
+});
 
-export interface BisonTransition {
-  readonly type: "shift" | "goto";
-  readonly symbol: string;
-  readonly state: number;
-}
+export type BisonNonterminal = z.infer<typeof BisonNonterminalSchema>;
 
-export interface BisonErrorAction {
-  readonly symbol: string;
-  readonly kind: "nonassociative";
-}
+/** A nonterminal declaration as represented in Bison's XML report. */
+export const BisonNonterminalSchema = z.object({
+  symbolNumber: z.number(),
+  name: z.string(),
+  type: z.string(),
+  usefulness: z.union([z.literal("useful"), z.literal("useless-in-grammar")]),
+});
 
-export interface BisonReduction {
-  readonly symbol: string;
-  readonly rule: number | "accept";
-  readonly enabled: boolean;
-}
+export type BisonItem = z.infer<typeof BisonItemSchema>;
 
-export interface BisonSolvedConflict {
-  readonly state: number;
-  readonly rule: number;
-  readonly symbol: string;
-  readonly type: "shift" | "reduce" | "error";
-  readonly resolution: string;
-}
+/** One LR item in a Bison automaton state. */
+export const BisonItemSchema = z.object({
+  ruleNumber: z.number(),
+  dot: z.number(),
+  lookaheads: z.array(z.string()).readonly(),
+});
 
-export interface BisonSolvedConflictViolation extends BisonSolvedConflict {
-  readonly kind: "solved-conflict";
-}
+export type BisonTransition = z.infer<typeof BisonTransitionSchema>;
 
-export interface BisonAutomatonState {
-  readonly number: number;
-  readonly items: readonly BisonItem[];
-  readonly transitions: readonly BisonTransition[];
-  readonly errors: readonly BisonErrorAction[];
-  readonly reductions: readonly BisonReduction[];
-  readonly solvedConflicts: readonly BisonSolvedConflict[];
-}
+/** A shift or goto transition from a Bison automaton state. */
+export const BisonTransitionSchema = z.object({
+  type: z.union([z.literal("shift"), z.literal("goto")]),
+  symbol: z.string(),
+  state: z.number(),
+});
 
-export type BisonConflict =
-  | {
-      readonly kind: "shift-reduce";
-      readonly state: number;
-      readonly symbol: string;
-      readonly disabledReductionRule: number | "accept";
-    }
-  | {
-      readonly kind: "reduce-reduce";
-      readonly state: number;
-      readonly symbol: string;
-      readonly disabledReductionRule: number | "accept";
-      readonly enabledReductionRule: number | "accept";
-    };
+export type BisonErrorAction = z.infer<typeof BisonErrorActionSchema>;
 
-export interface BisonAutomatonSummary {
-  readonly ruleCount: number;
-  readonly stateCount: number;
-  readonly disabledActionCount: number;
-  readonly solvedConflictCount: number;
-  readonly shiftReduceConflictCount: number;
-  readonly reduceReduceConflictCount: number;
-}
+/** A nonassociative error action emitted by Bison. */
+export const BisonErrorActionSchema = z.object({
+  symbol: z.string(),
+  kind: z.literal("nonassociative"),
+});
 
-export interface BisonXmlReport {
-  readonly version: string;
-  /** Kept as raw report evidence; never used to classify the grammar. */
-  readonly filename: string;
-  readonly grammar: {
-    readonly rules: readonly BisonGrammarRule[];
-    readonly terminals: readonly BisonTerminal[];
-    readonly nonterminals: readonly BisonNonterminal[];
-  };
-  readonly automaton: { readonly states: readonly BisonAutomatonState[] };
-  readonly conflicts: readonly BisonConflict[];
-  readonly solvedConflicts: readonly BisonSolvedConflict[];
-  readonly summary: BisonAutomatonSummary;
-}
+export type BisonReduction = z.infer<typeof BisonReductionSchema>;
+
+/** A reduction action in a Bison automaton state. */
+export const BisonReductionSchema = z.object({
+  symbol: z.string(),
+  rule: z.union([z.number(), z.literal("accept")]),
+  enabled: z.boolean(),
+});
+
+export type BisonSolvedConflict = z.infer<typeof BisonSolvedConflictSchema>;
+
+/** A conflict Bison resolved through grammar policy such as precedence. */
+export const BisonSolvedConflictSchema = z.object({
+  state: z.number(),
+  rule: z.number(),
+  symbol: z.string(),
+  type: z.union([z.literal("shift"), z.literal("reduce"), z.literal("error")]),
+  resolution: z.string(),
+});
+
+export type BisonSolvedConflictViolation = z.infer<typeof BisonSolvedConflictViolationSchema>;
+
+/** A solved XML conflict rendered as a source-policy violation. */
+export const BisonSolvedConflictViolationSchema = BisonSolvedConflictSchema.extend({
+  kind: z.literal("solved-conflict"),
+});
+
+export type BisonAutomatonState = z.infer<typeof BisonAutomatonStateSchema>;
+
+/** One complete state in Bison's LR automaton. */
+export const BisonAutomatonStateSchema = z.object({
+  number: z.number(),
+  items: z.array(BisonItemSchema).readonly(),
+  transitions: z.array(BisonTransitionSchema).readonly(),
+  errors: z.array(BisonErrorActionSchema).readonly(),
+  reductions: z.array(BisonReductionSchema).readonly(),
+  solvedConflicts: z.array(BisonSolvedConflictSchema).readonly(),
+});
+
+export type BisonConflict = z.infer<typeof BisonConflictSchema>;
+
+/** An unresolved shift/reduce or reduce/reduce conflict in the XML automaton. */
+export const BisonConflictSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("shift-reduce"),
+    state: z.number(),
+    symbol: z.string(),
+    disabledReductionRule: z.union([z.number(), z.literal("accept")]),
+  }),
+  z.object({
+    kind: z.literal("reduce-reduce"),
+    state: z.number(),
+    symbol: z.string(),
+    disabledReductionRule: z.union([z.number(), z.literal("accept")]),
+    enabledReductionRule: z.union([z.number(), z.literal("accept")]),
+  }),
+]);
+
+export type BisonAutomatonSummary = z.infer<typeof BisonAutomatonSummarySchema>;
+
+/** Aggregate counts computed from a complete Bison XML automaton. */
+export const BisonAutomatonSummarySchema = z.object({
+  ruleCount: z.number(),
+  stateCount: z.number(),
+  disabledActionCount: z.number(),
+  solvedConflictCount: z.number(),
+  shiftReduceConflictCount: z.number(),
+  reduceReduceConflictCount: z.number(),
+});
+
+export type BisonXmlReport = z.infer<typeof BisonXmlReportSchema>;
+
+/** Structural machine-readable Bison report used for strict LR(1) classification. */
+export const BisonXmlReportSchema = z.object({
+  version: z.string(),
+  filename: z.string(),
+  grammar: z.object({
+    rules: z.array(BisonGrammarRuleSchema).readonly(),
+    terminals: z.array(BisonTerminalSchema).readonly(),
+    nonterminals: z.array(BisonNonterminalSchema).readonly(),
+  }),
+  automaton: z.object({ states: z.array(BisonAutomatonStateSchema).readonly() }),
+  conflicts: z.array(BisonConflictSchema).readonly(),
+  solvedConflicts: z.array(BisonSolvedConflictSchema).readonly(),
+  summary: BisonAutomatonSummarySchema,
+});
 
 export class BisonXmlDecodeError extends Error {
   readonly code:
@@ -732,6 +834,17 @@ export function decodeBisonXml(xml: string | Uint8Array, expectedVersion: string
       reduceReduceConflictCount,
     }),
   });
+}
+
+/**
+ * Parse and semantically validate one GNU Bison XML report.
+ *
+ * This is the consumer-facing spelling paired with {@link BisonXmlReportSchema}.
+ * {@link decodeBisonXml} remains as the compatibility name used by existing
+ * callers; both paths retain the same XML, cross-reference, and summary checks.
+ */
+export function parseBisonXmlReport(xml: string | Uint8Array, expectedVersion: string): BisonXmlReport {
+  return decodeBisonXml(xml, expectedVersion);
 }
 
 interface XmlElement {
@@ -1174,14 +1287,28 @@ export interface BisonRunEvidence {
   readonly normativeArgv: readonly string[];
   /** Exact raw process record, including stdout, stderr, status, and argv. */
   readonly process: CompletedProcess;
-  readonly xmlSha256?: string;
-  readonly textReportSha256?: string;
+  readonly xmlSha256?: string | undefined;
+  readonly textReportSha256?: string | undefined;
   /** Exact report bytes, including malformed bytes; absent only when Bison did not create the artifact. */
-  readonly rawXml?: Uint8Array;
+  readonly rawXml?: Uint8Array | undefined;
   /** Exact report bytes, including malformed bytes; absent only when Bison did not create the artifact. */
-  readonly rawTextReport?: Uint8Array;
-  readonly report?: BisonXmlReport;
+  readonly rawTextReport?: Uint8Array | undefined;
+  readonly report?: BisonXmlReport | undefined;
 }
+
+/** Process and raw-artifact evidence, which may be incomplete after a failed run. */
+export const BisonRunEvidenceSchema: z.ZodType<BisonRunEvidence> = z.object({
+  sourceSha256: z.string(),
+  requestedGrammarPath: z.string(),
+  analyzedGrammarPath: z.string(),
+  normativeArgv: z.array(z.string()),
+  process: CompletedProcessSchema,
+  xmlSha256: z.string().optional(),
+  textReportSha256: z.string().optional(),
+  rawXml: z.instanceof(Uint8Array).optional(),
+  rawTextReport: z.instanceof(Uint8Array).optional(),
+  report: BisonXmlReportSchema.optional(),
+});
 
 export interface BisonLr1Evidence extends BisonRunEvidence {
   readonly xmlSha256: string;
@@ -1191,15 +1318,49 @@ export interface BisonLr1Evidence extends BisonRunEvidence {
   readonly report: BisonXmlReport;
 }
 
+/** Complete process and report evidence required by a conclusive LR(1) result. */
+export const BisonLr1EvidenceSchema: z.ZodType<BisonLr1Evidence> = z.object({
+  sourceSha256: z.string(),
+  requestedGrammarPath: z.string(),
+  analyzedGrammarPath: z.string(),
+  normativeArgv: z.array(z.string()),
+  process: CompletedProcessSchema,
+  xmlSha256: z.string(),
+  textReportSha256: z.string(),
+  rawXml: z.instanceof(Uint8Array),
+  rawTextReport: z.instanceof(Uint8Array),
+  report: BisonXmlReportSchema,
+});
+
 export type BisonLr1Verdict =
   | { readonly kind: "lr1"; readonly evidence: BisonLr1Evidence }
   | { readonly kind: "conflicts"; readonly conflicts: readonly BisonConflict[]; readonly evidence: BisonLr1Evidence }
   | {
       readonly kind: "policy-violation";
       readonly violations: readonly BisonGrammarPolicyViolation[];
-      readonly evidence?: BisonRunEvidence;
+      readonly evidence?: BisonRunEvidence | undefined;
     }
   | { readonly kind: "inconsistent"; readonly issues: readonly string[]; readonly evidence: BisonRunEvidence };
+
+/** Strict Bison outcome: conclusive LR(1), conflicts, policy violation, or inconsistent evidence. */
+export const BisonLr1VerdictSchema: z.ZodType<BisonLr1Verdict> = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("lr1"), evidence: BisonLr1EvidenceSchema }),
+  z.object({
+    kind: z.literal("conflicts"),
+    conflicts: z.array(BisonConflictSchema),
+    evidence: BisonLr1EvidenceSchema,
+  }),
+  z.object({
+    kind: z.literal("policy-violation"),
+    violations: z.array(BisonGrammarPolicyViolationSchema),
+    evidence: BisonRunEvidenceSchema.optional(),
+  }),
+  z.object({
+    kind: z.literal("inconsistent"),
+    issues: z.array(z.string()),
+    evidence: BisonRunEvidenceSchema,
+  }),
+]);
 
 /**
  * Cross-check process status, declaration policy, XML actions, and the text

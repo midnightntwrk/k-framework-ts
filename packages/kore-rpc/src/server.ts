@@ -113,6 +113,7 @@ import type { Stats } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:net";
 import { join } from "node:path";
+import { z } from "zod";
 import type { BugReport } from "./bugreport.js";
 
 //////////////////////
@@ -823,6 +824,12 @@ export interface ServerExit {
   readonly code: number | null;
   readonly signal: string | null;
 }
+
+/** Structural process-exit observation; exit ordering remains process-handle semantics. */
+export const ServerExitSchema: z.ZodType<ServerExit> = z.object({
+  code: z.number().nullable(),
+  signal: z.string().nullable(),
+});
 
 /**
  * How long, after the child has *exited*, to keep waiting for its pipes to

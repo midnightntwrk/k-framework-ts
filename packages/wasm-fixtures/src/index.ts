@@ -11,12 +11,11 @@
  * drift; one does not.  So the bytes, the pin, the census and the recipe live
  * here, and both soaks read them.
  *
- * This package is **private** and is never published.  Nothing in `dependencies`
- * on purpose: `@kframework-ts/kompiled` and `@kframework-ts/konvert` take it as
- * a *dev* dependency, and a dependency of its own on `@kframework-ts/ktool` —
- * the obvious home for {@link wasmCacheKey}'s idiom — would close the cycle
- * `kompiled → wasm-fixtures → ktool → kompiled`.  The idiom is transcribed
- * instead (see `kompile-soak.ts`).
+ * This package is **private** and is never published.  It carries no runtime
+ * dependency on `@kframework-ts/ktool`: `@kframework-ts/kompiled` and
+ * `@kframework-ts/konvert` take it as a *dev* dependency, and that dependency
+ * would close the cycle `kompiled → wasm-fixtures → ktool → kompiled`.  The
+ * cache idiom is transcribed instead (see `kompile-soak.ts`).
  *
  * The identity guard is {@link WASM_DEFINITION_HASH}, **not** a byte hash of a
  * locally built `compiled.json`: that file embeds 1594 occurrences of the
@@ -33,6 +32,7 @@ import { readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -239,6 +239,14 @@ export const WASM_CACHE_SCHEMA = 1;
 /** The completion marker written into a cache entry, last, by an atomic rename. */
 export const WASM_CACHE_MARKER = ".kframework-ts-wasm-soak.json" as const;
 
+/** The forward-compatible structural portion of a persisted soak cache marker. */
+export const wasmSoakCacheMarkerSchema = z.looseObject({
+  schema: z.number(),
+  key: z.string(),
+});
+
+export type WasmSoakCacheMarker = z.infer<typeof wasmSoakCacheMarkerSchema>;
+
 /**
  * The content key for one KWasm build: sha256 over schema, K release, pin commit
  * and argv.
@@ -299,13 +307,8 @@ export function wasmCacheEntry(kVersion: string = WASM_PIN.kBuiltWith): string {
 export function isCompletedCacheEntry(dir: string, key: string): boolean {
   try {
     if (!statSync(dir).isDirectory()) return false;
-    const parsed: unknown = JSON.parse(readFileSync(join(dir, WASM_CACHE_MARKER), "utf8"));
-    return (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      (parsed as { schema?: unknown }).schema === WASM_CACHE_SCHEMA &&
-      (parsed as { key?: unknown }).key === key
-    );
+    const marker = wasmSoakCacheMarkerSchema.safeParse(JSON.parse(readFileSync(join(dir, WASM_CACHE_MARKER), "utf8")));
+    return marker.success && marker.data.schema === WASM_CACHE_SCHEMA && marker.data.key === key;
   } catch {
     // A missing directory, an unreadable marker, or one that parses to something
     // else, are all the same answer: not a cache hit.

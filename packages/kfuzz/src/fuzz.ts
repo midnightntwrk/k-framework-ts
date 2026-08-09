@@ -51,6 +51,7 @@ import { KoreParser, koreText, type EVar, type Pattern } from "@kframework-ts/ko
 import { llvmInterpretRaw, type LlvmInterpretOptions } from "@kframework-ts/ktool";
 import * as fc from "fast-check";
 import type { Arbitrary } from "fast-check";
+import { z } from "zod";
 
 import { ExitCodeAssertionError, KFuzzArgumentError, KFuzzError } from "./errors.js";
 import { NULL_KFUZZ_HANDLER, type KFuzzHandler } from "./handler.js";
@@ -84,12 +85,14 @@ export type CheckFunction = (pattern: Pattern) => void | Promise<void>;
  * What one interpreter run produced.  Structurally a subset of ktool's
  * `CompletedProcess`, so the real runner satisfies it without adaptation.
  */
-export interface InterpretResult {
+export const interpretResultSchema = z.object({
   /** The exit status, or `-signum` if a signal killed it. */
-  readonly returncode: number;
-  readonly stdout: string;
-  readonly stderr: string;
-}
+  returncode: z.number(),
+  stdout: z.string(),
+  stderr: z.string(),
+});
+
+export type InterpretResult = z.infer<typeof interpretResultSchema>;
 
 /**
  * The interpreter seam — this package's analogue of ktool's `runner` option.

@@ -28,6 +28,7 @@ import {
   evmCacheRoot,
   evmKompileArgv,
   evmSoakDir,
+  evmSoakCacheMarkerSchema,
 } from "../src/index.ts";
 import { SoakUsageError, parseSoakArgs } from "../src/kompile-soak.ts";
 
@@ -46,6 +47,21 @@ afterEach(() => {
     else process.env[name] = value;
   }
   saved.clear();
+});
+
+describe("evm soak cache marker schema", () => {
+  test("preserves forward-compatible fields", () => {
+    expect(evmSoakCacheMarkerSchema.parse({ schema: EVM_CACHE_SCHEMA, key: "expected", future: true })).toEqual({
+      schema: EVM_CACHE_SCHEMA,
+      key: "expected",
+      future: true,
+    });
+  });
+
+  test("rejects malformed marker identities", () => {
+    expect(evmSoakCacheMarkerSchema.safeParse({ schema: "1", key: "expected" }).success).toBe(false);
+    expect(evmSoakCacheMarkerSchema.safeParse({ schema: EVM_CACHE_SCHEMA }).success).toBe(false);
+  });
 });
 
 describe("envDir — the single copy", () => {
@@ -101,7 +117,10 @@ describe("evmSoakDir — the discovery order", () => {
       writeFileSync(join(entry, EVM_CACHE_MARKER), JSON.stringify({ schema: EVM_CACHE_SCHEMA, key: "nope" }));
       expect(evmSoakDir()).toBeUndefined();
 
-      writeFileSync(join(entry, EVM_CACHE_MARKER), JSON.stringify({ schema: EVM_CACHE_SCHEMA, key: evmCacheKey() }));
+      writeFileSync(
+        join(entry, EVM_CACHE_MARKER),
+        JSON.stringify({ schema: EVM_CACHE_SCHEMA, key: evmCacheKey(), future: true }),
+      );
       expect(isCompletedCacheEntry(entry, evmCacheKey())).toBe(true);
       expect(evmSoakDir()).toBe(entry);
     } finally {

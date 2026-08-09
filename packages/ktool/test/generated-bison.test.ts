@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import {
   generateBisonGrammar,
   GeneratedBisonGrammarError,
+  GeneratedBisonGrammarSchema,
   type GenerateBisonGrammarOptions,
 } from "../src/generated-bison.ts";
 
@@ -171,6 +172,7 @@ describe("generateBisonGrammar without K", () => {
   test("forces deterministic generation policy and retains exact source/process/version evidence", async () => {
     const fixture = await fakeGeneration();
     const generated = await generateBisonGrammar(options(fixture));
+    expect(GeneratedBisonGrammarSchema.safeParse(generated).success).toBe(true);
 
     expect(generated.startSort).toBe("Pgm");
     expect(generated.syntaxModule).toBe("MINI-SYNTAX");

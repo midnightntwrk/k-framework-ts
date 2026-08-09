@@ -31,6 +31,7 @@ import { mlAnd, mlEquals, mlEqualsFalse, mlEqualsTrue } from "@kframework-ts/kas
 
 import { baseProofDict, Proof, ProofError, type ProofOptions } from "./proof.js";
 import { ProofStatus } from "./status.js";
+import { impliesProofDictSchema } from "./schemas.js";
 import type { ImpliesProofResult, ImpliesProofStep } from "./step.js";
 import { EqualitySummary, RefutationSummary, type ProofSummary } from "./summary.js";
 
@@ -175,31 +176,22 @@ interface ImpliesDictParts {
 }
 
 function decodeImpliesDict(value: unknown): ImpliesDictParts {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ProofError("Expected an object for an ImpliesProof dictionary");
-  }
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const dct = value as Readonly<Record<string, unknown>>;
-  const id = dct["id"];
-  if (typeof id !== "string") throw new ProofError("ImpliesProof dictionary is missing a string id");
-  const subproofIds = dct["subproof_ids"];
-  if (!Array.isArray(subproofIds) || !subproofIds.every((entry) => typeof entry === "string")) {
-    throw new ProofError(`ImpliesProof ${id} dictionary subproof_ids must be an array of strings`);
-  }
+  const dct = impliesProofDictSchema.parse(value);
+  const { id, subproof_ids: subproofIds } = dct;
   return {
     id,
-    antecedent: kastFromDict(dct["antecedent"], `${id}.antecedent`),
-    consequent: kastFromDict(dct["consequent"], `${id}.consequent`),
-    admitted: dct["admitted"] === true,
+    antecedent: kastFromDict(dct.antecedent, `${id}.antecedent`),
+    consequent: kastFromDict(dct.consequent, `${id}.consequent`),
+    admitted: dct.admitted,
     subproofIds,
     optional: {
-      ...("simplified_antecedent" in dct
-        ? { simplifiedAntecedent: kastFromDict(dct["simplified_antecedent"], `${id}.simplified_antecedent`) }
-        : {}),
-      ...("simplified_consequent" in dct
-        ? { simplifiedConsequent: kastFromDict(dct["simplified_consequent"], `${id}.simplified_consequent`) }
-        : {}),
-      ...("csubst" in dct ? { csubst: CSubst.fromDict(dct["csubst"]) } : {}),
+      ...(dct.simplified_antecedent === undefined
+        ? {}
+        : { simplifiedAntecedent: kastFromDict(dct.simplified_antecedent, `${id}.simplified_antecedent`) }),
+      ...(dct.simplified_consequent === undefined
+        ? {}
+        : { simplifiedConsequent: kastFromDict(dct.simplified_consequent, `${id}.simplified_consequent`) }),
+      ...(dct.csubst === undefined ? {} : { csubst: CSubst.fromDict(dct.csubst) }),
     },
   };
 }

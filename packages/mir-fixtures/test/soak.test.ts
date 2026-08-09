@@ -27,6 +27,7 @@ import {
   mirCacheRoot,
   mirKompileArgv,
   mirSoakDir,
+  mirSoakCacheMarkerSchema,
 } from "../src/index.ts";
 import { SoakUsageError, parseSoakArgs } from "../src/kompile-soak.ts";
 
@@ -45,6 +46,21 @@ afterEach(() => {
     else process.env[name] = value;
   }
   saved.clear();
+});
+
+describe("mir soak cache marker schema", () => {
+  test("preserves forward-compatible fields", () => {
+    expect(mirSoakCacheMarkerSchema.parse({ schema: MIR_CACHE_SCHEMA, key: "expected", future: true })).toEqual({
+      schema: MIR_CACHE_SCHEMA,
+      key: "expected",
+      future: true,
+    });
+  });
+
+  test("rejects malformed marker identities", () => {
+    expect(mirSoakCacheMarkerSchema.safeParse({ schema: "1", key: "expected" }).success).toBe(false);
+    expect(mirSoakCacheMarkerSchema.safeParse({ schema: MIR_CACHE_SCHEMA }).success).toBe(false);
+  });
 });
 
 describe("envDir — the single copy", () => {
@@ -100,7 +116,10 @@ describe("mirSoakDir — the discovery order", () => {
       writeFileSync(join(entry, MIR_CACHE_MARKER), JSON.stringify({ schema: MIR_CACHE_SCHEMA, key: "nope" }));
       expect(mirSoakDir()).toBeUndefined();
 
-      writeFileSync(join(entry, MIR_CACHE_MARKER), JSON.stringify({ schema: MIR_CACHE_SCHEMA, key: mirCacheKey() }));
+      writeFileSync(
+        join(entry, MIR_CACHE_MARKER),
+        JSON.stringify({ schema: MIR_CACHE_SCHEMA, key: mirCacheKey(), future: true }),
+      );
       expect(isCompletedCacheEntry(entry, mirCacheKey())).toBe(true);
       expect(mirSoakDir()).toBe(entry);
     } finally {

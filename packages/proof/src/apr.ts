@@ -51,6 +51,7 @@ import { decodeProofLogs, encodeProofLogs } from "./logs.js";
 import { baseProofDict, Proof, ProofError, type ProofOptions } from "./proof.js";
 import { kcfgFromClaim } from "./rules.js";
 import { ProofStatus } from "./status.js";
+import { aprProofDictSchema } from "./schemas.js";
 import type { APRProofResult, APRProofStep } from "./step.js";
 import { APRSummary, CompositeSummary, type ProofSummary } from "./summary.js";
 
@@ -768,34 +769,28 @@ export class APRProof extends Proof {
    * here and the fact that pyk yields an empty map for the same input.
    */
   static fromDict(value: unknown, options: ProofOptions = {}): APRProof {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      throw new ProofError("Expected an object for an APRProof dictionary");
-    }
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const dct = value as Readonly<Record<string, unknown>>;
-    const id = dct["id"];
-    if (typeof id !== "string") throw new ProofError("APRProof dictionary is missing a string id");
-    const kcfg = KCFG.fromDict(dct["kcfg"]);
-    const subproofIds = readStringArray(dct["subproof_ids"] ?? [], `${id}.subproof_ids`);
+    const dct = aprProofDictSchema.parse(value);
+    const { id } = dct;
+    const kcfg = KCFG.fromDict(dct.kcfg);
+    const subproofIds = dct.subproof_ids;
     const nodeRefutations = new Map<number, string>();
-    for (const [key, proofId] of Object.entries(readObject(dct["node_refutations"] ?? {}, `${id}.node_refutations`))) {
-      if (typeof proofId !== "string") throw new ProofError(`${id}.node_refutations[${key}] must be a proof id`);
-      nodeRefutations.set(kcfg.resolve(Number(key)), proofId);
+    for (const [nodeId, proofId] of dct.node_refutations) {
+      nodeRefutations.set(kcfg.resolve(nodeId), proofId);
     }
     return new APRProof(
       id,
       kcfg,
-      readNumberArray(dct["terminal"], `${id}.terminal`),
-      readNodeId(dct["init"], `${id}.init`),
-      readNodeId(dct["target"], `${id}.target`),
-      "logs" in dct ? decodeProofLogs(dct["logs"], `${id}.logs`) : new Map(),
+      dct.terminal,
+      readNodeId(dct.init, `${id}.init`),
+      readNodeId(dct.target, `${id}.target`),
+      dct.logs === undefined ? new Map() : decodeProofLogs(dct.logs, `${id}.logs`),
       {
         ...options,
         subproofIds,
-        bounded: readNumberArray(dct["bounded"], `${id}.bounded`),
-        ...("bmc_depth" in dct ? { bmcDepth: readNodeId(dct["bmc_depth"], `${id}.bmc_depth`) } : {}),
-        circularity: dct["circularity"] === true,
-        admitted: dct["admitted"] === true,
+        bounded: dct.bounded,
+        ...(dct.bmc_depth === undefined ? {} : { bmcDepth: readNodeId(dct.bmc_depth, `${id}.bmc_depth`) }),
+        circularity: dct.circularity,
+        admitted: dct.admitted,
         nodeRefutations,
       },
     );
@@ -851,29 +846,6 @@ function pythonRound(value: number): number {
   if (fraction > 0.5) return floor + 1;
   if (fraction < 0.5) return floor;
   return floor % 2 === 0 ? floor : floor + 1;
-}
-
-function readObject(value: unknown, where: string): Readonly<Record<string, unknown>> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ProofError(`Expected an object for ${where}`);
-  }
-  // The three checks above are the whole structural guarantee this decoder needs.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return value as Readonly<Record<string, unknown>>;
-}
-
-function readStringArray(value: unknown, where: string): readonly string[] {
-  if (!Array.isArray(value) || !value.every((entry) => typeof entry === "string")) {
-    throw new ProofError(`Expected an array of strings for ${where}`);
-  }
-  return value;
-}
-
-function readNumberArray(value: unknown, where: string): readonly number[] {
-  if (!Array.isArray(value) || !value.every((entry) => typeof entry === "number")) {
-    throw new ProofError(`Expected an array of numbers for ${where}`);
-  }
-  return value;
 }
 
 function readNodeId(value: unknown, where: string): number {

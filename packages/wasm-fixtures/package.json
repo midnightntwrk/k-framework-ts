@@ -30,6 +30,9 @@
     "check": "bun run check:types && bun test",
     "kompile-soak": "bun run src/kompile-soak-bin.ts"
   },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
   "devDependencies": {
     "@kframework-ts/kast": "workspace:*",
     "@types/node": "^26.1.2"

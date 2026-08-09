@@ -27,6 +27,7 @@
 import { access, stat } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
+import { z } from "zod";
 
 import { runProcess, type ProcessControlOptions, type ProcessLogger } from "./proc.js";
 
@@ -135,14 +136,14 @@ export function clearKDistributionCache(): void {
 //////////////////////////////
 
 /** The `-<ahead>-g<rev>[-dirty]` tail of a `git describe` version. */
-export interface KVersionGit {
-  /** Commits ahead of the tag. */
-  readonly ahead: number;
-  /** The abbreviated commit, exactly ten lowercase hex digits. */
-  readonly rev: string;
-  /** Whether the working tree was dirty at build time. */
-  readonly dirty: boolean;
-}
+/** The `git describe` component of a K version. */
+export const KVersionGitSchema = z.object({
+  ahead: z.number().int(),
+  rev: z.string().regex(/^[0-9a-f]{10}$/u),
+  dirty: z.boolean(),
+});
+
+export type KVersionGit = z.infer<typeof KVersionGitSchema>;
 
 /** A parsed K version — pyk's `KVersion` (`kbuild/utils.py:18-66`). */
 export interface KVersion {
@@ -151,22 +152,77 @@ export interface KVersion {
   readonly patch: number;
   /** Absent for a released build; present when K was built off a tag. */
   readonly git: KVersionGit | undefined;
-  /** The canonical spelling, round-tripping {@link parseKVersion} — `KVersion.text` (`:60-66`). */
+  /** The canonical spelling, round-tripping {@link parseKVersion}. */
   readonly text: string;
 }
 
+const KVersionInputSchema = z.object({
+  major: z.number().int(),
+  minor: z.number().int(),
+  patch: z.number().int(),
+  /** Absent for a released build; present when K was built off a tag. */
+  git: z.union([KVersionGitSchema, z.undefined()]),
+  /** The canonical spelling, round-tripping {@link parseKVersion}. */
+  text: z.string(),
+});
+
+/** Structural K version record. Text/component agreement remains parser semantics. */
+export const KVersionSchema: z.ZodType<KVersion, z.input<typeof KVersionInputSchema>> = KVersionInputSchema.superRefine(
+  (version, context) => {
+    if (!Object.hasOwn(version, "git"))
+      context.addIssue({ code: "custom", message: "git must be present, even when undefined" });
+  },
+).transform(
+  (version): KVersion => ({
+    major: version.major,
+    minor: version.minor,
+    patch: version.patch,
+    git: version.git,
+    text: version.text,
+  }),
+);
+
 /** A strict parse result that preserves an unrecognised observed spelling. */
-export type KVersionParseResult =
-  | { readonly kind: "parsed"; readonly version: KVersion }
-  | { readonly kind: "unrecognized"; readonly text: string };
+export const KVersionParseResultSchema = z.union([
+  z.object({ kind: z.literal("parsed"), version: KVersionSchema }),
+  z.object({ kind: z.literal("unrecognized"), text: z.string() }),
+]);
+
+export type KVersionParseResult = z.infer<typeof KVersionParseResultSchema>;
 
 /** A parsed version together with the exact bytes `kompile --version` emitted. */
 export interface KVersionResult extends KVersion {
   /** The complete, unmodified stdout banner. */
   readonly banner: string;
-  /** The unmodified first line of {@link banner}. */
+  /** The unmodified first line of the banner. */
   readonly line: string;
 }
+
+const KVersionResultInputSchema = KVersionInputSchema.extend({
+  /** The complete, unmodified stdout banner. */
+  banner: z.string(),
+  /** The unmodified first line of the banner. */
+  line: z.string(),
+});
+
+/** Structural `kompile --version` evidence; banner/line interpretation remains in `kVersion`. */
+export const KVersionResultSchema: z.ZodType<
+  KVersionResult,
+  z.input<typeof KVersionResultInputSchema>
+> = KVersionResultInputSchema.superRefine((version, context) => {
+  if (!Object.hasOwn(version, "git"))
+    context.addIssue({ code: "custom", message: "git must be present, even when undefined" });
+}).transform(
+  (version): KVersionResult => ({
+    major: version.major,
+    minor: version.minor,
+    patch: version.patch,
+    git: version.git,
+    text: version.text,
+    banner: version.banner,
+    line: version.line,
+  }),
+);
 
 /**
  * `KVersion.PATTERN` (`kbuild/utils.py:38-47`), with one character changed.

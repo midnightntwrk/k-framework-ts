@@ -27,6 +27,7 @@ import {
   wasmCacheRoot,
   wasmKompileArgv,
   wasmSoakDir,
+  wasmSoakCacheMarkerSchema,
 } from "../src/index.ts";
 import { SoakUsageError, parseSoakArgs } from "../src/kompile-soak.ts";
 
@@ -45,6 +46,21 @@ afterEach(() => {
     else process.env[name] = value;
   }
   saved.clear();
+});
+
+describe("wasm soak cache marker schema", () => {
+  test("preserves forward-compatible fields", () => {
+    expect(wasmSoakCacheMarkerSchema.parse({ schema: WASM_CACHE_SCHEMA, key: "expected", future: true })).toEqual({
+      schema: WASM_CACHE_SCHEMA,
+      key: "expected",
+      future: true,
+    });
+  });
+
+  test("rejects malformed marker identities", () => {
+    expect(wasmSoakCacheMarkerSchema.safeParse({ schema: "1", key: "expected" }).success).toBe(false);
+    expect(wasmSoakCacheMarkerSchema.safeParse({ schema: WASM_CACHE_SCHEMA }).success).toBe(false);
+  });
 });
 
 describe("envDir — the single copy", () => {
@@ -100,7 +116,10 @@ describe("wasmSoakDir — the discovery order", () => {
       writeFileSync(join(entry, WASM_CACHE_MARKER), JSON.stringify({ schema: WASM_CACHE_SCHEMA, key: "nope" }));
       expect(wasmSoakDir()).toBeUndefined();
 
-      writeFileSync(join(entry, WASM_CACHE_MARKER), JSON.stringify({ schema: WASM_CACHE_SCHEMA, key: wasmCacheKey() }));
+      writeFileSync(
+        join(entry, WASM_CACHE_MARKER),
+        JSON.stringify({ schema: WASM_CACHE_SCHEMA, key: wasmCacheKey(), future: true }),
+      );
       expect(isCompletedCacheEntry(entry, wasmCacheKey())).toBe(true);
       expect(wasmSoakDir()).toBe(entry);
     } finally {

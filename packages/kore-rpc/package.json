@@ -63,7 +63,8 @@
     "prepublishOnly": "bun run --cwd ../.. check && bun run build"
   },
   "dependencies": {
-    "@kframework-ts/kore": "workspace:*"
+    "@kframework-ts/kore": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.2"

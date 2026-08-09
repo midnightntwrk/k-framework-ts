@@ -8,18 +8,17 @@
  * so the generator has one deterministic place to render them.
  */
 
+import { z } from "zod";
+
 /** An opaque Lean expression/type leaf supplied by a lowering pass. */
-export type LeanTerm = string;
+export type LeanTerm = z.infer<typeof leanTermSchema>;
 
 /** Construct an opaque Lean term while making call sites self-documenting. */
 export function leanTerm(text: string): LeanTerm {
   return text;
 }
 
-export interface LeanModule {
-  readonly imports?: readonly string[];
-  readonly commands?: readonly LeanCommand[];
-}
+export type LeanModule = z.infer<typeof leanModuleSchema>;
 
 export type LeanCommand = LeanDeclaration | LeanMutual;
 
@@ -30,168 +29,193 @@ export interface LeanMutual {
 
 export type LeanDeclaration = LeanAxiom | LeanAbbrev | LeanInductive | LeanInstance | LeanDefinition | LeanStructure;
 
-export interface LeanAxiom {
-  readonly tag: "axiom";
-  readonly identifier: LeanDeclarationIdentifier;
-  readonly signature: LeanSignature;
-  readonly modifiers?: LeanModifiers;
-}
-
-export interface LeanAbbrev {
-  readonly tag: "abbrev";
-  readonly identifier: LeanDeclarationIdentifier;
-  readonly value: LeanTerm;
-  readonly signature?: LeanSignature;
-  readonly modifiers?: LeanModifiers;
-}
-
-export interface LeanInductive {
-  readonly tag: "inductive";
-  readonly identifier: LeanDeclarationIdentifier;
-  readonly signature?: LeanSignature;
-  readonly constructors?: readonly LeanConstructor[];
-  readonly deriving?: readonly string[] | undefined;
-  readonly modifiers?: LeanModifiers;
-}
-
-export interface LeanInstance {
-  readonly tag: "instance";
-  readonly signature: LeanSignature;
-  readonly value: LeanDeclarationValue;
-  readonly attributeKind?: LeanAttributeKind;
-  readonly priority?: number;
-  readonly identifier?: LeanDeclarationIdentifier;
-  readonly modifiers?: LeanModifiers;
-}
-
-export interface LeanDefinition {
-  readonly tag: "definition";
-  readonly identifier: LeanDeclarationIdentifier;
-  readonly value: LeanDeclarationValue;
-  readonly signature?: LeanSignature;
-  readonly deriving?: readonly string[] | undefined;
-  readonly modifiers?: LeanModifiers;
-}
-
-export interface LeanStructure {
-  readonly tag: "structure";
-  readonly identifier: LeanDeclarationIdentifier;
-  readonly signature?: LeanSignature;
-  readonly extends?: readonly LeanTerm[];
-  readonly constructor?: LeanStructureConstructor;
-  readonly deriving?: readonly string[];
-  readonly modifiers?: LeanModifiers;
-}
-
-export interface LeanDeclarationIdentifier {
-  readonly text: string;
-  readonly universes?: readonly string[];
-}
+export type LeanAxiom = z.infer<typeof leanAxiomSchema>;
+export type LeanAbbrev = z.infer<typeof leanAbbrevSchema>;
+export type LeanInductive = z.infer<typeof leanInductiveSchema>;
+export type LeanInstance = z.infer<typeof leanInstanceSchema>;
+export type LeanDefinition = z.infer<typeof leanDefinitionSchema>;
+export type LeanStructure = z.infer<typeof leanStructureSchema>;
+export type LeanDeclarationIdentifier = z.infer<typeof leanDeclarationIdentifierSchema>;
 
 /** Convenience constructor for declaration names, including universe levels. */
 export function leanIdentifier(text: string, universes?: readonly string[]): LeanDeclarationIdentifier {
   return universes === undefined ? { text } : { text, universes };
 }
 
-export interface LeanConstructor {
-  readonly identifier: string;
-  readonly signature?: LeanSignature;
-  readonly modifiers?: LeanModifiers;
-}
+export type LeanConstructor = z.infer<typeof leanConstructorSchema>;
+export type LeanSignature = z.infer<typeof leanSignatureSchema>;
+export type LeanBinder = z.infer<typeof leanBinderSchema>;
+export type LeanExplicitBinder = z.infer<typeof leanExplicitBinderSchema>;
+export type LeanImplicitBinder = z.infer<typeof leanImplicitBinderSchema>;
+export type LeanInstanceBinder = z.infer<typeof leanInstanceBinderSchema>;
+export type LeanDeclarationValue = z.infer<typeof leanDeclarationValueSchema>;
+export type LeanSimpleValue = z.infer<typeof leanSimpleValueSchema>;
+export type LeanStructureValue = z.infer<typeof leanStructureValueSchema>;
+export type LeanAlternativesValue = z.infer<typeof leanAlternativesValueSchema>;
+export type LeanInstanceField = z.infer<typeof leanInstanceFieldSchema>;
+export type LeanFieldValue = z.infer<typeof leanFieldValueSchema>;
+export type LeanSimpleFieldValue = z.infer<typeof leanSimpleFieldValueSchema>;
+export type LeanAlternativesFieldValue = z.infer<typeof leanAlternativesFieldValueSchema>;
+export type LeanAlternative = z.infer<typeof leanAlternativeSchema>;
+export type LeanStructureConstructor = z.infer<typeof leanStructureConstructorSchema>;
+export type LeanStructureIdentifier = z.infer<typeof leanStructureIdentifierSchema>;
+export type LeanModifiers = z.infer<typeof leanModifiersSchema>;
+export type LeanAttribute = z.infer<typeof leanAttributeSchema>;
+export type LeanAttributeKind = z.infer<typeof leanAttributeKindSchema>;
+export type LeanVisibility = z.infer<typeof leanVisibilitySchema>;
+export type LeanTotality = z.infer<typeof leanTotalitySchema>;
 
-export interface LeanSignature {
-  readonly binders?: readonly LeanBinder[] | undefined;
-  readonly type?: LeanTerm;
-}
-
-export type LeanBinder = LeanExplicitBinder | LeanImplicitBinder | LeanInstanceBinder;
-
-export interface LeanExplicitBinder {
-  readonly tag: "explicit";
-  readonly identifiers: readonly string[];
-  readonly type?: LeanTerm;
-}
-
-export interface LeanImplicitBinder {
-  readonly tag: "implicit";
-  readonly identifiers: readonly string[];
-  readonly type?: LeanTerm;
-  /** Strict implicits render with `⦃`/`⦄`, otherwise `{`/`}`. */
-  readonly strict?: boolean;
-}
-
-export interface LeanInstanceBinder {
-  readonly tag: "instance";
-  readonly type: LeanTerm;
-  readonly identifier?: string;
-}
-
-export type LeanDeclarationValue = LeanSimpleValue | LeanStructureValue | LeanAlternativesValue;
-
-export interface LeanSimpleValue {
-  readonly tag: "simple";
-  readonly term: LeanTerm;
-}
-
-export interface LeanStructureValue {
-  readonly tag: "structure";
-  readonly fields: readonly LeanInstanceField[];
-}
-
-export interface LeanAlternativesValue {
-  readonly tag: "alternatives";
-  readonly alternatives: readonly LeanAlternative[];
-}
-
-export interface LeanInstanceField {
-  readonly identifier: string;
-  readonly value: LeanFieldValue;
-  readonly signature?: LeanSignature;
-}
-
-export type LeanFieldValue = LeanSimpleFieldValue | LeanAlternativesFieldValue;
-
-export interface LeanSimpleFieldValue {
-  readonly tag: "simple";
-  readonly term: LeanTerm;
-}
-
-export interface LeanAlternativesFieldValue {
-  readonly tag: "alternatives";
-  readonly alternatives: readonly LeanAlternative[];
-}
-
-export interface LeanAlternative {
-  readonly patterns: readonly LeanTerm[];
-  readonly rhs: LeanTerm;
-}
-
-export interface LeanStructureConstructor {
-  readonly identifier?: LeanStructureIdentifier;
-  readonly fields: readonly LeanBinder[];
-}
-
-export interface LeanStructureIdentifier {
-  readonly text: string;
-  readonly modifiers?: LeanModifiers;
-}
-
-export interface LeanModifiers {
-  readonly attributes?: readonly LeanAttribute[];
-  readonly visibility?: LeanVisibility;
-  readonly noncomputable?: boolean;
-  readonly unsafe?: boolean;
-  readonly totality?: LeanTotality;
-}
-
-export interface LeanAttribute {
-  readonly text: string;
-  readonly kind?: LeanAttributeKind;
-}
-
-export type LeanAttributeKind = "scoped" | "local";
-export type LeanVisibility = "private" | "protected";
-export type LeanTotality = "partial" | "nonrec";
+/** Named structural dependencies of {@link leanModuleSchema}; objects strip unknown keys by default. */
+export const leanTermSchema = z.string();
+export const leanAttributeKindSchema = z.enum(["scoped", "local"]);
+export const leanVisibilitySchema = z.enum(["private", "protected"]);
+export const leanTotalitySchema = z.enum(["partial", "nonrec"]);
+export const leanAttributeSchema = z.object({
+  text: z.string(),
+  kind: leanAttributeKindSchema.optional(),
+});
+export const leanModifiersSchema = z.object({
+  attributes: z.array(leanAttributeSchema).readonly().optional(),
+  visibility: leanVisibilitySchema.optional(),
+  noncomputable: z.boolean().optional(),
+  unsafe: z.boolean().optional(),
+  totality: leanTotalitySchema.optional(),
+});
+export const leanDeclarationIdentifierSchema = z.object({
+  text: z.string(),
+  universes: z.array(z.string()).readonly().optional(),
+});
+export const leanExplicitBinderSchema = z.object({
+  tag: z.literal("explicit"),
+  identifiers: z.array(z.string()).readonly(),
+  type: leanTermSchema.optional(),
+});
+export const leanImplicitBinderSchema = z.object({
+  tag: z.literal("implicit"),
+  identifiers: z.array(z.string()).readonly(),
+  type: leanTermSchema.optional(),
+  strict: z.boolean().optional(),
+});
+export const leanInstanceBinderSchema = z.object({
+  tag: z.literal("instance"),
+  type: leanTermSchema,
+  identifier: z.string().optional(),
+});
+export const leanBinderSchema = z.discriminatedUnion("tag", [
+  leanExplicitBinderSchema,
+  leanImplicitBinderSchema,
+  leanInstanceBinderSchema,
+]);
+export const leanSignatureSchema = z.object({
+  binders: z.array(leanBinderSchema).readonly().optional(),
+  type: leanTermSchema.optional(),
+});
+export const leanConstructorSchema = z.object({
+  identifier: z.string(),
+  signature: leanSignatureSchema.optional(),
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanSimpleValueSchema = z.object({ tag: z.literal("simple"), term: leanTermSchema });
+export const leanAlternativeSchema = z.object({ patterns: z.array(leanTermSchema).readonly(), rhs: leanTermSchema });
+export const leanSimpleFieldValueSchema = z.object({ tag: z.literal("simple"), term: leanTermSchema });
+export const leanAlternativesFieldValueSchema = z.object({
+  tag: z.literal("alternatives"),
+  alternatives: z.array(leanAlternativeSchema).readonly(),
+});
+export const leanFieldValueSchema = z.discriminatedUnion("tag", [
+  leanSimpleFieldValueSchema,
+  leanAlternativesFieldValueSchema,
+]);
+export const leanInstanceFieldSchema = z.object({
+  identifier: z.string(),
+  value: leanFieldValueSchema,
+  signature: leanSignatureSchema.optional(),
+});
+export const leanStructureValueSchema = z.object({
+  tag: z.literal("structure"),
+  fields: z.array(leanInstanceFieldSchema).readonly(),
+});
+export const leanAlternativesValueSchema = z.object({
+  tag: z.literal("alternatives"),
+  alternatives: z.array(leanAlternativeSchema).readonly(),
+});
+export const leanDeclarationValueSchema = z.discriminatedUnion("tag", [
+  leanSimpleValueSchema,
+  leanStructureValueSchema,
+  leanAlternativesValueSchema,
+]);
+export const leanStructureIdentifierSchema = z.object({
+  text: z.string(),
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanStructureConstructorSchema = z.object({
+  identifier: leanStructureIdentifierSchema.optional(),
+  fields: z.array(leanBinderSchema).readonly(),
+});
+export const leanAxiomSchema = z.object({
+  tag: z.literal("axiom"),
+  identifier: leanDeclarationIdentifierSchema,
+  signature: leanSignatureSchema,
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanAbbrevSchema = z.object({
+  tag: z.literal("abbrev"),
+  identifier: leanDeclarationIdentifierSchema,
+  value: leanTermSchema,
+  signature: leanSignatureSchema.optional(),
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanInductiveSchema = z.object({
+  tag: z.literal("inductive"),
+  identifier: leanDeclarationIdentifierSchema,
+  signature: leanSignatureSchema.optional(),
+  constructors: z.array(leanConstructorSchema).readonly().optional(),
+  deriving: z.array(z.string()).readonly().optional(),
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanInstanceSchema = z.object({
+  tag: z.literal("instance"),
+  signature: leanSignatureSchema,
+  value: leanDeclarationValueSchema,
+  attributeKind: leanAttributeKindSchema.optional(),
+  priority: z.number().optional(),
+  identifier: leanDeclarationIdentifierSchema.optional(),
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanDefinitionSchema = z.object({
+  tag: z.literal("definition"),
+  identifier: leanDeclarationIdentifierSchema,
+  value: leanDeclarationValueSchema,
+  signature: leanSignatureSchema.optional(),
+  deriving: z.array(z.string()).readonly().optional(),
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanStructureSchema = z.object({
+  tag: z.literal("structure"),
+  identifier: leanDeclarationIdentifierSchema,
+  signature: leanSignatureSchema.optional(),
+  extends: z.array(leanTermSchema).readonly().optional(),
+  constructor: leanStructureConstructorSchema.optional(),
+  deriving: z.array(z.string()).readonly().optional(),
+  modifiers: leanModifiersSchema.optional(),
+});
+export const leanDeclarationSchema: z.ZodType<LeanDeclaration> = z.discriminatedUnion("tag", [
+  leanAxiomSchema,
+  leanAbbrevSchema,
+  leanInductiveSchema,
+  leanInstanceSchema,
+  leanDefinitionSchema,
+  leanStructureSchema,
+]);
+export const leanMutualSchema: z.ZodType<LeanMutual> = z.object({
+  tag: z.literal("mutual"),
+  commands: z.array(leanDeclarationSchema).readonly(),
+});
+export const leanCommandSchema: z.ZodType<LeanCommand> = z.union([leanDeclarationSchema, leanMutualSchema]);
+export const leanModuleSchema = z.object({
+  imports: z.array(z.string()).readonly().optional(),
+  commands: z.array(leanCommandSchema).readonly().optional(),
+});
 
 /** Render a module with one final newline whenever it has output. */
 export function renderLeanModule(module: LeanModule): string {

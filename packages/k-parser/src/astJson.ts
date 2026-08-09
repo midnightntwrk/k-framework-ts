@@ -56,6 +56,7 @@
  */
 
 import type { JsonObject, JsonValue } from "@kframework-ts/kast";
+import { z } from "zod";
 import type {
   Assoc,
   Ast,
@@ -72,6 +73,292 @@ import type {
   Sort,
   SortDecl,
 } from "./syntax.js";
+
+/////////////////////////////////////////
+// Raw outer-AST JSON schemas           //
+/////////////////////////////////////////
+
+/*
+ * The JSON projection emitted by {@link syntaxToDict}, rather than the parsed
+ * {@link Ast}.  In particular, source locations stay JSON arrays, pyk field
+ * spellings are retained, and parser-only `span` / `itemSpans` metadata does
+ * not cross this boundary.
+ *
+ * Every object is strict.  This makes the schema a validator for the writer's
+ * actual protocol, not a forgiving JSON-to-AST decoder; parsing and AST
+ * construction remain owned by `parser.ts` and `syntax.ts`.
+ */
+/** A serialized source location: `[startLine, startCol, endLine, endCol]`. */
+export const OuterLocationJsonSchema = z.tuple([z.number(), z.number(), z.number(), z.number()]);
+export type OuterLocationJson = z.infer<typeof OuterLocationJsonSchema>;
+
+/** Optional source metadata shared by serialized outer-AST objects. */
+export const OuterAstBaseJsonSchema = z
+  .object({
+    source: z.string().optional(),
+    location: OuterLocationJsonSchema.optional(),
+  })
+  .strict();
+export type OuterAstBaseJson = z.infer<typeof OuterAstBaseJsonSchema>;
+
+function outerNodeSchema<T extends z.ZodRawShape>(shape: T) {
+  return OuterAstBaseJsonSchema.extend(shape).strict();
+}
+
+/** One serialized attribute pair. */
+export const OuterAttItemJsonSchema = z.tuple([z.string(), z.string()]);
+export type OuterAttItemJson = z.infer<typeof OuterAttItemJsonSchema>;
+
+/** A serialized `Att`. */
+export const OuterAttJsonSchema = outerNodeSchema({
+  node: z.literal("Att"),
+  items: z.array(OuterAttItemJsonSchema),
+});
+export type OuterAttJson = z.infer<typeof OuterAttJsonSchema>;
+
+/** A serialized `SortDecl`. */
+export const OuterSortDeclJsonSchema = outerNodeSchema({
+  node: z.literal("SortDecl"),
+  name: z.string(),
+  params: z.array(z.string()),
+  args: z.array(z.string()),
+});
+export type OuterSortDeclJson = z.infer<typeof OuterSortDeclJsonSchema>;
+
+/** A serialized `Sort`; unlike `SortDecl.args`, its arguments may be numbers. */
+export const OuterSortJsonSchema = outerNodeSchema({
+  node: z.literal("Sort"),
+  name: z.string(),
+  args: z.array(z.union([z.string(), z.number()])),
+});
+export type OuterSortJson = z.infer<typeof OuterSortJsonSchema>;
+
+/** A serialized `Terminal`. */
+export const OuterTerminalJsonSchema = outerNodeSchema({
+  node: z.literal("Terminal"),
+  value: z.string(),
+});
+export type OuterTerminalJson = z.infer<typeof OuterTerminalJsonSchema>;
+
+/** A serialized `NonTerminal`. */
+export const OuterNonTerminalJsonSchema = outerNodeSchema({
+  node: z.literal("NonTerminal"),
+  sort: OuterSortJsonSchema,
+  name: z.string(),
+});
+export type OuterNonTerminalJson = z.infer<typeof OuterNonTerminalJsonSchema>;
+
+/** A serialized `Lexical`. */
+export const OuterLexicalJsonSchema = outerNodeSchema({
+  node: z.literal("Lexical"),
+  regex: z.string(),
+});
+export type OuterLexicalJson = z.infer<typeof OuterLexicalJsonSchema>;
+
+/** Any serialized production item. */
+export const OuterProductionItemJsonSchema = z.union([
+  OuterTerminalJsonSchema,
+  OuterNonTerminalJsonSchema,
+  OuterLexicalJsonSchema,
+]);
+export type OuterProductionItemJson = z.infer<typeof OuterProductionItemJsonSchema>;
+
+/** A serialized `Production`. */
+export const OuterProductionJsonSchema = outerNodeSchema({
+  node: z.literal("Production"),
+  items: z.array(OuterProductionItemJsonSchema),
+  att: OuterAttJsonSchema,
+});
+export type OuterProductionJson = z.infer<typeof OuterProductionJsonSchema>;
+
+/** A serialized `UserList`, including pyk's `non_empty` spelling. */
+export const OuterUserListJsonSchema = outerNodeSchema({
+  node: z.literal("UserList"),
+  sort: z.string(),
+  sep: z.string(),
+  non_empty: z.boolean(),
+  att: OuterAttJsonSchema,
+});
+export type OuterUserListJson = z.infer<typeof OuterUserListJsonSchema>;
+
+/** Any serialized production-like node. */
+export const OuterProductionLikeJsonSchema = z.union([OuterProductionJsonSchema, OuterUserListJsonSchema]);
+export type OuterProductionLikeJson = z.infer<typeof OuterProductionLikeJsonSchema>;
+
+/** A serialized `PriorityBlock`; absent associativity is emitted as `null`. */
+export const OuterPriorityBlockJsonSchema = outerNodeSchema({
+  node: z.literal("PriorityBlock"),
+  productions: z.array(OuterProductionLikeJsonSchema),
+  assoc: z.enum(["LEFT", "RIGHT", "NON_ASSOC"]).nullable(),
+});
+export type OuterPriorityBlockJson = z.infer<typeof OuterPriorityBlockJsonSchema>;
+
+/** A serialized `SyntaxDecl`. */
+export const OuterSyntaxDeclJsonSchema = outerNodeSchema({
+  node: z.literal("SyntaxDecl"),
+  decl: OuterSortDeclJsonSchema,
+  att: OuterAttJsonSchema,
+});
+export type OuterSyntaxDeclJson = z.infer<typeof OuterSyntaxDeclJsonSchema>;
+
+/** A serialized `SyntaxDefn`. */
+export const OuterSyntaxDefnJsonSchema = outerNodeSchema({
+  node: z.literal("SyntaxDefn"),
+  decl: OuterSortDeclJsonSchema,
+  blocks: z.array(OuterPriorityBlockJsonSchema),
+});
+export type OuterSyntaxDefnJson = z.infer<typeof OuterSyntaxDefnJsonSchema>;
+
+/** A serialized `SyntaxSynonym`, with pyk's `new` and `old` keys. */
+export const OuterSyntaxSynonymJsonSchema = outerNodeSchema({
+  node: z.literal("SyntaxSynonym"),
+  new: OuterSortDeclJsonSchema,
+  old: OuterSortJsonSchema,
+  att: OuterAttJsonSchema,
+});
+export type OuterSyntaxSynonymJson = z.infer<typeof OuterSyntaxSynonymJsonSchema>;
+
+/** A serialized `SyntaxPriority`. */
+export const OuterSyntaxPriorityJsonSchema = outerNodeSchema({
+  node: z.literal("SyntaxPriority"),
+  groups: z.array(z.array(z.string())),
+});
+export type OuterSyntaxPriorityJson = z.infer<typeof OuterSyntaxPriorityJsonSchema>;
+
+/** A serialized `SyntaxAssoc`. */
+export const OuterSyntaxAssocJsonSchema = outerNodeSchema({
+  node: z.literal("SyntaxAssoc"),
+  assoc: z.enum(["LEFT", "RIGHT", "NON_ASSOC"]),
+  klabels: z.array(z.string()),
+});
+export type OuterSyntaxAssocJson = z.infer<typeof OuterSyntaxAssocJsonSchema>;
+
+/** A serialized `SyntaxLexical`. */
+export const OuterSyntaxLexicalJsonSchema = outerNodeSchema({
+  node: z.literal("SyntaxLexical"),
+  name: z.string(),
+  regex: z.string(),
+});
+export type OuterSyntaxLexicalJson = z.infer<typeof OuterSyntaxLexicalJsonSchema>;
+
+/** Any serialized sentence beginning with `syntax`. */
+export const OuterSyntaxSentenceJsonSchema = z.union([
+  OuterSyntaxDeclJsonSchema,
+  OuterSyntaxDefnJsonSchema,
+  OuterSyntaxSynonymJsonSchema,
+  OuterSyntaxPriorityJsonSchema,
+  OuterSyntaxAssocJsonSchema,
+  OuterSyntaxLexicalJsonSchema,
+]);
+export type OuterSyntaxSentenceJson = z.infer<typeof OuterSyntaxSentenceJsonSchema>;
+
+/** The fields shared by each serialized string sentence, apart from `node`. */
+export const OuterStringSentenceBaseJsonSchema = outerNodeSchema({
+  bubble: z.string(),
+  label: z.string(),
+  att: OuterAttJsonSchema,
+});
+export type OuterStringSentenceBaseJson = z.infer<typeof OuterStringSentenceBaseJsonSchema>;
+
+/** A serialized `Rule`. */
+export const OuterRuleJsonSchema = OuterStringSentenceBaseJsonSchema.extend({ node: z.literal("Rule") }).strict();
+export type OuterRuleJson = z.infer<typeof OuterRuleJsonSchema>;
+
+/** A serialized `Claim`. */
+export const OuterClaimJsonSchema = OuterStringSentenceBaseJsonSchema.extend({ node: z.literal("Claim") }).strict();
+export type OuterClaimJson = z.infer<typeof OuterClaimJsonSchema>;
+
+/** A serialized `Config`. */
+export const OuterConfigJsonSchema = OuterStringSentenceBaseJsonSchema.extend({ node: z.literal("Config") }).strict();
+export type OuterConfigJson = z.infer<typeof OuterConfigJsonSchema>;
+
+/** A serialized `Context`. */
+export const OuterContextJsonSchema = OuterStringSentenceBaseJsonSchema.extend({ node: z.literal("Context") }).strict();
+export type OuterContextJson = z.infer<typeof OuterContextJsonSchema>;
+
+/** A serialized `Alias`. */
+export const OuterAliasJsonSchema = OuterStringSentenceBaseJsonSchema.extend({ node: z.literal("Alias") }).strict();
+export type OuterAliasJson = z.infer<typeof OuterAliasJsonSchema>;
+
+/** Any serialized string sentence. */
+export const OuterStringSentenceJsonSchema = z.union([
+  OuterRuleJsonSchema,
+  OuterClaimJsonSchema,
+  OuterConfigJsonSchema,
+  OuterContextJsonSchema,
+  OuterAliasJsonSchema,
+]);
+export type OuterStringSentenceJson = z.infer<typeof OuterStringSentenceJsonSchema>;
+
+/** Any serialized module sentence. */
+export const OuterSentenceJsonSchema = z.union([OuterSyntaxSentenceJsonSchema, OuterStringSentenceJsonSchema]);
+export type OuterSentenceJson = z.infer<typeof OuterSentenceJsonSchema>;
+
+/** A serialized `Import`, with pyk's `module_name` spelling. */
+export const OuterImportJsonSchema = outerNodeSchema({
+  node: z.literal("Import"),
+  module_name: z.string(),
+  public: z.boolean(),
+});
+export type OuterImportJson = z.infer<typeof OuterImportJsonSchema>;
+
+/** A serialized `Module`. */
+export const OuterModuleJsonSchema = outerNodeSchema({
+  node: z.literal("Module"),
+  name: z.string(),
+  sentences: z.array(OuterSentenceJsonSchema),
+  imports: z.array(OuterImportJsonSchema),
+  att: OuterAttJsonSchema,
+});
+export type OuterModuleJson = z.infer<typeof OuterModuleJsonSchema>;
+
+/** A serialized `Require`. */
+export const OuterRequireJsonSchema = outerNodeSchema({
+  node: z.literal("Require"),
+  path: z.string(),
+});
+export type OuterRequireJson = z.infer<typeof OuterRequireJsonSchema>;
+
+/** A serialized `Definition`. */
+export const OuterDefinitionJsonSchema = outerNodeSchema({
+  node: z.literal("Definition"),
+  modules: z.array(OuterModuleJsonSchema),
+  requires: z.array(OuterRequireJsonSchema),
+});
+export type OuterDefinitionJson = z.infer<typeof OuterDefinitionJsonSchema>;
+
+/**
+ * Every raw JSON node {@link syntaxToDict} may emit.  This validates the
+ * writer's projection only; it deliberately is not `z.ZodType<Ast>` and does
+ * not decode JSON into the parsed surface AST.
+ */
+export const OuterAstJsonSchema = z.union([
+  OuterAttJsonSchema,
+  OuterSortDeclJsonSchema,
+  OuterSortJsonSchema,
+  OuterPriorityBlockJsonSchema,
+  OuterProductionJsonSchema,
+  OuterUserListJsonSchema,
+  OuterTerminalJsonSchema,
+  OuterNonTerminalJsonSchema,
+  OuterLexicalJsonSchema,
+  OuterSyntaxDeclJsonSchema,
+  OuterSyntaxDefnJsonSchema,
+  OuterSyntaxSynonymJsonSchema,
+  OuterSyntaxPriorityJsonSchema,
+  OuterSyntaxAssocJsonSchema,
+  OuterSyntaxLexicalJsonSchema,
+  OuterRuleJsonSchema,
+  OuterClaimJsonSchema,
+  OuterConfigJsonSchema,
+  OuterContextJsonSchema,
+  OuterAliasJsonSchema,
+  OuterImportJsonSchema,
+  OuterModuleJsonSchema,
+  OuterRequireJsonSchema,
+  OuterDefinitionJsonSchema,
+]);
+export type OuterAstJson = z.infer<typeof OuterAstJsonSchema>;
 
 /** Prove at compile time that a `switch` over a node union is exhaustive. */
 function exhausted(value: never): never {

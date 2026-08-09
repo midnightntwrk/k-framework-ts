@@ -17,7 +17,14 @@ import { app, evar, koreText, KoreParser, sortApp, type EVar, type Pattern } fro
 import { intDv } from "@kframework-ts/kore/prelude";
 
 import { ExitCodeAssertionError, KFuzzArgumentError, KFuzzError } from "../src/errors.ts";
-import { DEFAULT_DEADLINE_MS, fuzz, KFuzz, type Interpret, type InterpretResult } from "../src/fuzz.ts";
+import {
+  DEFAULT_DEADLINE_MS,
+  fuzz,
+  KFuzz,
+  type Interpret,
+  type InterpretResult,
+  interpretResultSchema,
+} from "../src/fuzz.ts";
 import type { KFuzzHandler } from "../src/handler.ts";
 import { kintegers } from "../src/strategies.ts";
 import { substituteVars, type KoreSubst } from "../src/subst.ts";
@@ -42,6 +49,21 @@ const never: Interpret = () => new Promise<InterpretResult>(() => {});
 function completed(fields: Partial<InterpretResult> = {}): InterpretResult {
   return { returncode: 0, stdout: "Lblok{}()", stderr: "", ...fields };
 }
+
+describe("interpret result schema", () => {
+  test("accepts an interpreter process result", () => {
+    expect(interpretResultSchema.parse({ returncode: 0, stdout: "Lblok{}()", stderr: "" })).toEqual({
+      returncode: 0,
+      stdout: "Lblok{}()",
+      stderr: "",
+    });
+  });
+
+  test("rejects malformed interpreter process results", () => {
+    expect(interpretResultSchema.safeParse({ returncode: "0", stdout: "", stderr: "" }).success).toBe(false);
+    expect(interpretResultSchema.safeParse({ returncode: 0, stdout: "" }).success).toBe(false);
+  });
+});
 
 /** An interpreter that records what it was handed and answers `fields`. */
 function recording(fields: (kore: string) => InterpretResult): { interpret: Interpret; seen: string[] } {

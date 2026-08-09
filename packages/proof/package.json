@@ -69,7 +69,8 @@
     "@kframework-ts/kast": "workspace:*",
     "@kframework-ts/kcfg": "workspace:*",
     "@kframework-ts/kore-rpc": "workspace:*",
-    "@kframework-ts/ktool": "workspace:*"
+    "@kframework-ts/ktool": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@kframework-ts/konvert": "workspace:*",

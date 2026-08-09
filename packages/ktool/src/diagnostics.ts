@@ -1,5 +1,7 @@
 /** Pure parsers for K frontend diagnostics measured at K v7.1.337. */
 
+import { z } from "zod";
+
 /** JVM exit statuses.  They describe frontend machinery, not backend failures. */
 export const K_FRONTEND_EXIT_CODES = Object.freeze({
   success: 0,
@@ -11,32 +13,48 @@ export const K_FRONTEND_EXIT_CODES = Object.freeze({
 /** Generated Bison statuses; `1` does not distinguish scanner from parser failure. */
 export const K_NATIVE_PARSER_EXIT_CODES = Object.freeze({ failure: 1, stackExhaustion: 2 } as const);
 
-export type KDiagnosticSeverity = "error" | "warning";
-export type KDiagnosticGroup =
-  | "Compiler"
-  | "Outer Parser"
-  | "Inner Parser"
-  | "Internal"
-  | "Critical"
-  | "Prover"
-  | "wrapper"
-  | "native-scanner"
-  | "native-parser";
+export const KDiagnosticSeveritySchema = z.enum(["error", "warning"]);
+export type KDiagnosticSeverity = z.infer<typeof KDiagnosticSeveritySchema>;
 
-export interface KDiagnostic {
-  readonly severity: KDiagnosticSeverity;
-  readonly group: KDiagnosticGroup;
-  readonly message: string;
-  readonly source: string | null;
-  readonly location: string | null;
-  readonly snippet: string | null;
-  /** Shell wrapper tool for wrapper-attributed failures; `null` otherwise. */
-  readonly wrapperTool: "krun" | "kparse" | "kparse-gen" | "kore-print" | null;
-  /** Original, unreassembled bytes for forward-compatible reporting. */
-  readonly raw: string;
-  /** Original physical lines, including K's optional 80-column wrapping. */
-  readonly rawLines: readonly string[];
-}
+export const KDiagnosticGroupSchema = z.enum([
+  "Compiler",
+  "Outer Parser",
+  "Inner Parser",
+  "Internal",
+  "Critical",
+  "Prover",
+  "wrapper",
+  "native-scanner",
+  "native-parser",
+]);
+export type KDiagnosticGroup = z.infer<typeof KDiagnosticGroupSchema>;
+
+/** Structural parsed stderr record; grouping and classification remain parser semantics. */
+export const KDiagnosticSchema = z
+  .object({
+    severity: KDiagnosticSeveritySchema,
+    group: KDiagnosticGroupSchema,
+    message: z.string(),
+    source: z.string().nullable(),
+    location: z.string().nullable(),
+    snippet: z.string().nullable(),
+    wrapperTool: z.enum(["krun", "kparse", "kparse-gen", "kore-print"]).nullable(),
+    raw: z.string(),
+    rawLines: z.array(z.string()),
+  })
+  .superRefine((diagnostic, context) => {
+    // Classification and ambiguity extraction remain semantic operations, but
+    // their public values are structural children of this approved root.
+    if (!KMessageClassSchema.safeParse(classifyKDiagnostic(diagnostic)).success) {
+      context.addIssue({ code: "custom", message: "diagnostic classification is structurally invalid" });
+    }
+    for (const alternative of parseAmbiguity(diagnostic)) {
+      if (!KAmbiguityAlternativeSchema.safeParse(alternative).success) {
+        context.addIssue({ code: "custom", message: "diagnostic ambiguity alternative is structurally invalid" });
+      }
+    }
+  });
+export type KDiagnostic = z.infer<typeof KDiagnosticSchema>;
 
 /**
  * Complete program-input `Inner Parser` message inventory for K v7.1.337.
@@ -48,54 +66,60 @@ export interface KDiagnostic {
  * the same externally observable message grammar.  See the source entries in
  * `version.ts` for the pinned Java files.
  */
-export type KInnerParserMessageTag =
-  | "non-lr-grammar"
-  | "parse-unexpected-eof"
-  | "parse-unexpected-token"
-  | "scanner-unexpected-character"
-  | "parsing-ambiguity"
-  | "invalid-apply-priority"
-  | "rewrite-immediate-child"
-  | "ksequence-immediate-child"
-  | "let-immediate-child"
-  | "cast-immediate-child"
-  | "priority-filter"
-  | "left-associativity-filter"
-  | "right-associativity-filter"
-  | "z3-constant-sort"
-  | "z3-production-sort"
-  | "z3-localized-variable-sort"
-  | "simplesub-lattice-term"
-  | "simplesub-lattice-anonymous-variable"
-  | "simplesub-lattice-named-variable"
-  | "simplesub-constraint"
-  | "simplesub-monomorphization"
-  | "overloaded-terminator-no-least-sort"
-  | "overloaded-empty-list-terminator-no-least-sort"
-  | "duplicate-record-key"
-  | "no-suitable-production"
-  | "unknown-start-symbol";
+export const KInnerParserMessageTagSchema = z.enum([
+  "non-lr-grammar",
+  "parse-unexpected-eof",
+  "parse-unexpected-token",
+  "scanner-unexpected-character",
+  "parsing-ambiguity",
+  "invalid-apply-priority",
+  "rewrite-immediate-child",
+  "ksequence-immediate-child",
+  "let-immediate-child",
+  "cast-immediate-child",
+  "priority-filter",
+  "left-associativity-filter",
+  "right-associativity-filter",
+  "z3-constant-sort",
+  "z3-production-sort",
+  "z3-localized-variable-sort",
+  "simplesub-lattice-term",
+  "simplesub-lattice-anonymous-variable",
+  "simplesub-lattice-named-variable",
+  "simplesub-constraint",
+  "simplesub-monomorphization",
+  "overloaded-terminator-no-least-sort",
+  "overloaded-empty-list-terminator-no-least-sort",
+  "duplicate-record-key",
+  "no-suitable-production",
+  "unknown-start-symbol",
+]);
+export type KInnerParserMessageTag = z.infer<typeof KInnerParserMessageTagSchema>;
 
-export type KMessageClass =
-  | { readonly family: "inner-parser"; readonly tag: KInnerParserMessageTag }
-  | { readonly family: "native"; readonly tag: "scanner" | "parser" }
-  | {
-      readonly family: "outer-parser";
-      readonly tag:
-        | "circular-lexical-identifiers"
-        | "unrecognized-lexical-identifiers"
-        | "named-lexical-line-anchor"
-        | "syntax";
-    }
-  | { readonly family: "compiler"; readonly tag: "had-parsing-errors" }
-  | { readonly family: "wrapper"; readonly tag: "krun" | "kparse" | "kparse-gen" | "kore-print" }
-  | { readonly kind: "unknown"; readonly raw: string };
+export const KMessageClassSchema = z.union([
+  z.object({ family: z.literal("inner-parser"), tag: KInnerParserMessageTagSchema }),
+  z.object({ family: z.literal("native"), tag: z.enum(["scanner", "parser"]) }),
+  z.object({
+    family: z.literal("outer-parser"),
+    tag: z.enum([
+      "circular-lexical-identifiers",
+      "unrecognized-lexical-identifiers",
+      "named-lexical-line-anchor",
+      "syntax",
+    ]),
+  }),
+  z.object({ family: z.literal("compiler"), tag: z.literal("had-parsing-errors") }),
+  z.object({ family: z.literal("wrapper"), tag: z.enum(["krun", "kparse", "kparse-gen", "kore-print"]) }),
+  z.object({ kind: z.literal("unknown"), raw: z.string() }),
+]);
+export type KMessageClass = z.infer<typeof KMessageClassSchema>;
 
-export interface KAmbiguityAlternative {
-  readonly index: number;
-  readonly production: string;
-  readonly term: string | null;
-}
+export const KAmbiguityAlternativeSchema = z.object({
+  index: z.number().int(),
+  production: z.string(),
+  term: z.string().nullable(),
+});
+export type KAmbiguityAlternative = z.infer<typeof KAmbiguityAlternativeSchema>;
 
 const JVM =
   /^(?:org\.kframework\.utils\.errorsystem\.KEMException: )?\[(Error|Warning)\] (Compiler|Outer Parser|Inner Parser|Internal|Critical|Prover):\s?(.*)$/u;

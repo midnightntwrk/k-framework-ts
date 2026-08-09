@@ -17,6 +17,7 @@ import { readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -204,6 +205,14 @@ export const MIR_CACHE_SCHEMA = 1;
 /** The completion marker written into a cache entry, last, by an atomic rename. */
 export const MIR_CACHE_MARKER = ".kframework-ts-mir-soak.json" as const;
 
+/** The forward-compatible structural portion of a persisted soak cache marker. */
+export const mirSoakCacheMarkerSchema = z.looseObject({
+  schema: z.number(),
+  key: z.string(),
+});
+
+export type MirSoakCacheMarker = z.infer<typeof mirSoakCacheMarkerSchema>;
+
 /**
  * The content key for one KMIR build: sha256 over schema, K release, source pin
  * and argv.
@@ -264,13 +273,8 @@ export function mirCacheEntry(kVersion: string = MIR_PIN.kBuiltWith): string {
 export function isCompletedCacheEntry(dir: string, key: string): boolean {
   try {
     if (!statSync(dir).isDirectory()) return false;
-    const parsed: unknown = JSON.parse(readFileSync(join(dir, MIR_CACHE_MARKER), "utf8"));
-    return (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      (parsed as { schema?: unknown }).schema === MIR_CACHE_SCHEMA &&
-      (parsed as { key?: unknown }).key === key
-    );
+    const marker = mirSoakCacheMarkerSchema.safeParse(JSON.parse(readFileSync(join(dir, MIR_CACHE_MARKER), "utf8")));
+    return marker.success && marker.data.schema === MIR_CACHE_SCHEMA && marker.data.key === key;
   } catch {
     // A missing directory, an unreadable marker, or one that parses to something
     // else, are all the same answer: not a cache hit.

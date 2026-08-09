@@ -1,5 +1,6 @@
 /** Browser-safe, pure K proof artifacts: objects, status, summaries, codecs. */
 export * from "./status.js";
+export * from "./schemas.js";
 export * from "./summary.js";
 export * from "./proof.js";
 export * from "./implies.js";

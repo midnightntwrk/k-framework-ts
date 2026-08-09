@@ -16,6 +16,7 @@ import {
   assembleProofTrace,
   filterProofTrace,
   proofTraceContext,
+  proofTraceRecordSchema,
   proofTraceRecords,
   proofTraceRuleCounts,
   proofTraceToJsonl,
@@ -70,6 +71,24 @@ describe("the record shape", () => {
     for (const entry of recordsFor("guardedBig")) {
       for (const value of Object.values(entry)) expect(value).not.toBeUndefined();
     }
+  });
+
+  test("fixture records round-trip through the JSONL interchange schema", () => {
+    const records = recordsFor("guardedBig");
+    const reread = proofTraceToJsonl(records)
+      .trimEnd()
+      .split("\n")
+      .map((line) => proofTraceRecordSchema.parse(JSON.parse(line) as unknown));
+    expect(reread).toEqual([...records]);
+  });
+
+  test("rejects malformed nested interchange fields", () => {
+    const [record] = recordsFor("addRewrite");
+    expect(record).toBeDefined();
+    expect(proofTraceRecordSchema.safeParse({ ...record!, location: [18, 23, 18, "76"] }).success).toBe(false);
+    expect(proofTraceRecordSchema.safeParse({ ...record!, substitution: { VarN: { bad: BigInt(1) } } }).success).toBe(
+      false,
+    );
   });
 });
 

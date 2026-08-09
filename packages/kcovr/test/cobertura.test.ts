@@ -19,6 +19,7 @@ import { join } from "node:path";
 
 import {
   type CoverageDefinition,
+  coverageDefinitionSchema,
   coverageSourceRoot,
   createRuleMap,
   formatPythonFloat,
@@ -59,6 +60,27 @@ function covBuild(): CoverageDefinition {
     coverageLogs: [read("cov-build/coverage.txt"), ...logs],
   };
 }
+
+describe("coverage definition schema", () => {
+  test("accepts the public text transport shape", () => {
+    expect(
+      coverageDefinitionSchema.parse({
+        name: "example-kompiled",
+        allRulesTxt: "rule locations",
+        coverageLogs: ["first log", "second log"],
+      }),
+    ).toEqual({
+      name: "example-kompiled",
+      allRulesTxt: "rule locations",
+      coverageLogs: ["first log", "second log"],
+    });
+  });
+
+  test("rejects malformed artifact text", () => {
+    expect(coverageDefinitionSchema.safeParse({ allRulesTxt: "rules", coverageLogs: [1] }).success).toBe(false);
+    expect(coverageDefinitionSchema.safeParse({ allRulesTxt: 1, coverageLogs: [] }).success).toBe(false);
+  });
+});
 
 //////////////////////////////
 // The golden               //

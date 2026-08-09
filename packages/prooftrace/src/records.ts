@@ -70,9 +70,17 @@
  * leaves `substitution` `null`, exactly as cterm does.
  */
 
-import { kastTermToDict, type JsonObject, type KDefinition, type KInner, type Location } from "@kframework-ts/kast";
+import {
+  kastTermToDict,
+  type JsonObject,
+  type JsonValue,
+  type KDefinition,
+  type KInner,
+  type Location,
+} from "@kframework-ts/kast";
 import { koreToKast } from "@kframework-ts/konvert";
 import type { Pattern } from "@kframework-ts/kore";
+import { z } from "zod";
 
 import type { ProofTraceBinding, ProofTraceEvent, ProofTracePhase } from "./events.js";
 import { parseProofTrace, proofTraceEvents } from "./events.js";
@@ -89,6 +97,9 @@ export type ProofTraceOrigin = "llvm";
 
 /** {@link ProofTraceOrigin}'s only inhabitant. */
 export const LLVM_ORIGIN: ProofTraceOrigin = "llvm";
+
+/** The trace writer identity. A composition building block only. */
+export const proofTraceOriginSchema = z.literal("llvm");
 
 /**
  * One rewrite step, fully attributed — `@kframework-ts/cterm`'s `TraceEntry`
@@ -141,6 +152,38 @@ export interface ProofTraceRecord {
    */
   readonly substitution: Readonly<Record<string, JsonObject>> | null;
 }
+
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(
+  (): z.ZodType<JsonValue> =>
+    z.union([
+      z.null(),
+      z.boolean(),
+      z.number(),
+      z.string(),
+      z.array(jsonValueSchema),
+      z.record(z.string(), jsonValueSchema),
+    ]) as z.ZodType<JsonValue>,
+);
+
+/**
+ * JSONL interchange record structure, not an assembled trace-domain model.
+ *
+ * Ordinal resolution, trace ordering, and KORE-to-KAST conversion happen
+ * before this boundary and remain outside this structural schema.
+ */
+export const proofTraceRecordSchema: z.ZodType<ProofTraceRecord> = z.object({
+  index: z.number(),
+  outcome: z.enum(["success", "failure"]),
+  ruleId: z.string().nullable(),
+  resolved: z.boolean(),
+  label: z.string().nullable(),
+  source: z.string().nullable(),
+  location: z.tuple([z.number().int(), z.number().int(), z.number().int(), z.number().int()]).nullable(),
+  module: z.string().nullable(),
+  origin: proofTraceOriginSchema,
+  reason: z.string().nullable(),
+  substitution: z.record(z.string(), z.record(z.string(), jsonValueSchema)).nullable(),
+});
 
 /** The join's two inputs: the ordinal index, and (for R4) a KORE→KAST decoder. */
 export interface ProofTraceContext {

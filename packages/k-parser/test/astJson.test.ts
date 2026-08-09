@@ -22,7 +22,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { syntaxToDict } from "../src/astJson.ts";
+import { OuterAstJsonSchema, OuterAttJsonSchema, OuterPriorityBlockJsonSchema, syntaxToDict } from "../src/astJson.ts";
 import {
   AST_NODES,
   Assoc,
@@ -105,8 +105,107 @@ describe("every node type encodes", () => {
     test(`${name} encodes with its own class name`, () => {
       const encoded = syntaxToDict(samples[name]);
       expect(encoded).toMatchObject({ node: name });
+      expect(OuterAstJsonSchema.safeParse(encoded).success).toBe(true);
     });
   }
+});
+
+/////////////////////////////////////////
+// Raw JSON schema boundary             //
+/////////////////////////////////////////
+
+describe("OuterAstJsonSchema", () => {
+  test("accepts a nested definition emitted by syntaxToDict", () => {
+    const encoded = syntaxToDict(
+      definition({
+        modules: [
+          module("MAIN", {
+            imports: [importt("OTHER", { public: false })],
+            sentences: [
+              syntaxDefn(sortDecl("Exp"), {
+                blocks: [
+                  priorityBlock(
+                    [
+                      production([terminal("("), nonTerminal(sort("Exp"), { name: "term" }), lexical("[0-9]+")]),
+                      userList("Exp", ",", { nonEmpty: true }),
+                    ],
+                    { assoc: Assoc.LEFT },
+                  ),
+                ],
+              }),
+              syntaxSynonym(sortDecl("Nat", { args: ["8"] }), sort("MInt", { args: [8] })),
+              rule("term", { label: "main" }),
+            ],
+          }),
+        ],
+        requires: [require("prelude.k")],
+      }),
+    );
+
+    expect(OuterAstJsonSchema.safeParse(encoded as unknown).success).toBe(true);
+  });
+
+  test("rejects malformed nested children instead of decoding them into AST nodes", () => {
+    expect(
+      OuterAstJsonSchema.safeParse({
+        node: "Definition",
+        modules: [
+          {
+            node: "Module",
+            name: "MAIN",
+            sentences: [
+              {
+                node: "SyntaxDefn",
+                decl: { node: "SortDecl", name: "Exp", params: [], args: [] },
+                blocks: [
+                  {
+                    node: "PriorityBlock",
+                    productions: [
+                      {
+                        node: "Production",
+                        items: [{ node: "NonTerminal", sort: { node: "Sort", name: "Exp", args: [] } }],
+                        att: { node: "Att", items: [] },
+                      },
+                    ],
+                    assoc: null,
+                  },
+                ],
+              },
+            ],
+            imports: [],
+            att: { node: "Att", items: [] },
+          },
+        ],
+        requires: [],
+      }).success,
+    ).toBe(false);
+  });
+
+  test("enforces pyk spellings, nullability, and omitted parser-only metadata", () => {
+    expect(OuterAstJsonSchema.safeParse({ node: "Import", moduleName: "OTHER", public: true }).success).toBe(false);
+    expect(
+      OuterAstJsonSchema.safeParse({
+        node: "UserList",
+        sort: "Exp",
+        sep: ",",
+        nonEmpty: true,
+        att: { node: "Att", items: [] },
+      }).success,
+    ).toBe(false);
+    expect(
+      OuterAstJsonSchema.safeParse({
+        node: "SyntaxSynonym",
+        new: { node: "SortDecl", name: "New", params: [], args: [] },
+        att: { node: "Att", items: [] },
+      }).success,
+    ).toBe(false);
+    expect(OuterPriorityBlockJsonSchema.safeParse({ node: "PriorityBlock", productions: [] }).success).toBe(false);
+    expect(
+      OuterPriorityBlockJsonSchema.safeParse({ node: "PriorityBlock", productions: [], assoc: null }).success,
+    ).toBe(true);
+    expect(OuterAstJsonSchema.safeParse({ node: "Terminal", value: "x", span: [1, 1, 1, 2] }).success).toBe(false);
+    expect(OuterAttJsonSchema.safeParse({ node: "Att", items: [], itemSpans: [] }).success).toBe(false);
+  });
 });
 
 /////////////////////////////////////////

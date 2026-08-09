@@ -72,7 +72,8 @@ import {
   decodeKoreJson,
   encodeKoreJsonValue,
 } from "@kframework-ts/kore";
-import { type JsonRpcErrorObject, decodeErrorObject } from "./errors.js";
+import { z } from "zod";
+import { JsonRpcErrorObjectWireSchema, decodeErrorObject } from "./errors.js";
 import {
   type MutableJsonObject,
   asBoolean,
@@ -95,6 +96,7 @@ import {
 import {
   type LogEntry,
   type LogLine,
+  LogLineWireSchema,
   decodeLogEntries,
   decodeLogLines,
   encodeLogEntries,
@@ -120,6 +122,7 @@ import {
   type OffReasonFields,
   type OffReasonKey,
   type RequestId,
+  RequestIdSchema,
   type SatResult,
   type SimplifyParams,
   type SimplifyResult,
@@ -554,15 +557,38 @@ export interface ResultResponse {
   readonly result: JsonValue;
 }
 
+/** The decoded `result` branch of a JSON-RPC response envelope. */
+export const ResultResponseSchema: z.ZodType<ResultResponse, ResultResponse> = z.object({
+  kind: z.literal("result"),
+  id: RequestIdSchema.nullable(),
+  result: z.json().transform((value): JsonValue => value),
+});
+
+/** The decoded, normalized `error` branch of a JSON-RPC response envelope. */
+export const ErrorResponseSchema = z.object({
+  kind: z.literal("error"),
+  id: RequestIdSchema.nullable(),
+  error: JsonRpcErrorObjectWireSchema,
+});
+
 /** A response carrying an `error` member. */
-export interface ErrorResponse {
-  readonly kind: "error";
-  readonly id: RequestId | null;
-  readonly error: JsonRpcErrorObject;
-}
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
 /** Exactly one of `result` / `error`, per JSON-RPC 2.0. */
 export type JsonRpcResponse = ResultResponse | ErrorResponse;
+
+const DecodedJsonRpcResponseSchema = z.union([ResultResponseSchema, ErrorResponseSchema]);
+
+/**
+ * A JSON-RPC response transformed through the established response decoder.
+ *
+ * The decoder deliberately retains request/response discrimination and error
+ * normalization; the composed branch schemas check the normalized result.
+ */
+export const JsonRpcResponseSchema: z.ZodType<JsonRpcResponse> = z
+  .unknown()
+  .transform((value) => decodeResponse(value))
+  .pipe(DecodedJsonRpcResponseSchema);
 
 /**
  * How much of an unparseable response line goes in the error message.
@@ -906,6 +932,18 @@ export function encodeSimplifyResult(result: SimplifyResult): JsonObject {
 ////////////////////////
 // add-module results //
 ////////////////////////
+
+/** Structural `add-module` result as returned by the JSON-RPC server. */
+export const AddModuleResultWireSchema = z.object({
+  module: z.string(),
+  "haskell-log-entries": z.array(LogLineWireSchema).nullable().optional(),
+});
+
+/** An `add-module` result transformed through the established log decoder. */
+export const AddModuleResultSchema: z.ZodType<
+  AddModuleResult,
+  z.input<typeof AddModuleResultWireSchema>
+> = AddModuleResultWireSchema.transform((result): AddModuleResult => decodeAddModuleResult(result));
 
 /**
  * `AddModuleResult` (`Types.hs:208-215`) — pyk returns the bare string
