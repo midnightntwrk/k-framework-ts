@@ -9,6 +9,10 @@ on:
       - ".github/workflows/k-conformance.yml"
       - "bun.lock"
       - "package.json"
+      - "packages/bison/package.json"
+      - "packages/bison/src/**"
+      - "packages/bison/test/**"
+      - "packages/bison/fixtures/**"
       - "packages/ktool/package.json"
       - "packages/ktool/src/**"
       - "packages/ktool/test/**"
@@ -17,6 +21,10 @@ on:
       - ".github/workflows/k-conformance.yml"
       - "bun.lock"
       - "package.json"
+      - "packages/bison/package.json"
+      - "packages/bison/src/**"
+      - "packages/bison/test/**"
+      - "packages/bison/fixtures/**"
       - "packages/ktool/package.json"
       - "packages/ktool/src/**"
       - "packages/ktool/test/**"
@@ -73,11 +81,10 @@ jobs:
           test -x "$k_store/bin-unwrapped/kompile"
           test ! -e "$k_store/bin/bison"
 
-          # K's packaged wrappers prepend their own tool directories. That is
-          # appropriate for ordinary commands, but it would bypass the
-          # single-use Bison attestation at the head of PATH. Select only the
-          # exact unwrapped kompile entry point while retaining wrapped peers
-          # for the other live conformance scenarios.
+          # K's packaged wrappers prepend their own tool directories. Use the
+          # unwrapped kompile entry point so deterministic grammar capture sees
+          # the selected system Bison on PATH; retain wrapped peers for the
+          # other live conformance scenarios.
           selected_bin="$RUNNER_TEMP/kframework-ts-selected-bin"
           mkdir "$selected_bin"
           for tool in "$k_store"/bin/*; do
@@ -91,9 +98,8 @@ jobs:
           printf 'KFRAMEWORK_TS_K_BIN=%s\n' "$selected_bin" >> "$GITHUB_ENV"
           printf 'KFRAMEWORK_TS_K_WRAPPED_BIN=%s\n' "$k_store/bin" >> "$GITHUB_ENV"
           # Distribution discovery intentionally sees the real K prefix so the
-          # kserver lane can locate lib/kframework/bin/ng. Generated-Bison
-          # calls the explicitly selected unwrapped compiler, whose shim is
-          # prepended ahead of this directory in its child environment.
+          # kserver lane can locate lib/kframework/bin/ng. Parser capture calls
+          # the explicitly selected unwrapped compiler.
           printf '%s\n' "$k_store/bin" >> "$GITHUB_PATH"
 
       - name: Verify the selected K tools
@@ -161,11 +167,10 @@ jobs:
       - name: Run the ktool throughput conformance scenario
         run: bun test packages/ktool/test/live-throughput.test.ts
 
-      # The deterministic grammar lane binds the exact Bison executable into
-      # K's PATH, then analyzes K's retained parser.y with the same immutable
-      # executable snapshot.
-      - name: Run the ktool Bison conformance scenarios
+      # The deterministic grammar lane puts the selected Bison executable on
+      # K's PATH, then analyzes K's retained parser.y through that command.
+      - name: Run Bison and K parser-capture conformance scenarios
         run: >-
           bun test
-          packages/ktool/test/bison.test.ts
+          packages/bison/test/bison.test.ts
           packages/ktool/test/generated-bison-live.test.ts

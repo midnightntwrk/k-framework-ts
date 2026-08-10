@@ -1,0 +1,65 @@
+{
+  "name": "@kframework-ts/bison",
+  "version": "0.1.0",
+  "description": "GNU Bison IELR analysis for exact grammar bytes",
+  "keywords": [
+    "bison",
+    "grammar",
+    "ielr",
+    "lr1",
+    "parser"
+  ],
+  "homepage": "https://github.com/SebastienGllmt/k-framework-ts/tree/main/packages/bison#readme",
+  "bugs": {
+    "url": "https://github.com/SebastienGllmt/k-framework-ts/issues"
+  },
+  "license": "MIT OR Apache-2.0",
+  "author": "Sebastien Guillemot",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SebastienGllmt/k-framework-ts.git",
+    "directory": "packages/bison"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "THIRD-PARTY-NOTICES.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "test": "bun test",
+    "check:types": "tsc --noEmit",
+    "check": "bun run check:types && bun test",
+    "prepublishOnly": "bun run --cwd ../.. check && bun run build"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "@types/node": "^26.1.2"
+  },
+  "engines": {
+    "bun": ">=1.3.14",
+    "node": ">=20"
+  }
+}

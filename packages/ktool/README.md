@@ -97,172 +97,62 @@ rather than throwing. It accepts a missing JSON `KLabel.params` field as an
 empty list; `kast.fromDict` is stricter, so use that reader when validating
 adversarial JSON.
 
-### Generate a Bison grammar from K
+### Capture and check K's generated Bison grammar
 
-`generateBisonGrammar` produces the exact Bison token grammar that the LR(1)
-check consumes. Grammar generation and LR(1) analysis are separate operations.
-Generation does not establish LR(1).
+`generateKParserGrammar` asks the supported K release for its deterministic
+PGM parser and returns the exact retained `parser.y` bytes. The capture profile
+uses checked type inference, treats every K warning as an error, and suppresses
+only `unused-symbol`. It rejects GLR, parser-library, post-processing,
+read-only, and additional-parser requests.
 
-The generator does the following work:
-
-1. It asks K for one deterministic Bison parser with the selected start sort.
-2. It enables checked type inference and treats K warnings as errors. It ignores
-   only `unused-symbol`.
-3. It rejects GLR, parser libraries, additional generated parsers, and a wrong
-   start production.
-4. It requires one retained `parser.y` file.
-5. It returns the exact `parser.y` bytes, their digest, the process record, the
-   tool versions, and the artifact paths.
-
-The caller selects the K and Bison executables. The caller also owns the
-temporary and output directories. All four paths must be absolute, and the
-output directory must be fresh. K invokes the command name `bison`, so the
-generator places the selected Bison directory first in the exact child `PATH`.
-It then checks that K's generated C and header files name the selected Bison
-version.
+The function owns a unique temporary workspace and removes it after reading the
+bytes. A caller can explicitly retain debugging artifacts to a fresh absolute
+path; paths are not part of the normal result or the analysis handoff.
 
 ```ts
-import { generateBisonGrammar } from "@kframework-ts/ktool";
+import { generateKParserGrammar } from "@kframework-ts/ktool";
 
-const generated = await generateBisonGrammar({
-  spec: {
-    backend: "haskell",
-    mainFile: "/src/language.k",
-    mainModule: "LANGUAGE",
-    syntaxModule: "LANGUAGE-SYNTAX",
-  },
-  startSort: "Pgm",
+const spec = {
+  backend: "haskell",
+  mainFile: "/src/language.k",
+  mainModule: "LANGUAGE",
   syntaxModule: "LANGUAGE-SYNTAX",
-  expectedKVersion: "v7.1.337",
-  expectedBisonVersion: "3.8.2",
-  kompileExecutable: "/opt/k/bin/kompile",
-  bisonExecutable: "/opt/bison/bin/bison",
-  tempDir: "/build/k-retained",
-  outputDir: "/build/language-kompiled",
-  env: resolvedToolchainEnv,
+  haskellBinary: false,
+} as const;
+
+const generated = await generateKParserGrammar(spec, {
+  command: ["kompile"],
 });
+
+generated.source.bytes;
+generated.source.sha256;
+generated.kVersion;
+generated.diagnostics;
 ```
 
-Pass `generated.artifacts.parserSource` to `analyzeBisonLr1`. The generator does
-not prove that the K source grammar and the emitted Bison grammar recognize the
-same token language or construct the same syntax trees.
-
-### Check a Bison grammar for LR(1)
-
-`analyzeBisonLr1` is the source of truth for the strict LR(1) algorithm. It
-answers one question about one exact Bison grammar: "Is this grammar LR(1)?"
-
-The check fixes the lookahead length at one. It does not infer the lookahead
-length from the number of automaton states or the size of the parser tables. It
-also does not try LR(2) if LR(1) fails.
-
-#### Algorithm
-
-1. **Freeze the input.** Read `parser.y` once. Copy those exact bytes to a
-   read-only file in a fresh working directory. Analyze only that copy.
-2. **Require the strict grammar policy.** Require exactly one
-   `%define lr.type ielr` declaration. Reject `%glr-parser`, `%expect`,
-   `%expect-rr`, `%left`, `%right`, `%nonassoc`, and `%precedence`.
-3. **Construct the one-lookahead automaton.** Run the selected GNU Bison with
-   shift/reduce and reduce/reduce conflicts treated as errors. Request the full
-   XML automaton and the full text report.
-4. **Validate the automaton.** Decode the XML for the selected Bison version.
-   Validate its grammar, symbols, rules, LR items, states, transitions,
-   reductions, and cross-references.
-5. **Find all conflicts.** Inspect every disabled reduction in every state. A
-   competing shift on the same token is a shift/reduce conflict. A competing
-   enabled reduction on the same token is a reduce/reduce conflict.
-6. **Reject conflict resolution.** Reject every conflict that Bison solved by
-   precedence or associativity. These rules can select one parser action while
-   the grammar itself still has a conflict.
-7. **Cross-check the evidence.** Require the XML report, text report, process
-   arguments, exit status, and standard output to agree. Require empty standard
-   error for a conflict-free result. Treat missing, malformed, or inconsistent
-   evidence as an analysis failure.
-8. **Return the verdict.** Return `lr1` only when the grammar policy is valid,
-   the evidence is consistent, and the complete automaton has no unresolved,
-   disabled, or solved conflict.
-
-The strict Bison command is defined by `buildStrictBisonArgv`. It includes
-`-Werror=conflicts-sr`, `-Werror=conflicts-rr`, `--report=all`, and `--xml`.
-
-#### Why the algorithm works
-
-For a finite grammar, the set of possible LR(1) items is finite. An item has the
-form `[A -> α . β, a]`, where `a` is one lookahead token. The sets of items that
-form the parser states are also finite. Bison can therefore construct the whole
-IELR automaton and terminate.
-
-Each parser-table entry is identified by a state and one next token. An LR(1)
-grammar permits at most one action in each entry:
-
-- shift to one state
-- reduce by one rule
-- accept
-- report an error
-
-A shift/reduce conflict gives two possible actions for one entry. A
-reduce/reduce conflict also gives two possible actions for one entry. Therefore,
-a grammar with either conflict is not LR(1).
-
-IELR has the recognition power of canonical LR(1). Unlike LALR(1), IELR does
-not introduce conflicts only because it merged two states with different
-lookahead contexts. Therefore, a complete IELR automaton with one action for
-each state and lookahead token establishes LR(1) for the exact grammar.
-
-This is an unbounded grammar result. The finite automaton represents every
-viable parser prefix and every input of arbitrary finite length. The check does
-not test only a finite set of example programs. An LR(1) grammar has a unique
-parser action at every step, so its parsing is deterministic and its grammar is
-unambiguous.
-
-A conflict does not prove ambiguity. An ambiguous grammar produces a conflict,
-but an unambiguous grammar that needs more than one token of lookahead also
-produces a conflict. A `conflicts` verdict proves only that the exact grammar is
-not LR(1).
-
-#### Verdicts
-
-| Verdict            | Meaning                                                                 |
-| ------------------ | ----------------------------------------------------------------------- |
-| `lr1`              | The exact grammar is LR(1).                                             |
-| `conflicts`        | The exact grammar is not LR(1). Its ambiguity remains unknown.          |
-| `policy-violation` | The grammar uses an unsupported or conflict-hiding policy.              |
-| `inconsistent`     | The process and reports do not support a grammar-membership conclusion. |
-
-#### Evidence and scope
+`checkKGrammarLr1` passes those exact bytes to the independent
+`@kframework-ts/bison` analyzer. Its result deliberately keeps `capture` and
+`analysis` separate: a K failure is not a non-LR(1) grammar, and a successful
+capture does not establish LR(1).
 
 ```ts
-import { analyzeBisonGrammarPolicy, analyzeBisonLr1 } from "@kframework-ts/ktool";
+import { checkKGrammarLr1 } from "@kframework-ts/ktool";
 
-analyzeBisonGrammarPolicy(parserY);
-
-const verdict = await analyzeBisonLr1({
-  bisonExecutable: "/opt/bison-3.8.2/bin/bison",
-  grammarPath: "/build/generated/parser.y",
-  expectedVersion: "3.8.2",
-  env: resolvedToolchainEnv,
+const checked = await checkKGrammarLr1(spec, {
+  capture: { command: ["kompile"] },
+  bison: { tool: { command: ["bison"] } },
 });
+
+checked.capture.source.sha256;
+checked.analysis.classification;
+checked.unprovedBoundaries;
 ```
 
-The executable and grammar paths must be absolute. `env` is the exact child
-environment; the analyzer does not merge it with the ambient environment. The
-analyzer opens the snapshot as `parser.y` and maps its temporary directory to
-`/ktool-bison-input`. This makes the raw reports independent of the temporary
-path.
-
-The evidence retains the exact grammar digest, XML bytes, text-report bytes,
-process record, arguments, decoded grammar, decoded automaton, and report
-digests. XML is the machine-readable authority. The text report and process
-record provide independent consistency checks. Unknown XML shapes, unsupported
-text-report sections, unexpected diagnostics, and tool-version mismatches can
-never produce `lr1`.
-
-The result applies only to the emitted token grammar. It relies on the selected
-Bison implementation to construct the IELR automaton correctly. It does not
-prove that a K source grammar and its emitted Bison grammar correspond. It also
-does not establish scanner determinism. Callers must state and discharge these
-separate proof obligations.
+The classification applies only to the emitted token grammar. This operation
+does not prove K-to-Bison grammar correspondence, scanner determinism,
+semantic-action correctness, or generated-parser runtime correctness. See
+[`@kframework-ts/bison`](../bison/README.md) for the LR(1) algorithm, verdicts,
+tool support, and evidence contract.
 
 ### kompile
 

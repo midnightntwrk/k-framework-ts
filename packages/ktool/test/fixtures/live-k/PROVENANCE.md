@@ -69,7 +69,7 @@ The six `generated-bison-*` definitions are the independent cases consumed by
    `d` for both alternatives; the following `d`/`e` is required to choose
    `Left` or `Right`. It is therefore LR(2), not LR(1), and independently
    produces a reduce/reduce conflict. This is the K-generated equivalent of
-   `../../../fixtures/bison/unambiguous-non-lr1.y`;
+   `../../../../bison/fixtures/unambiguous-non-lr1.y`;
 4. `unused` has one sort unreachable from Pgm, proving that `unused-symbol` is
    the sole necessary suppression; and
 5. `not-lr1` imports a module carrying `[not-lr1]`, proving that suppression

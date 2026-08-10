@@ -1,29 +1,30 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 import {
-  BISON_INPUT_VIRTUAL_DIRECTORY,
   BisonGrammarPolicyAnalysisSchema,
   BisonLr1EvidenceSchema,
   BisonLr1VerdictSchema,
   BisonRunEvidenceSchema,
   BisonXmlDecodeError,
   BisonXmlReportSchema,
+  CompletedProcessSchema,
   analyzeBisonGrammarPolicy,
   analyzeBisonLr1,
+  analyzeBisonLr1File,
   bisonAnalysisFingerprint,
   buildStrictBisonArgv,
   classifyBisonRun,
   decodeBisonXml,
   parseBisonXmlReport,
   normalizeBisonEvidenceText,
-  runStrictBison,
+  resolveOnPath,
   type CompletedProcess,
-} from "../src/index.ts";
+} from "../src/testing.ts";
 
-const FIXTURES = join(import.meta.dir, "..", "fixtures", "bison");
+const FIXTURES = join(import.meta.dir, "..", "fixtures");
 const BISON_VERSION = "3.8.2";
 const CLASSIFY_BISON = "/usr/bin/bison";
 const scratchDirs: string[] = [];
@@ -53,12 +54,26 @@ afterEach(async () => {
 });
 
 async function scratch(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "ktool-bison-test-"));
+  const dir = await mkdtemp(join(tmpdir(), "kframework-ts-bison-test-"));
   scratchDirs.push(dir);
   return dir;
 }
 
+async function exists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 describe("Bison structural schemas", () => {
+  test("uses a portable string representation for process signals", () => {
+    const process = completed("lr1", { signal: "SIGKILL" });
+    expect(CompletedProcessSchema.parse(process).signal).toBe("SIGKILL");
+  });
+
   test("accepts policy analysis and decoded XML while preserving their discriminants", async () => {
     const policy = analyzeBisonGrammarPolicy("%define lr.type ielr\n%expect 1\n%%\n");
     expect(BisonGrammarPolicyAnalysisSchema.parse(policy)).toEqual(policy);
@@ -253,15 +268,54 @@ describe("analyzeBisonGrammarPolicy", () => {
 });
 
 describe("strict Bison command and evidence identity", () => {
+  test("resolves a separator-containing command relative to the supplied tool cwd", async () => {
+    const cwd = await scratch();
+    const executable = join(cwd, "tools", "bison");
+    await mkdir(join(cwd, "tools"));
+    await writeFile(executable, "#!/bin/sh\nexit 0\n");
+    await chmod(executable, 0o755);
+
+    expect(await resolveOnPath("./tools/bison", "", cwd)).toBe(executable);
+    expect(await resolveOnPath("./tools/missing-bison", "", cwd)).toBeUndefined();
+  });
+
+  test("passes a supplied tool cwd to relative Bison command resolution", async () => {
+    const cwd = await scratch();
+    const tools = join(cwd, "tools");
+    const executable = join(tools, "bison");
+    await mkdir(tools);
+    await writeFile(
+      executable,
+      `#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "bison (GNU Bison) 3.8.3"
+fi
+`,
+    );
+    await chmod(executable, 0o755);
+
+    const result = await analyzeBisonLr1({
+      source: new TextEncoder().encode("%%\n"),
+      env: { PATH: "" },
+      tool: { command: ["./tools/bison"], cwd },
+    });
+    expect(result.classification).toMatchObject({
+      kind: "tool-failure",
+      failure: { message: expect.stringContaining("Unsupported GNU Bison version 3.8.3") },
+    });
+    expect(result.evidence?.argv[0]).toBe(executable);
+  });
+
   test("constructs the normative deterministic argv exactly", () => {
     expect(buildStrictBisonArgv({ bisonExecutable: "/opt/bison", grammarPath: "/generated/parser.y" })).toEqual([
       "/opt/bison",
+      "--force-define=lr.type=ielr",
       "-Werror=conflicts-sr",
       "-Werror=conflicts-rr",
       "--report=all",
       "--report-file=parser.output",
       "--xml=parser.xml",
-      "--file-prefix-map=/generated=/ktool-bison-input",
+      "--file-prefix-map=/generated=/kframework-ts-bison-input",
       "-o",
       "parser.c",
       "parser.y",
@@ -640,53 +694,39 @@ describe("classifyBisonRun", () => {
   });
 });
 
-describe("analyzeBisonLr1 snapshot identity", () => {
-  test("a caller grammar mutation after capture cannot change the bytes Bison opens", async () => {
-    const dir = await scratch();
-    const originalPath = join(dir, "caller-parser.y");
-    const capturedPath = join(dir, "captured-by-tool.y");
-    const snapshotXmlPath = join(dir, "snapshot.xml");
-    const fakeBison = join(dir, "bison");
-    const originalSource = await textFixture("lr1", "y");
-    await writeFile(originalPath, originalSource);
-    await writeFile(
-      snapshotXmlPath,
-      (await textFixture("lr1", "xml")).replace("<filename>lr1.y</filename>", "<filename>parser.y</filename>"),
-    );
-    await writeFile(
-      fakeBison,
-      `#!/bin/bash
-set -eu
-/usr/bin/printf '%%define lr.type lalr\n%%%%\nchanged: ;\n' > "$KTOOL_RACE_ORIGINAL"
-last=""
-for argument in "$@"; do last="$argument"; done
-/bin/cp "$last" "$KTOOL_RACE_CAPTURED"
-/bin/cp "$KTOOL_RACE_XML" parser.xml
-/bin/cp "$KTOOL_RACE_REPORT" parser.output
+test("converts owned-workspace cleanup failure into a tool failure with run evidence", async () => {
+  const parent = await scratch();
+  const fakeBison = join(parent, "cleanup-failure-bison");
+  await writeFile(
+    fakeBison,
+    `#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "bison (GNU Bison) 3.8.2"
+  exit 0
+fi
+/bin/cp "$XML" parser.xml
+/bin/cp "$REPORT" parser.output
+/bin/chmod a-w "$PARENT"
 `,
-    );
-    await chmod(fakeBison, 0o755);
-
-    const verdict = await analyzeBisonLr1({
-      bisonExecutable: fakeBison,
-      grammarPath: originalPath,
-      expectedVersion: BISON_VERSION,
+  );
+  await chmod(fakeBison, 0o755);
+  try {
+    const result = await analyzeBisonLr1({
+      source: await readFile(fixture("lr1", "y")),
+      tool: { command: [fakeBison] },
+      tempDir: parent,
       env: {
-        KTOOL_RACE_ORIGINAL: originalPath,
-        KTOOL_RACE_CAPTURED: capturedPath,
-        KTOOL_RACE_XML: snapshotXmlPath,
-        KTOOL_RACE_REPORT: resolve(fixture("lr1", "output")),
+        XML: resolve(fixture("lr1", "xml")),
+        REPORT: resolve(fixture("lr1", "output")),
+        PARENT: parent,
       },
     });
-    expect(verdict.kind).toBe("lr1");
-    if (verdict.kind !== "lr1") throw new Error(`expected snapshot to remain lr1, found ${verdict.kind}`);
-    expect(await readFile(originalPath, "utf8")).toContain("lr.type lalr");
-    expect(await readFile(capturedPath, "utf8")).toBe(originalSource);
-    expect(verdict.evidence.requestedGrammarPath).toBe(originalPath);
-    expect(verdict.evidence.analyzedGrammarPath).not.toBe(originalPath);
-    expect(verdict.evidence.process.args.at(-1)).toBe("parser.y");
-    expect(verdict.evidence.process.args).toEqual(verdict.evidence.normativeArgv);
-  });
+    expect(result.classification.kind).toBe("tool-failure");
+    expect(result.tool?.resolvedExecutable).toBe(fakeBison);
+    expect(result.evidence?.process.returncode).toBe(0);
+  } finally {
+    await chmod(parent, 0o755);
+  }
 });
 
 const bisonExecutable = process.env["KFRAMEWORK_TS_BISON_BIN"];
@@ -695,115 +735,157 @@ const describeBison = bisonExecutable === undefined || bisonExecutable === "" ? 
 describeBison("GNU Bison 3.8.2 integration", () => {
   const executable = resolve(bisonExecutable ?? "");
 
-  test.each([
-    ["lr1", "lr1"],
-    ["shift-reduce", "conflicts"],
-    ["reduce-reduce", "conflicts"],
-    ["unambiguous-non-lr1", "conflicts"],
-  ] as const)("strictly analyzes %s as %s", async (name, kind) => {
-    const verdict = await analyzeBisonLr1({
-      bisonExecutable: executable,
-      grammarPath: resolve(fixture(name, "y")),
-      expectedVersion: BISON_VERSION,
+  async function analyzeV1(name: string) {
+    return analyzeBisonLr1({
+      source: await readFile(fixture(name, "y")),
+      tool: { command: [executable] },
     });
-    expect(verdict.kind).toBe(kind);
+  }
+
+  test.each(["v1-mode-missing", "v1-mode-lalr", "v1-mode-ielr", "v1-mode-canonical"])(
+    "forces IELR independently of the %s source selection",
+    async (name) => {
+      const analysis = await analyzeV1(name);
+      expect(analysis.tool).toMatchObject({ version: BISON_VERSION, adapter: "gnu-bison-3.8.2-xml-v1" });
+      expect(analysis.classification).toEqual({ kind: "lr1" });
+      expect(analysis.policyDiagnostics.length).toBeGreaterThanOrEqual(name === "v1-mode-ielr" ? 0 : 1);
+    },
+  );
+
+  test("uses forced IELR for an LR(1)-but-not-LALR grammar and retains exact bytes", async () => {
+    const bytes = await readFile(fixture("v1-lr1-not-lalr", "y"));
+    const analysis = await analyzeBisonLr1({ source: bytes, tool: { command: [executable] } });
+    expect(analysis.source.bytes).toEqual(bytes);
+    expect(analysis.source.sha256).toHaveLength(64);
+    expect(analysis.classification).toEqual({ kind: "lr1" });
+    expect(analysis.evidence?.argv).toContain("--force-define=lr.type=ielr");
   });
 
-  test("%expect makes raw Bison accept but policy and XML independently expose the conflict", async () => {
-    const path = resolve(fixture("expected-conflict", "y"));
-    const run = await runStrictBison({ bisonExecutable: executable, grammarPath: path });
-    expect(run.process.returncode).toBe(0);
-    if (run.xml === undefined) throw new Error("expected XML report");
-    expect(decodeBisonXml(run.xml, BISON_VERSION).summary.disabledActionCount).toBe(1);
-    expect(
-      (await analyzeBisonLr1({ bisonExecutable: executable, grammarPath: path, expectedVersion: BISON_VERSION })).kind,
-    ).toBe("policy-violation");
+  test("classifies unresolved and solved conflicts from XML regardless of Bison's conflict-policy exit", async () => {
+    const expected = await analyzeV1("expected-conflict");
+    expect(expected.evidence?.process.returncode).toBe(0);
+    expect(expected.classification.kind).toBe("not-lr1");
+    if (expected.classification.kind !== "not-lr1") throw new Error("expected an unresolved conflict");
+    expect(expected.classification.conflicts.some((conflict) => conflict.kind === "shift-reduce")).toBe(true);
+
+    const precedence = await analyzeV1("precedence");
+    expect(precedence.evidence?.process.returncode).toBe(0);
+    expect(precedence.classification.kind).toBe("not-lr1");
+    if (precedence.classification.kind !== "not-lr1") throw new Error("expected a solved conflict");
+    expect(precedence.classification.conflicts).toContainEqual({
+      kind: "solved",
+      solved: { state: 5, rule: 2, symbol: '"+"', type: "reduce", resolution: '%left "+"' },
+    });
+
+    const unexpected = await analyzeV1("v1-expect-zero-conflict");
+    expect(unexpected.evidence?.process.returncode).toBe(1);
+    expect(unexpected.classification.kind).toBe("not-lr1");
+    if (unexpected.classification.kind !== "not-lr1") throw new Error("expected an unexpected conflict");
+    expect(unexpected.classification.conflicts.some((conflict) => conflict.kind === "shift-reduce")).toBe(true);
   });
 
-  test("raw reports use a stable input identity before evidence hashing", async () => {
-    const grammarPath = resolve(fixture("lr1", "y"));
-    const source = await textFixture("lr1", "y");
-    const first = await runStrictBison({ bisonExecutable: executable, grammarPath });
-    const second = await runStrictBison({ bisonExecutable: executable, grammarPath });
-    if (
-      first.xml === undefined ||
-      first.textReport === undefined ||
-      second.xml === undefined ||
-      second.textReport === undefined
-    ) {
-      throw new Error("expected complete reports from both strict Bison runs");
+  test("keeps unused precedence and %expect 0 as non-gating policy diagnostics", async () => {
+    for (const name of ["v1-unused-precedence", "v1-expect-zero"]) {
+      const analysis = await analyzeV1(name);
+      expect(analysis.classification).toEqual({ kind: "lr1" });
+      expect(analysis.policyDiagnostics.length).toBeGreaterThan(0);
     }
-    expect(first.xml).toEqual(second.xml);
-    expect(first.textReport).toEqual(second.textReport);
-    expect(decodeBisonXml(first.xml, BISON_VERSION).filename).toBe("parser.y");
-    expect(first.process.args).toContain(
-      `--file-prefix-map=${dirname(first.analyzedGrammarPath)}=${BISON_INPUT_VIRTUAL_DIRECTORY}`,
+  });
+
+  test("returns distinct invalid, unsupported, and tool-failure classifications", async () => {
+    const invalid = await analyzeV1("syntax-error");
+    expect(invalid.classification.kind).toBe("invalid-grammar");
+
+    for (const [name, reason] of [
+      ["v1-glr", "glr"],
+      ["v1-skeleton", "custom-skeleton"],
+      ["v1-glr-dprec", "glr-runtime-control"],
+    ] as const) {
+      const analysis = await analyzeV1(name);
+      expect(analysis.classification.kind).toBe("unsupported-input");
+      if (analysis.classification.kind !== "unsupported-input") throw new Error("expected unsupported input");
+      expect(analysis.classification.reasons.some((item) => item.kind === reason)).toBe(true);
+    }
+
+    const failed = await analyzeBisonLr1({
+      source: await readFile(fixture("v1-mode-missing", "y")),
+      tool: { command: [join(await scratch(), "missing-bison")] },
+    });
+    expect(failed.classification.kind).toBe("tool-failure");
+
+    const commandDir = await scratch();
+    const marker = join(commandDir, "spawned");
+    const markerExecutable = join(commandDir, "marker-bison");
+    await writeFile(
+      markerExecutable,
+      `#!/bin/sh
+: > "$MARKER"
+echo "bison (GNU Bison) 3.8.2"
+`,
     );
-    const classify = (run: typeof first) =>
-      classifyBisonRun({
-        source,
-        requestedGrammarPath: grammarPath,
-        bisonExecutable: executable,
-        grammarPath: run.analyzedGrammarPath,
-        expectedVersion: BISON_VERSION,
-        process: run.process,
-        xml: run.xml,
-        textReport: run.textReport,
+    await chmod(markerExecutable, 0o755);
+    for (const trailingArgument of [
+      "--help",
+      "--",
+      "-Dlr.type=lalr",
+      "-Flr.type=lalr",
+      "--language=c++",
+      "--skeleton=custom.m4",
+    ]) {
+      const invalidCommand = await analyzeBisonLr1({
+        source: await readFile(fixture("v1-mode-missing", "y")),
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- exercise runtime validation past the tuple type
+        tool: { command: [markerExecutable, trailingArgument] as unknown as readonly [string] },
+        env: { MARKER: marker },
       });
-    const firstVerdict = classify(first);
-    const secondVerdict = classify(second);
-    expect(firstVerdict.kind).toBe("lr1");
-    expect(secondVerdict.kind).toBe("lr1");
-    if (firstVerdict.kind !== "lr1" || secondVerdict.kind !== "lr1") {
-      throw new Error("expected both deterministic runs to classify as lr1");
+      expect(invalidCommand.classification).toMatchObject({
+        kind: "tool-failure",
+        failure: { message: expect.stringContaining("exactly one executable") },
+      });
+      expect(await exists(marker)).toBe(false);
     }
-    expect(firstVerdict.evidence.xmlSha256).toBe(secondVerdict.evidence.xmlSha256);
-    expect(firstVerdict.evidence.textReportSha256).toBe(secondVerdict.evidence.textReportSha256);
-  });
 
-  test("rule-level %expect 0 is rejected even though raw Bison accepts a conflict-free grammar", async () => {
-    const path = resolve(fixture("rule-expected-zero", "y"));
-    const run = await runStrictBison({ bisonExecutable: executable, grammarPath: path });
-    expect(run.process.returncode).toBe(0);
-    expect(run.process.stderr).toBe("");
-
-    const verdict = await analyzeBisonLr1({
-      bisonExecutable: executable,
-      grammarPath: path,
-      expectedVersion: BISON_VERSION,
+    const wrapper = join(commandDir, "bison-wrapper");
+    await writeFile(
+      wrapper,
+      `#!/bin/sh
+exec "$BISON_UNDER_TEST" "$@"
+`,
+    );
+    await chmod(wrapper, 0o755);
+    const wrapped = await analyzeBisonLr1({
+      source: await readFile(fixture("v1-mode-missing", "y")),
+      tool: { command: [wrapper] },
+      env: { BISON_UNDER_TEST: executable },
     });
-    expect(verdict.kind).toBe("policy-violation");
-    if (verdict.kind !== "policy-violation") throw new Error("expected rule-level policy violation");
-    expect(verdict.violations).toEqual([
-      {
-        kind: "expected-conflicts",
-        directive: "%expect",
-        line: 5,
-        raw: "start: A %expect 0 ;",
-      },
-    ]);
-  });
+    expect(wrapped.classification).toEqual({ kind: "lr1" });
+    expect(wrapped.tool?.resolvedExecutable).toBe(wrapper);
 
-  test("precedence makes raw Bison accept but policy and solved-conflict XML independently expose it", async () => {
-    const path = resolve(fixture("precedence", "y"));
-    const run = await runStrictBison({ bisonExecutable: executable, grammarPath: path });
-    expect(run.process.returncode).toBe(0);
-    if (run.xml === undefined) throw new Error("expected XML report");
-    expect(decodeBisonXml(run.xml, BISON_VERSION).summary.solvedConflictCount).toBe(1);
-    expect(
-      (await analyzeBisonLr1({ bisonExecutable: executable, grammarPath: path, expectedVersion: BISON_VERSION })).kind,
-    ).toBe("policy-violation");
-  });
-
-  test("a malformed grammar with missing reports is inconsistent and preserves process evidence", async () => {
-    const verdict = await analyzeBisonLr1({
-      bisonExecutable: executable,
-      grammarPath: resolve(fixture("syntax-error", "y")),
-      expectedVersion: BISON_VERSION,
+    const unsupportedTool = join(await scratch(), "bison-3.8.3");
+    await writeFile(
+      unsupportedTool,
+      `#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "bison (GNU Bison) 3.8.3"
+fi
+`,
+    );
+    await chmod(unsupportedTool, 0o755);
+    const unsupportedVersion = await analyzeBisonLr1({
+      source: await readFile(fixture("v1-mode-missing", "y")),
+      tool: { command: [unsupportedTool] },
     });
-    expect(verdict.kind).toBe("inconsistent");
-    if (verdict.kind !== "inconsistent") throw new Error("expected inconsistency");
-    expect(verdict.evidence.process.returncode).not.toBe(0);
-    expect(verdict.evidence.process.stderr).not.toBe("");
+    expect(unsupportedVersion.classification).toMatchObject({
+      kind: "tool-failure",
+      failure: { message: expect.stringContaining("Unsupported GNU Bison version 3.8.3") },
+    });
+  });
+
+  test("file convenience reads once and delegates to the byte-oriented result", async () => {
+    const result = await analyzeBisonLr1File({
+      path: resolve(fixture("v1-mode-missing", "y")),
+      tool: { command: [executable] },
+    });
+    expect(result.classification).toEqual({ kind: "lr1" });
   });
 });

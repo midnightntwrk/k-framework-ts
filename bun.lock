@@ -14,6 +14,18 @@
         "zod": "4.4.3",
       },
     },
+    "packages/bison": {
+      "name": "@kframework-ts/bison",
+      "version": "0.1.0",
+      "dependencies": {
+        "@xmldom/xmldom": "^0.9.8",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@types/bun": "1.3.14",
+        "@types/node": "^26.1.2",
+      },
+    },
     "packages/cterm": {
       "name": "@kframework-ts/cterm",
       "version": "0.1.0",
@@ -205,13 +217,13 @@
         "ktool": "./dist/bin.js",
       },
       "dependencies": {
+        "@kframework-ts/bison": "workspace:*",
         "@kframework-ts/k-parser": "workspace:*",
         "@kframework-ts/kast": "workspace:*",
         "@kframework-ts/kast-json": "workspace:*",
         "@kframework-ts/kompiled": "workspace:*",
         "@kframework-ts/konvert": "workspace:*",
         "@kframework-ts/kore": "workspace:*",
-        "@xmldom/xmldom": "^0.9.8",
         "zod": "^4.4.3",
       },
       "devDependencies": {
@@ -280,6 +292,8 @@
     },
   },
   "packages": {
+    "@kframework-ts/bison": ["@kframework-ts/bison@workspace:packages/bison"],
+
     "@kframework-ts/cterm": ["@kframework-ts/cterm@workspace:packages/cterm"],
 
     "@kframework-ts/evm-fixtures": ["@kframework-ts/evm-fixtures@workspace:packages/evm-fixtures"],

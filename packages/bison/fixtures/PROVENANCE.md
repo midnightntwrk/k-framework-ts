@@ -11,7 +11,7 @@ bison -Werror=conflicts-sr -Werror=conflicts-rr --report=all --report-file=<fixt
 Using a basename for the input deliberately keeps host paths out of the checked
 in XML. The live tests exercise the public runner's exact normative argv, its
 absolute read-only owned input snapshot, and its
-`--file-prefix-map=<owned-directory>=/ktool-bison-input` mapping. That mapping
+`--file-prefix-map=<owned-directory>=/kframework-ts-bison-input` mapping. That mapping
 and the cwd-relative `parser.y` input spelling make the public runner's raw
 reports deterministic before hashing; Bison 3.8.2 does not apply the mapping to
 XML's `<filename>` itself. The generated reports are evidence

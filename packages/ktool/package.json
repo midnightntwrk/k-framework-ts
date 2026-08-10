@@ -30,6 +30,7 @@
   "files": [
     "dist",
     "README.md",
+    "MIGRATION.md",
     "ROADMAP.md",
     "THIRD-PARTY-NOTICES.md",
     "LICENSE-MIT",
@@ -59,13 +60,13 @@
     "prepublishOnly": "bun run --cwd ../.. check && bun run build"
   },
   "dependencies": {
+    "@kframework-ts/bison": "workspace:*",
     "@kframework-ts/k-parser": "workspace:*",
     "@kframework-ts/kast": "workspace:*",
     "@kframework-ts/kast-json": "workspace:*",
     "@kframework-ts/kompiled": "workspace:*",
     "@kframework-ts/konvert": "workspace:*",
     "@kframework-ts/kore": "workspace:*",
-    "@xmldom/xmldom": "^0.9.8",
     "zod": "^4.4.3"
   },
   "devDependencies": {

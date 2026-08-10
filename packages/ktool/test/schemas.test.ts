@@ -4,8 +4,6 @@ import { join } from "node:path";
 
 import {
   CompletedProcessSchema,
-  BisonGrammarPolicyViolationSchema,
-  BisonSolvedConflictViolationSchema,
   KAmbiguityAlternativeSchema,
   KDiagnosticSchema,
   KInnerParserMessageTagSchema,
@@ -86,22 +84,5 @@ describe("public runtime schemas", () => {
     ).toBe(true);
     expect(KInnerParserMessageTagSchema.safeParse("parse-unexpected-token").success).toBe(true);
     expect(KInnerParserMessageTagSchema.safeParse("future-tag").success).toBe(false);
-    expect(
-      BisonGrammarPolicyViolationSchema.safeParse({
-        line: 3,
-        raw: "%left PLUS",
-        kind: "precedence-resolution",
-        directive: "%left",
-      }).success,
-    ).toBe(true);
-    expect(
-      BisonSolvedConflictViolationSchema.safeParse({
-        kind: "solved-conflict",
-        state: 1,
-        rule: 2,
-        symbol: "PLUS",
-        type: "shift",
-      }).success,
-    ).toBe(false);
   });
 });

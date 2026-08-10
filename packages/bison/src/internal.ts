@@ -1,16 +1,14 @@
 /**
- * Strict, reusable GNU Bison analysis for deterministic K-generated grammars.
+ * Reusable GNU Bison analysis for exact grammar bytes.
  *
- * This module establishes a property of the exact emitted token grammar: one
- * `%define lr.type ielr` declaration, no conflict-hiding source policy, and a
- * complete Bison automaton with no disabled or precedence-resolved action. It
- * deliberately does not establish that K's source grammar and emitted grammar
- * correspond; callers must state that lowering premise separately.
+ * V1 forces IELR and classifies the resulting automaton independently of
+ * source-policy diagnostics. It deliberately does not establish that an
+ * upstream grammar lowered to these bytes correctly.
  *
- * XML is the machine-readable authority. The policy lexer covers declarations
- * and rule-level policy while treating embedded code as opaque; the text report
- * and process streams are independent consistency evidence. Unknown XML shapes
- * or diagnostics never become an `lr1` verdict.
+ * XML is the machine-readable conflict authority. The policy lexer covers
+ * declarations and rule-level policy while treating embedded code as opaque;
+ * raw process and text-report data remain audit evidence. Unknown XML shapes
+ * or tool failures never become an `lr1` verdict.
  */
 
 import { createHash } from "node:crypto";
@@ -30,6 +28,7 @@ import {
   type ProcessControlOptions,
   type ProcessLogger,
 } from "./proc.js";
+import { resolveOnPath } from "./proc.js";
 
 //////////////////////////////
 // Declaration policy       //
@@ -179,6 +178,7 @@ function isForbiddenDirective(value: string | undefined): value is keyof typeof 
 interface BisonPolicyScan {
   readonly declarations: BisonLrTypeDeclaration[];
   readonly forbidden: (BisonDirectiveLocation & { readonly directive: keyof typeof FORBIDDEN_DIRECTIVES })[];
+  readonly unsupported: (BisonDirectiveLocation & { readonly directive: "%skeleton" | "%dprec" | "%merge" })[];
 }
 
 interface PolicyCursor {
@@ -195,6 +195,7 @@ function scanBisonPolicy(source: string): BisonPolicyScan {
   const lines = source.split(/\r?\n/u);
   const declarations: BisonLrTypeDeclaration[] = [];
   const forbidden: BisonPolicyScan["forbidden"] = [];
+  const unsupported: BisonPolicyScan["unsupported"] = [];
   let index = 0;
   let line = 1;
   let separators = 0;
@@ -249,10 +250,13 @@ function scanBisonPolicy(source: string): BisonPolicyScan {
       if (lrType !== null) declarations.push(Object.freeze({ value: lrType[1], line, raw }));
     }
     if (isForbiddenDirective(directive)) forbidden.push(Object.freeze({ directive, line, raw }));
+    if (directive === "%skeleton" || directive === "%dprec" || directive === "%merge") {
+      unsupported.push(Object.freeze({ directive, line, raw }));
+    }
     index += directive.length;
   }
 
-  return { declarations, forbidden };
+  return { declarations, forbidden, unsupported };
 }
 
 function skipLineComment(source: string, index: number, line: number): PolicyCursor {
@@ -389,7 +393,7 @@ export interface StrictBisonArgvInput {
 }
 
 /** Stable report path replacing the fresh analysis directory in raw Bison artifacts. */
-export const BISON_INPUT_VIRTUAL_DIRECTORY = "/ktool-bison-input";
+export const BISON_INPUT_VIRTUAL_DIRECTORY = "/kframework-ts-bison-input";
 
 /**
  * The normative conflict-as-error invocation. It must run with
@@ -401,6 +405,7 @@ export function buildStrictBisonArgv(input: StrictBisonArgvInput): readonly stri
   requireAbsolute(input.grammarPath, "grammarPath");
   return Object.freeze([
     input.bisonExecutable,
+    "--force-define=lr.type=ielr",
     "-Werror=conflicts-sr",
     "-Werror=conflicts-rr",
     "--report=all",
@@ -513,7 +518,7 @@ async function runStrictBisonSnapshot(
 ): Promise<BisonStrictRun> {
   const parent = options.tempDir ?? tmpdir();
   await checkDirPath(parent);
-  const workDir = await mkdtemp(join(parent, "ktool-bison-lr1-"));
+  const workDir = await mkdtemp(join(parent, "kframework-ts-bison-lr1-"));
   try {
     const analyzedGrammarPath = join(workDir, "parser.y");
     await writeFile(analyzedGrammarPath, sourceBytes, { flag: "wx", mode: 0o444 });
@@ -1419,39 +1424,357 @@ export function classifyBisonRun(input: ClassifyBisonRunInput): BisonLr1Verdict 
   return Object.freeze({ kind: "lr1", evidence });
 }
 
-export interface AnalyzeBisonLr1Options extends RunStrictBisonOptions {
-  readonly expectedVersion: string;
+//////////////////////////////
+// Byte-oriented V1 API     //
+//////////////////////////////
+
+/** The only GNU Bison XML adapter supported by the V1 analyzer. */
+export const SUPPORTED_BISON_ADAPTER = "gnu-bison-3.8.2-xml-v1" as const;
+const SUPPORTED_BISON_VERSION = "3.8.2";
+
+/** Source-policy facts are metadata and never decide the LR(1) classification. */
+export type BisonSourcePolicyDiagnostic = BisonGrammarPolicyViolation;
+
+/** One source control that V1 intentionally does not analyze. */
+export type BisonUnsupportedReason = BisonDirectiveLocation & {
+  readonly kind: "glr" | "custom-skeleton" | "glr-runtime-control";
+  readonly directive: "%glr-parser" | "%skeleton" | "%dprec" | "%merge";
+};
+
+/** The observed selected tool and the exact XML adapter selected for it. */
+export interface BisonToolObservation {
+  readonly requestedCommand: readonly string[];
+  readonly resolvedExecutable: string;
+  readonly version: string;
+  readonly banner: string;
+  readonly adapter: typeof SUPPORTED_BISON_ADAPTER;
 }
 
-/** Policy-check and then strictly analyze one exact grammar file. */
-export async function analyzeBisonLr1(options: AnalyzeBisonLr1Options): Promise<BisonLr1Verdict> {
-  await checkFilePath(options.grammarPath);
-  const sourceBytes = await readFile(options.grammarPath);
-  const source = decodeReportUtf8(sourceBytes, "Bison grammar");
-  const policy = analyzeBisonGrammarPolicy(source);
-  if (policy.violations.length > 0) {
-    return Object.freeze({ kind: "policy-violation", violations: policy.violations });
+/** A conflict found in the forced-IELR automaton, including a Bison-solved one. */
+export type BisonAnalysisConflict = BisonConflict | { readonly kind: "solved"; readonly solved: BisonSolvedConflict };
+
+/** Diagnostic evidence for source rejection or a Bison grammar failure. */
+export interface BisonDiagnostic {
+  readonly message: string;
+}
+
+/** Process/report evidence retained when it is useful for an audit. */
+export interface BisonAnalysisEvidence {
+  readonly argv: readonly string[];
+  readonly process: CompletedProcess;
+  readonly xml?: Uint8Array | undefined;
+  readonly textReport?: Uint8Array | undefined;
+}
+
+export type BisonLr1Classification =
+  | { readonly kind: "lr1" }
+  | { readonly kind: "not-lr1"; readonly conflicts: readonly BisonAnalysisConflict[] }
+  | { readonly kind: "invalid-grammar"; readonly diagnostics: readonly BisonDiagnostic[] }
+  | { readonly kind: "unsupported-input"; readonly reasons: readonly BisonUnsupportedReason[] }
+  | { readonly kind: "tool-failure"; readonly failure: BisonDiagnostic };
+
+/** Stable V1 result for exactly the supplied Bison source bytes. */
+export interface BisonLr1Analysis {
+  readonly source: {
+    readonly bytes: Uint8Array;
+    readonly sha256: string;
+  };
+  readonly classification: BisonLr1Classification;
+  readonly policyDiagnostics: readonly BisonSourcePolicyDiagnostic[];
+  readonly tool?: BisonToolObservation | undefined;
+  readonly evidence?: BisonAnalysisEvidence | undefined;
+}
+
+export interface BisonToolOptions {
+  /**
+   * One Bison executable or a wrapper executable which forwards Bison's argv.
+   * Defaults to `["bison"]`. V1 owns every Bison argument needed for its
+   * normative transaction, so caller-supplied trailing arguments are rejected.
+   */
+  readonly command?: readonly [string];
+  /** Base directory for a command containing a path separator. Defaults to the process working directory. */
+  readonly cwd?: string;
+}
+
+/** Normative V1 input: exact source bytes, not a caller-owned file path. */
+export interface AnalyzeBisonLr1BytesOptions extends ProcessControlOptions {
+  readonly source: Uint8Array;
+  readonly tool?: BisonToolOptions;
+  /** Parent for the analyzer-owned unique workspace. Defaults to the OS temporary directory. */
+  readonly tempDir?: string;
+  readonly env?: Readonly<Record<string, string>>;
+  readonly logger?: ProcessLogger;
+}
+
+/** Convenience input which reads a path once then delegates to the byte-taking API. */
+export interface AnalyzeBisonLr1FileOptions extends Omit<AnalyzeBisonLr1BytesOptions, "source"> {
+  readonly path: string;
+}
+
+/** Read one source file once and analyze those exact bytes. */
+export async function analyzeBisonLr1File(options: AnalyzeBisonLr1FileOptions): Promise<BisonLr1Analysis> {
+  const source = await readFile(options.path);
+  const { path: _path, ...analysisOptions } = options;
+  return analyzeBisonLr1({ ...analysisOptions, source });
+}
+
+/** Analyze exact Bison bytes with the supported GNU Bison 3.8.2 IELR adapter. */
+export function analyzeBisonLr1(options: AnalyzeBisonLr1BytesOptions): Promise<BisonLr1Analysis> {
+  return analyzeBisonLr1Bytes(options);
+}
+
+async function analyzeBisonLr1Bytes(options: AnalyzeBisonLr1BytesOptions): Promise<BisonLr1Analysis> {
+  const sourceBytes = Uint8Array.from(options.source);
+  const source = Object.freeze({ bytes: sourceBytes, sha256: sha256(sourceBytes) });
+  let sourceText: string;
+  try {
+    sourceText = decodeReportUtf8(sourceBytes, "grammar");
+  } catch (error: unknown) {
+    return analysis(source, [], { kind: "invalid-grammar", diagnostics: [diagnostic(error)] });
   }
-  const run = await runStrictBisonSnapshot(options, sourceBytes);
-  const classificationInput = {
-    source,
-    requestedGrammarPath: run.requestedGrammarPath,
-    bisonExecutable: options.bisonExecutable,
-    grammarPath: run.analyzedGrammarPath,
-    expectedVersion: options.expectedVersion,
-    process: run.process,
-    xml: run.xml,
-    textReport: run.textReport,
-  } as const;
-  if (run.artifactIssues.length > 0) {
-    const classified = classifyBisonRun(classificationInput);
-    if (classified.kind !== "inconsistent") return classified;
-    return Object.freeze({
-      ...classified,
-      issues: Object.freeze([...run.artifactIssues, ...classified.issues]),
+
+  const policy = analyzeBisonGrammarPolicy(sourceText);
+  const command: readonly string[] = options.tool?.command ?? ["bison"];
+  const commandHead = command[0];
+  if (command.length !== 1 || commandHead === undefined || commandHead === "") {
+    return analysis(source, policy.violations, {
+      kind: "tool-failure",
+      failure: { message: "Bison command must contain exactly one executable and no trailing arguments" },
     });
   }
-  return classifyBisonRun(classificationInput);
+  const unsupported = unsupportedBisonControls(sourceText);
+  if (unsupported.length > 0) {
+    return analysis(source, policy.violations, {
+      kind: "unsupported-input",
+      reasons: unsupported,
+    });
+  }
+  const resolvedExecutable = await resolveOnPath(commandHead, (options.env ?? process.env)["PATH"], options.tool?.cwd);
+  if (resolvedExecutable === undefined) {
+    return analysis(source, policy.violations, {
+      kind: "tool-failure",
+      failure: { message: `Bison executable was not found: ${JSON.stringify(commandHead)}` },
+    });
+  }
+  let versionProcess: CompletedProcess;
+  try {
+    versionProcess = await runProcess([resolvedExecutable, "--version"], processOptions(options));
+  } catch (error: unknown) {
+    return analysis(source, policy.violations, { kind: "tool-failure", failure: diagnostic(error) });
+  }
+  const versionLine = versionProcess.stdout.split("\n")[0] ?? "";
+  const version = /^bison \(GNU Bison\) ([0-9]+(?:\.[0-9]+)+)$/u.exec(versionLine)?.[1];
+  if (version !== SUPPORTED_BISON_VERSION) {
+    return analysis(
+      source,
+      policy.violations,
+      {
+        kind: "tool-failure",
+        failure: {
+          message:
+            version === undefined
+              ? `Unrecognized GNU Bison version banner: ${JSON.stringify(versionLine)}`
+              : `Unsupported GNU Bison version ${version}; supported adapter is ${SUPPORTED_BISON_ADAPTER}`,
+        },
+      },
+      undefined,
+      { argv: versionProcess.args, process: versionProcess },
+    );
+  }
+  const tool: BisonToolObservation = Object.freeze({
+    requestedCommand: Object.freeze([...command]),
+    resolvedExecutable,
+    version,
+    banner: versionProcess.stdout,
+    adapter: SUPPORTED_BISON_ADAPTER,
+  });
+
+  const parent = options.tempDir ?? tmpdir();
+  try {
+    await checkDirPath(parent);
+  } catch (error: unknown) {
+    return analysis(source, policy.violations, { kind: "tool-failure", failure: diagnostic(error) }, tool);
+  }
+  let workDir: string;
+  try {
+    workDir = await mkdtemp(join(parent, "kframework-ts-bison-lr1-v1-"));
+  } catch (error: unknown) {
+    return analysis(source, policy.violations, { kind: "tool-failure", failure: diagnostic(error) }, tool);
+  }
+  const runInWorkspace = async (): Promise<BisonLr1Analysis> => {
+    const grammarPath = join(workDir, "parser.y");
+    try {
+      await writeFile(grammarPath, sourceBytes, { flag: "wx", mode: 0o444 });
+    } catch (error: unknown) {
+      return analysis(source, policy.violations, { kind: "tool-failure", failure: diagnostic(error) }, tool);
+    }
+    const argv = buildForcedIelrBisonArgv(resolvedExecutable, grammarPath);
+    let process: CompletedProcess;
+    try {
+      process = await runProcess(argv, { ...processOptions(options), cwd: workDir, check: false });
+    } catch (error: unknown) {
+      return analysis(source, policy.violations, { kind: "tool-failure", failure: diagnostic(error) }, tool);
+    }
+    const [xml, textReport] = await Promise.all([
+      readBisonArtifact(join(workDir, "parser.xml"), "parser.xml"),
+      readBisonArtifact(join(workDir, "parser.output"), "parser.output"),
+    ]);
+    const evidence: BisonAnalysisEvidence = Object.freeze({
+      argv: Object.freeze(argv),
+      process,
+      ...(xml.bytes === undefined ? {} : { xml: xml.bytes }),
+      ...(textReport.bytes === undefined ? {} : { textReport: textReport.bytes }),
+    });
+    if (process.cancelledBy !== undefined || process.returncode === undefined) {
+      return analysis(
+        source,
+        policy.violations,
+        { kind: "tool-failure", failure: diagnosticProcess(process) },
+        tool,
+        evidence,
+      );
+    }
+    if (xml.bytes === undefined) {
+      const message = xml.issue ?? "Bison did not produce XML";
+      return analysis(
+        source,
+        policy.violations,
+        process.returncode === 0
+          ? { kind: "tool-failure", failure: { message } }
+          : { kind: "invalid-grammar", diagnostics: [{ message: process.stderr || message }] },
+        tool,
+        evidence,
+      );
+    }
+    let report: BisonXmlReport;
+    try {
+      report = decodeBisonXml(xml.bytes, SUPPORTED_BISON_VERSION);
+    } catch (error: unknown) {
+      return analysis(
+        source,
+        policy.violations,
+        process.returncode === 0
+          ? { kind: "tool-failure", failure: diagnostic(error) }
+          : { kind: "invalid-grammar", diagnostics: [diagnostic(error), diagnosticProcess(process)] },
+        tool,
+        evidence,
+      );
+    }
+    const conflicts: BisonAnalysisConflict[] = [
+      ...report.conflicts,
+      ...report.solvedConflicts.map((solved) => Object.freeze({ kind: "solved" as const, solved })),
+    ];
+    if (conflicts.length > 0) {
+      return analysis(
+        source,
+        policy.violations,
+        { kind: "not-lr1", conflicts: Object.freeze(conflicts) },
+        tool,
+        evidence,
+      );
+    }
+    if (process.returncode !== 0) {
+      return analysis(
+        source,
+        policy.violations,
+        { kind: "invalid-grammar", diagnostics: [diagnosticProcess(process)] },
+        tool,
+        evidence,
+      );
+    }
+    return analysis(source, policy.violations, { kind: "lr1" }, tool, evidence);
+  };
+  let result: BisonLr1Analysis;
+  try {
+    result = await runInWorkspace();
+  } catch (error: unknown) {
+    result = analysis(source, policy.violations, { kind: "tool-failure", failure: diagnostic(error) }, tool);
+  }
+  try {
+    await rm(workDir, { recursive: true, force: true });
+  } catch (error: unknown) {
+    return analysis(
+      source,
+      policy.violations,
+      { kind: "tool-failure", failure: diagnostic(error) },
+      tool,
+      result.evidence,
+    );
+  }
+  return result;
+}
+
+function buildForcedIelrBisonArgv(executable: string, grammarPath: string): readonly string[] {
+  return Object.freeze([
+    executable,
+    "--force-define=lr.type=ielr",
+    "-Werror=conflicts-sr",
+    "-Werror=conflicts-rr",
+    "--report=all",
+    "--report-file=parser.output",
+    "--xml=parser.xml",
+    `--file-prefix-map=${dirname(grammarPath)}=${BISON_INPUT_VIRTUAL_DIRECTORY}`,
+    "-o",
+    "parser.c",
+    basename(grammarPath),
+  ]);
+}
+
+function processOptions(options: AnalyzeBisonLr1BytesOptions): ProcessControlOptions & {
+  readonly env?: Readonly<Record<string, string>>;
+  readonly logger?: ProcessLogger;
+} {
+  return {
+    ...(options.env === undefined ? {} : { env: options.env }),
+    ...(options.logger === undefined ? {} : { logger: options.logger }),
+    ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
+    ...(options.killGraceMs === undefined ? {} : { killGraceMs: options.killGraceMs }),
+  };
+}
+
+function unsupportedBisonControls(source: string): readonly BisonUnsupportedReason[] {
+  const controls: BisonUnsupportedReason[] = [];
+  const scan = scanBisonPolicy(source);
+  for (const item of scan.forbidden) {
+    if (item.directive === "%glr-parser") {
+      controls.push(Object.freeze({ kind: "glr", directive: item.directive, line: item.line, raw: item.raw }));
+    }
+  }
+  for (const item of scan.unsupported) {
+    const kind = item.directive === "%skeleton" ? "custom-skeleton" : "glr-runtime-control";
+    controls.push(Object.freeze({ kind, directive: item.directive, line: item.line, raw: item.raw }));
+  }
+  return Object.freeze(controls);
+}
+
+function analysis(
+  source: BisonLr1Analysis["source"],
+  policyDiagnostics: readonly BisonSourcePolicyDiagnostic[],
+  classification: BisonLr1Classification,
+  tool?: BisonToolObservation,
+  evidence?: BisonAnalysisEvidence,
+): BisonLr1Analysis {
+  return Object.freeze({
+    source,
+    classification,
+    policyDiagnostics: Object.freeze([...policyDiagnostics]),
+    ...(tool === undefined ? {} : { tool }),
+    ...(evidence === undefined ? {} : { evidence }),
+  });
+}
+
+function diagnostic(error: unknown): BisonDiagnostic {
+  return Object.freeze({ message: errorMessage(error) });
+}
+
+function diagnosticProcess(process: CompletedProcess): BisonDiagnostic {
+  return Object.freeze({
+    message:
+      process.stderr.trim() === ""
+        ? `Bison exited with status ${String(process.returncode)}`
+        : process.stderr.trimEnd(),
+  });
 }
 
 function makeRawEvidence(input: ClassifyBisonRunInput): BisonRunEvidence {

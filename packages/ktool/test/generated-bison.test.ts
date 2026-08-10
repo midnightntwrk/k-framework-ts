@@ -1,95 +1,48 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import {
-  generateBisonGrammar,
-  GeneratedBisonGrammarError,
-  GeneratedBisonGrammarSchema,
-  type GenerateBisonGrammarOptions,
+  checkKGrammarLr1,
+  generateKParserGrammar,
+  KGeneratedParserGrammarSchema,
+  KParserGrammarCaptureError,
+  type GenerateKParserGrammarOptions,
 } from "../src/generated-bison.ts";
 
 const scratchDirs: string[] = [];
 
 async function scratch(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "ktool-generated-bison-"));
-  scratchDirs.push(dir);
-  return dir;
+  const directory = await mkdtemp(join(tmpdir(), "ktool-k-parser-capture-"));
+  scratchDirs.push(directory);
+  return directory;
 }
 
 afterEach(async () => {
-  await Promise.all(scratchDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+  await Promise.all(scratchDirs.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
-interface FakeGeneration {
+interface FakeKompile {
   readonly root: string;
-  readonly binDir: string;
-  readonly kompileExecutable: string;
-  readonly bisonExecutable: string;
+  readonly command: string;
   readonly mainFile: string;
-  readonly tempDir: string;
-  readonly outputDir: string;
-  readonly bypassBinDir: string;
 }
 
-async function fakeGeneration(): Promise<FakeGeneration> {
+async function fakeKompile(): Promise<FakeKompile> {
   const root = await scratch();
-  const binDir = join(root, "bin");
-  const kompileExecutable = join(binDir, "kompile");
-  const bisonExecutable = join(binDir, "bison");
+  const bin = join(root, "bin");
+  const command = join(bin, "kompile");
   const mainFile = join(root, "mini.k");
-  const tempDir = join(root, "temp");
-  const outputDir = join(root, "output");
-  const bypassBinDir = join(root, "bypass-bin");
-  await mkdir(binDir);
-  await mkdir(bypassBinDir);
-  await mkdir(tempDir);
+  await mkdir(bin);
   await writeFile(mainFile, "module MINI endmodule\n");
   await writeFile(
-    bisonExecutable,
-    `#!/bin/bash
+    command,
+    String.raw`#!/bin/bash
 if [[ "$1" == "--version" ]]; then
-  echo "bison (GNU Bison) 3.8.2"
-  echo "Written by Robert Corbett and Richard Stallman."
-  exit 0
-fi
-candidate="$(/usr/bin/dirname "\${!#}")"
-version="3.8.2"
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "marker-mismatch" ]]; then version="3.8.1"; fi
-/usr/bin/printf '#define YYBISON_VERSION "%s"\n' "$version" > "$candidate/parser.tab.c"
-/usr/bin/printf '/* A Bison parser, made by GNU Bison %s.  */\n\n' "$version" > "$candidate/parser.tab.h"
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "marker-disagreement" ]]; then
-  /usr/bin/printf '/* A Bison parser, made by GNU Bison 3.8.1.  */\n\n' > "$candidate/parser.tab.h"
-fi
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "duplicate-c-marker" ]]; then
-  /usr/bin/printf '#define YYBISON_VERSION "3.8.2"\n' >> "$candidate/parser.tab.c"
-fi
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "duplicate-header-marker" ]]; then
-  /usr/bin/printf '/* A Bison parser, made by GNU Bison 3.8.2.  */\n' >> "$candidate/parser.tab.h"
-fi
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "misplaced-header-marker" ]]; then
-  /usr/bin/printf '/* unexpected prefix */\n/* A Bison parser, made by GNU Bison 3.8.2.  */\n\n' > "$candidate/parser.tab.h"
-fi
-exit 0
-`,
-  );
-  await writeFile(
-    join(bypassBinDir, "bison"),
-    `#!/bin/bash
-if [[ "$1" == "--version" ]]; then echo "bison (GNU Bison) 3.8.2"; exit 0; fi
-candidate="$(/usr/bin/dirname "\${!#}")"
-/usr/bin/printf '#define YYBISON_VERSION "3.8.2"\n' > "$candidate/parser.tab.c"
-/usr/bin/printf '/* A Bison parser, made by GNU Bison 3.8.2.  */\n\n' > "$candidate/parser.tab.h"
-exit 0
-`,
-  );
-  await writeFile(
-    kompileExecutable,
-    `#!/bin/bash
-if [[ "$1" == "--version" ]]; then
-  echo "K version:    v7.1.337"
-  echo "Build date:   fake"
+  version="$KTOOL_CAPTURE_VERSION"
+  if [[ -z "$version" ]]; then version="v7.1.337"; fi
+  echo "K version:    $version"
   exit 0
 fi
 output=""
@@ -101,215 +54,307 @@ while [[ $# -gt 0 ]]; do
     *) shift ;;
   esac
 done
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "failure" ]]; then
+if [[ "$KTOOL_CAPTURE_MODE" == "failure" ]]; then
   echo "[Error] Inner Parser: fake generation failure" >&2
   exit 113
 fi
+if [[ "$KTOOL_CAPTURE_MODE" == "sleep" ]]; then
+  /bin/sleep 3
+fi
 /bin/mkdir -p "$output" "$temporary/.kompile-fake"
-candidate="$temporary/.kompile-fake"
-if [[ "\${KTOOL_FAKE_MODE:-normal}" != "zero" ]]; then
-  top="SortPgm__"
-  if [[ "\${KTOOL_FAKE_MODE:-normal}" == "wrong-top" ]]; then top="SortWrong__"; fi
-  /usr/bin/printf '%%define lr.type ielr\n%%start top\n%%%%\ntop: %s ;\n%%%%\n' "$top" > "$candidate/parser.y"
+if [[ -n "$KTOOL_CAPTURE_RACE_DEST" ]]; then
+  /bin/mkdir -p "$KTOOL_CAPTURE_RACE_DEST"
+  /usr/bin/printf 'racing sentinel\n' > "$KTOOL_CAPTURE_RACE_DEST/sentinel"
 fi
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "wrapper-bypass" ]]; then PATH="$KTOOL_BYPASS_BIN:$PATH"; fi
-if [[ "\${KTOOL_FAKE_MODE:-normal}" != "zero" ]]; then
-  if [[ "\${KTOOL_FAKE_MODE:-normal}" == "wrong-bison-cwd" ]]; then
-    bison -d -Wno-other -Wno-conflicts-sr -Wno-conflicts-rr "$candidate/parser.y"
-  elif [[ "\${KTOOL_FAKE_MODE:-normal}" == "wrong-bison-argv" ]]; then
-    (cd "$candidate" && bison -d -Wno-conflicts-sr -Wno-conflicts-rr "$candidate/parser.y")
-  else
-    (
-      cd "$candidate"
-      bison -d -Wno-other -Wno-conflicts-sr -Wno-conflicts-rr "$candidate/parser.y"
-    )
-  fi
-fi
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "multiple" ]]; then
+if [[ "$KTOOL_CAPTURE_MODE" == "multiple" ]]; then
   /bin/mkdir -p "$temporary/.kompile-second"
-  /bin/cp "$candidate/parser.y" "$temporary/.kompile-second/parser.y"
+fi
+if [[ "$KTOOL_CAPTURE_MODE" != "missing-source" ]]; then
+  if [[ "$KTOOL_CAPTURE_MODE" == "raw" ]]; then
+    /usr/bin/printf '\377parser\n' > "$temporary/.kompile-fake/parser.y"
+  else
+    /usr/bin/printf 'parser:%s\n' "$KTOOL_CAPTURE_ID" > "$temporary/.kompile-fake/parser.y"
+  fi
 fi
 /usr/bin/touch "$output/parser_Pgm_MINI-SYNTAX"
 /bin/ln -s "parser_Pgm_MINI-SYNTAX" "$output/parser_PGM"
-if [[ "\${KTOOL_FAKE_MODE:-normal}" == "extra-parser" ]]; then
-  /usr/bin/touch "$output/parser_Aux_AUX"
-  /bin/ln -s "parser_Aux_AUX" "$output/parser_AUX"
+if [[ "$KTOOL_CAPTURE_MODE" == "extra-parser" ]]; then
+  /usr/bin/touch "$output/parser_Mode_MINI-MODE"
+  /bin/ln -s "parser_Mode_MINI-MODE" "$output/parser_MODE"
 fi
-echo "retained successful stderr" >&2
 exit 0
 `,
   );
-  await Promise.all([
-    chmod(kompileExecutable, 0o755),
-    chmod(bisonExecutable, 0o755),
-    chmod(join(bypassBinDir, "bison"), 0o755),
-  ]);
-  return { root, binDir, kompileExecutable, bisonExecutable, mainFile, tempDir, outputDir, bypassBinDir };
+  await chmod(command, 0o755);
+  return { root, command, mainFile };
 }
 
-function options(fixture: FakeGeneration, env: Readonly<Record<string, string>> = {}): GenerateBisonGrammarOptions {
+function options(
+  fixture: FakeKompile,
+  environment: Readonly<Record<string, string>> = {},
+): GenerateKParserGrammarOptions {
   return {
-    spec: {
-      backend: "haskell",
-      mainFile: fixture.mainFile,
-      mainModule: "MINI",
-      syntaxModule: "MINI-SYNTAX",
-      haskellBinary: false,
-    },
-    startSort: "Pgm",
-    syntaxModule: "MINI-SYNTAX",
-    expectedKVersion: "v7.1.337",
-    expectedBisonVersion: "3.8.2",
-    kompileExecutable: fixture.kompileExecutable,
-    bisonExecutable: fixture.bisonExecutable,
-    tempDir: fixture.tempDir,
-    outputDir: fixture.outputDir,
-    env: { PATH: "", ...env },
+    command: [fixture.command],
+    temporaryParent: fixture.root,
+    env: { PATH: process.env["PATH"] ?? "", ...environment },
   };
 }
 
-describe("generateBisonGrammar without K", () => {
-  test("forces deterministic generation policy and retains exact source/process/version evidence", async () => {
-    const fixture = await fakeGeneration();
-    const generated = await generateBisonGrammar(options(fixture));
-    expect(GeneratedBisonGrammarSchema.safeParse(generated).success).toBe(true);
+function spec(mainFile: string) {
+  return {
+    backend: "haskell" as const,
+    mainFile,
+    mainModule: "MINI",
+    syntaxModule: "MINI-SYNTAX",
+    haskellBinary: false,
+  };
+}
 
-    expect(generated.startSort).toBe("Pgm");
-    expect(generated.syntaxModule).toBe("MINI-SYNTAX");
-    expect(generated.source).toContain("%define lr.type ielr");
-    expect(new TextDecoder().decode(generated.sourceBytes)).toBe(generated.source);
-    expect(generated.sourceSha256).toHaveLength(64);
-    expect(generated.kVersion.text).toBe("v7.1.337");
-    expect(generated.bisonVersion.version).toBe("3.8.2");
-    expect(generated.generatedBisonVersion).toBe("3.8.2");
-    expect(generated.bisonInvocation).toMatchObject({
-      requestedExecutable: fixture.bisonExecutable,
-      requestedRealPath: fixture.bisonExecutable,
-      snapshotSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
-      snapshotSize: (await readFile(fixture.bisonExecutable)).byteLength,
-      cwd: dirname(generated.artifacts.parserSource),
+async function exists(path: string): Promise<boolean> {
+  try {
+    await lstat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+describe("generateKParserGrammar", () => {
+  test("composes capture and Bison analysis without collapsing their result boundaries", async () => {
+    const fixture = await fakeKompile();
+    const checked = await checkKGrammarLr1(spec(fixture.mainFile), {
+      capture: options(fixture, { KTOOL_CAPTURE_ID: "composed" }),
+      bison: { tool: { command: [join(fixture.root, "missing-bison")] } },
     });
-    expect(generated.bisonInvocation.argv).toEqual([
-      generated.bisonInvocation.snapshotExecutable,
-      "-d",
-      "-Wno-other",
-      "-Wno-conflicts-sr",
-      "-Wno-conflicts-rr",
-      generated.artifacts.parserSource,
+
+    expect(new TextDecoder().decode(checked.capture.source.bytes)).toBe("parser:composed\n");
+    expect(checked.analysis.classification.kind).toBe("tool-failure");
+    expect(checked.unprovedBoundaries).toEqual([
+      "k-to-bison-grammar-correspondence",
+      "scanner-determinism",
+      "semantic-action-correctness",
+      "generated-parser-runtime-correctness",
     ]);
-    expect(generated.versionMarkers.c).toEqual({ version: "3.8.2", line: '#define YYBISON_VERSION "3.8.2"' });
-    expect(generated.versionMarkers.header).toEqual({
-      version: "3.8.2",
-      line: "/* A Bison parser, made by GNU Bison 3.8.2.  */",
-    });
-    expect(generated.kompile.process.stderr).toBe("retained successful stderr\n");
-    expect(generated.kDiagnostics).toEqual([]);
+  });
 
-    const argv = generated.kompile.process.args;
+  test("returns exact bytes and derives the strict deterministic K invocation", async () => {
+    const fixture = await fakeKompile();
+    const retained = join(fixture.root, "retained");
+    const generated = await generateKParserGrammar(spec(fixture.mainFile), {
+      ...options(fixture, { KTOOL_CAPTURE_ID: "one" }),
+      retainArtifactsTo: retained,
+    });
+
+    expect(KGeneratedParserGrammarSchema.safeParse(generated).success).toBe(true);
+    expect(new TextDecoder().decode(generated.source.bytes)).toBe("parser:one\n");
+    expect(generated.source.sha256).toHaveLength(64);
+    expect(generated.target).toEqual({ kind: "pgm" });
+    expect(generated.kVersion.text).toBe("v7.1.337");
+    expect(generated.retainedArtifactsTo).toBe(retained);
+    expect("kompile" in generated).toBe(false);
+    expect(await readFile(join(retained, ".kompile-fake", "parser.y"), "utf8")).toBe("parser:one\n");
+
+    const argv = generated.process.args;
     expect(argv).toContain("--gen-bison-parser");
     expect(argv).not.toContain("--gen-glr-bison-parser");
+    expect(argv).not.toContain("--bison-parser-library");
     expect(argv).toContain("--debug");
-    expect(argv).toContain("--warnings-to-errors");
-    expect(argv.slice(argv.indexOf("--warnings"), argv.indexOf("--warnings") + 2)).toEqual(["--warnings", "all"]);
     expect(argv.slice(argv.indexOf("--type-inference-mode"), argv.indexOf("--type-inference-mode") + 2)).toEqual([
       "--type-inference-mode",
       "checked",
     ]);
+    expect(argv.slice(argv.indexOf("--warnings"), argv.indexOf("--warnings") + 2)).toEqual(["--warnings", "all"]);
+    expect(argv).toContain("--warnings-to-errors");
     expect(argv.slice(argv.indexOf("-Wno"), argv.indexOf("-Wno") + 2)).toEqual(["-Wno", "unused-symbol"]);
-    expect(argv.slice(argv.indexOf("--temp-dir"), argv.indexOf("--temp-dir") + 2)).toEqual([
-      "--temp-dir",
-      fixture.tempDir,
-    ]);
-    expect(argv.slice(argv.indexOf("--output-definition"), argv.indexOf("--output-definition") + 2)).toEqual([
-      "--output-definition",
-      fixture.outputDir,
-    ]);
+    expect(argv).toContain("--output-definition");
+    expect(argv).toContain("--temp-dir");
+  });
+
+  test("keeps exact non-UTF-8 bytes and cleans its owned workspace", async () => {
+    const fixture = await fakeKompile();
+    const sentinel = join(fixture.root, "sentinel");
+    await writeFile(sentinel, "keep\n");
+    const generated = await generateKParserGrammar(
+      spec(fixture.mainFile),
+      options(fixture, { KTOOL_CAPTURE_MODE: "raw" }),
+    );
+
+    expect([...generated.source.bytes]).toEqual([255, 112, 97, 114, 115, 101, 114, 10]);
+    expect(await readFile(sentinel, "utf8")).toBe("keep\n");
+    const entries = await readdir(fixture.root);
+    expect(entries.some((entry) => entry.startsWith(".ktool-k-parser-"))).toBe(false);
   });
 
   test.each([
-    ["zero", "bison-invocation-unverified"],
-    ["multiple", "parser-artifact-multiple"],
-    ["wrong-top", "parser-identity-unsupported"],
-    ["extra-parser", "parser-identity-unsupported"],
-    ["marker-mismatch", "generated-bison-version-mismatch"],
-    ["marker-disagreement", "generated-bison-version-mismatch"],
-    ["duplicate-c-marker", "generated-bison-version-mismatch"],
-    ["duplicate-header-marker", "generated-bison-version-mismatch"],
-    ["misplaced-header-marker", "generated-bison-version-mismatch"],
-  ] as const)("rejects %s output as %s", async (mode, code) => {
-    const fixture = await fakeGeneration();
-    expect(generateBisonGrammar(options(fixture, { KTOOL_FAKE_MODE: mode }))).rejects.toMatchObject({ code });
-  });
-
-  test("preserves diagnostics and CompletedProcess on K failure", async () => {
-    const fixture = await fakeGeneration();
+    [{ genGlrBisonParser: true }, "GLR"],
+    [{ bisonParserLibrary: true }, "libraries"],
+    [{ postProcess: "echo bad" }, "post-process"],
+    [{ readOnly: true }, "read-only"],
+  ] as const)("rejects unsupported strict-profile spec %s", async (extra) => {
+    const fixture = await fakeKompile();
     try {
-      await generateBisonGrammar(options(fixture, { KTOOL_FAKE_MODE: "failure" }));
-      throw new Error("expected generation failure");
+      await generateKParserGrammar({ ...spec(fixture.mainFile), ...extra }, options(fixture));
+      throw new Error("expected unsupported request to fail");
     } catch (error: unknown) {
-      expect(error).toBeInstanceOf(GeneratedBisonGrammarError);
-      if (!(error instanceof GeneratedBisonGrammarError)) throw error;
-      expect(error.code).toBe("kompile-failed");
-      expect(error.process?.returncode).toBe(113);
-      expect(error.process?.stderr).toContain("fake generation failure");
-      expect(error.diagnostics).toHaveLength(1);
-      expect(error.diagnostics[0]?.message).toBe("fake generation failure");
+      expect(error).toMatchObject({ code: "invalid-request" });
     }
   });
 
-  test("rejects a K wrapper that shadows the selected same-version Bison", async () => {
-    const fixture = await fakeGeneration();
-    expect(
-      generateBisonGrammar(
-        options(fixture, { KTOOL_FAKE_MODE: "wrapper-bypass", KTOOL_BYPASS_BIN: fixture.bypassBinDir }),
-      ),
-    ).rejects.toMatchObject({ code: "bison-invocation-unverified" });
+  test("rejects a K release outside the internal capture profile", async () => {
+    const fixture = await fakeKompile();
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), options(fixture, { KTOOL_CAPTURE_VERSION: "v7.1.338" }));
+      throw new Error("expected unsupported K version to fail");
+    } catch (error: unknown) {
+      expect(error).toMatchObject({
+        code: "unsupported-k-version",
+        expected: "v7.1.337",
+        actual: "v7.1.338",
+      });
+    }
   });
 
-  test.each(["wrong-bison-cwd", "wrong-bison-argv"])("rejects K's %s invocation", async (mode) => {
-    const fixture = await fakeGeneration();
-    expect(generateBisonGrammar(options(fixture, { KTOOL_FAKE_MODE: mode }))).rejects.toMatchObject({
-      code: "bison-invocation-unverified",
-    });
+  test("reports missing or non-directory caller workspace parents as invalid requests", async () => {
+    const fixture = await fakeKompile();
+    const missing = join(fixture.root, "missing-parent");
+    const file = join(fixture.root, "not-a-directory");
+    await writeFile(file, "not a directory\n");
+
+    for (const parent of [missing, file]) {
+      try {
+        await generateKParserGrammar(spec(fixture.mainFile), { ...options(fixture), temporaryParent: parent });
+        throw new Error("expected an invalid workspace parent to fail");
+      } catch (error: unknown) {
+        expect(error).toMatchObject({ code: "invalid-request", paths: [parent] });
+      }
+    }
+
+    const retentionParent = join(fixture.root, "missing-retention-parent");
+    const retentionDestination = join(retentionParent, "retained");
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), {
+        ...options(fixture),
+        retainArtifactsTo: retentionDestination,
+      });
+      throw new Error("expected an invalid retention parent to fail");
+    } catch (error: unknown) {
+      expect(error).toMatchObject({ code: "invalid-request", paths: [retentionParent] });
+    }
   });
 
-  test("checks both selected tool versions before generation", async () => {
-    const kFixture = await fakeGeneration();
-    expect(generateBisonGrammar({ ...options(kFixture), expectedKVersion: "v7.1.338" })).rejects.toMatchObject({
-      code: "k-version-mismatch",
-    });
-    const bisonFixture = await fakeGeneration();
-    expect(generateBisonGrammar({ ...options(bisonFixture), expectedBisonVersion: "3.8.1" })).rejects.toMatchObject({
-      code: "bison-version-mismatch",
-    });
+  test("reports private workspace creation failure distinctly", async () => {
+    const fixture = await fakeKompile();
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), { ...options(fixture), temporaryParent: "/proc" });
+      throw new Error("expected workspace creation to fail");
+    } catch (error: unknown) {
+      expect(error).toMatchObject({ code: "workspace-creation-failed", paths: ["/proc"] });
+    }
   });
 
-  test("requires absolute fresh caller-owned paths and never removes their existing contents on failure", async () => {
-    const fixture = await fakeGeneration();
-    const sentinel = join(fixture.tempDir, "caller-owned");
+  test.each([
+    ["failure", "kompile-failed"],
+    ["multiple", "parser-artifact-multiple"],
+    ["missing-source", "parser-artifact-missing"],
+    ["extra-parser", "parser-target-unsupported"],
+  ] as const)("returns a typed failure for %s and removes the workspace", async (mode, code) => {
+    const fixture = await fakeKompile();
+    const sentinel = join(fixture.root, "sentinel");
     await writeFile(sentinel, "keep\n");
-    expect(generateBisonGrammar(options(fixture, { KTOOL_FAKE_MODE: "zero" }))).rejects.toBeInstanceOf(
-      GeneratedBisonGrammarError,
-    );
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), options(fixture, { KTOOL_CAPTURE_MODE: mode }));
+      throw new Error("expected capture failure");
+    } catch (error: unknown) {
+      expect(error).toBeInstanceOf(KParserGrammarCaptureError);
+      expect(error).toMatchObject({ code });
+      if (error instanceof KParserGrammarCaptureError && mode === "failure") {
+        expect(error.process?.returncode).toBe(113);
+        expect(error.diagnostics[0]?.message).toBe("fake generation failure");
+      }
+    }
     expect(await readFile(sentinel, "utf8")).toBe("keep\n");
-
-    expect(generateBisonGrammar({ ...options(fixture), tempDir: "relative-temp" })).rejects.toMatchObject({
-      code: "invalid-path",
-    });
-    expect(generateBisonGrammar(options(fixture))).rejects.toMatchObject({ code: "output-not-fresh" });
+    const entries = await readdir(fixture.root);
+    expect(entries.some((entry) => entry.startsWith(".ktool-k-parser-"))).toBe(false);
   });
 
-  test("rejects caller attempts to request GLR, parser libraries, or a different syntax module", async () => {
-    const fixture = await fakeGeneration();
-    const base = options(fixture);
-    expect(generateBisonGrammar({ ...base, spec: { ...base.spec, genGlrBisonParser: true } })).rejects.toMatchObject({
-      code: "invalid-request",
-    });
-    expect(generateBisonGrammar({ ...base, spec: { ...base.spec, bisonParserLibrary: true } })).rejects.toMatchObject({
-      code: "invalid-request",
-    });
-    expect(generateBisonGrammar({ ...base, syntaxModule: "OTHER" })).rejects.toMatchObject({
-      code: "invalid-request",
-    });
+  test("isolates concurrent captures sharing one temporary parent", async () => {
+    const fixture = await fakeKompile();
+    const [first, second] = await Promise.all([
+      generateKParserGrammar(spec(fixture.mainFile), options(fixture, { KTOOL_CAPTURE_ID: "first" })),
+      generateKParserGrammar(spec(fixture.mainFile), options(fixture, { KTOOL_CAPTURE_ID: "second" })),
+    ]);
+
+    expect(new TextDecoder().decode(first.source.bytes)).toBe("parser:first\n");
+    expect(new TextDecoder().decode(second.source.bytes)).toBe("parser:second\n");
+    const entries = await readdir(fixture.root);
+    expect(entries.some((entry) => entry.startsWith(".ktool-k-parser-"))).toBe(false);
+  });
+
+  test("allows repeated captures with the same temporary parent", async () => {
+    const fixture = await fakeKompile();
+    const first = await generateKParserGrammar(spec(fixture.mainFile), options(fixture, { KTOOL_CAPTURE_ID: "one" }));
+    const second = await generateKParserGrammar(spec(fixture.mainFile), options(fixture, { KTOOL_CAPTURE_ID: "two" }));
+
+    expect(new TextDecoder().decode(first.source.bytes)).toBe("parser:one\n");
+    expect(new TextDecoder().decode(second.source.bytes)).toBe("parser:two\n");
+  });
+
+  test("retains a failed workspace only at the explicit fresh destination", async () => {
+    const fixture = await fakeKompile();
+    const retained = join(fixture.root, "retained-failure");
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), {
+        ...options(fixture, { KTOOL_CAPTURE_MODE: "missing-source" }),
+        retainArtifactsTo: retained,
+      });
+      throw new Error("expected capture failure");
+    } catch (error: unknown) {
+      expect(error).toMatchObject({ code: "parser-artifact-missing", retainedArtifactsTo: retained });
+    }
+    expect(await exists(join(retained, ".kompile-fake"))).toBe(true);
+
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), {
+        ...options(fixture),
+        retainArtifactsTo: retained,
+      });
+      throw new Error("expected an occupied retention destination to fail");
+    } catch (error: unknown) {
+      expect(error).toMatchObject({ code: "invalid-request" });
+    }
+  });
+
+  test("cleans its workspace when a retention destination appears after validation", async () => {
+    const fixture = await fakeKompile();
+    const retained = join(fixture.root, "racing-retention");
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), {
+        ...options(fixture, { KTOOL_CAPTURE_RACE_DEST: retained }),
+        retainArtifactsTo: retained,
+      });
+      throw new Error("expected retention race to fail");
+    } catch (error: unknown) {
+      expect(error).toMatchObject({ code: "retention-destination-not-fresh" });
+    }
+
+    expect(await readFile(join(retained, "sentinel"), "utf8")).toBe("racing sentinel\n");
+    const entries = await readdir(fixture.root);
+    expect(entries.some((entry) => entry.startsWith(".ktool-k-parser-"))).toBe(false);
+  });
+
+  test("cleans the workspace after a timeout", async () => {
+    const fixture = await fakeKompile();
+    try {
+      await generateKParserGrammar(spec(fixture.mainFile), {
+        ...options(fixture, { KTOOL_CAPTURE_MODE: "sleep" }),
+        timeoutMs: 20,
+        killGraceMs: 0,
+      });
+      throw new Error("expected capture timeout to fail");
+    } catch (error: unknown) {
+      expect(error).toMatchObject({ code: "kompile-failed" });
+    }
+    const entries = await readdir(fixture.root);
+    expect(entries.some((entry) => entry.startsWith(".ktool-k-parser-"))).toBe(false);
   });
 });

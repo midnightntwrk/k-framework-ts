@@ -1,11 +1,11 @@
 /**
  * `@kframework-ts/ktool` — the package that runs the K binaries.
  *
- * Every other package in this monorepo is hermetic: `kast`, `kore`, `konvert`,
- * `k-parser` and `kompiled` read bytes and return values, and none of them can
- * start a process. That is a property worth keeping, so the subprocess layer
- * lives here and only here. If you find yourself importing
- * `node:child_process` in a sibling, the code belongs in this package.
+ * The K-domain packages in this monorepo are hermetic: `kast`, `kore`,
+ * `konvert`, `k-parser` and `kompiled` read bytes and return values rather than
+ * starting K processes. Their subprocess layer lives here. The independent
+ * `@kframework-ts/bison` package is the separate exception: it owns only the
+ * GNU Bison process boundary required to classify grammar bytes.
  *
  * At milestone 1 that meant **kompile**: constructing its argv, finding it on
  * `PATH`, running it, and reading its version back. The argv construction is
@@ -87,7 +87,6 @@
 
 export * from "./claim-index.js";
 export * from "./claim-loader.js";
-export * from "./bison.js";
 export * from "./definition-cache.js";
 export * from "./diagnostics.js";
 export * from "./distribution.js";
