@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 
 import {
   BisonGrammarPolicyAnalysisSchema,
+  BisonLr1AnalysisSchema,
   BisonLr1EvidenceSchema,
   BisonLr1VerdictSchema,
   BisonRunEvidenceSchema,
@@ -69,6 +70,19 @@ async function exists(path: string): Promise<boolean> {
 }
 
 describe("Bison structural schemas", () => {
+  test("aggregate parsing preserves the public readonly runtime boundary", () => {
+    const source = new Uint8Array();
+    const parsed = BisonLr1AnalysisSchema.parse({
+      source: { bytes: source, sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+      classification: { kind: "tool-failure", failure: { message: "not run" } },
+      policyDiagnostics: [],
+    });
+
+    expect(Object.isFrozen(parsed)).toBe(true);
+    expect(Object.isFrozen(parsed.source)).toBe(true);
+    expect(Object.isFrozen(parsed.classification)).toBe(true);
+  });
+
   test("uses a portable string representation for process signals", () => {
     const process = completed("lr1", { signal: "SIGKILL" });
     expect(CompletedProcessSchema.parse(process).signal).toBe("SIGKILL");

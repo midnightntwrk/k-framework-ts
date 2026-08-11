@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { z } from "zod";
 
-import { analyzeBisonLr1, type AnalyzeBisonLr1BytesOptions, type BisonLr1Analysis } from "@kframework-ts/bison";
+import { analyzeBisonLr1, BisonLr1AnalysisSchema, type AnalyzeBisonLr1BytesOptions } from "@kframework-ts/bison";
 
 import { KDiagnosticSchema, parseKDiagnostics, type KDiagnostic } from "./diagnostics.js";
 import { KVersionResultSchema, kVersion, type KVersionResult } from "./distribution.js";
@@ -22,6 +22,9 @@ import {
 import { K_RELEASE } from "./version.js";
 
 const K_CAPTURE_PROFILE_VERSION = K_RELEASE;
+const Uint8ArraySchema: z.ZodType<Uint8Array> = z.custom<Uint8Array>(
+  (value): value is Uint8Array => value instanceof Uint8Array,
+);
 
 export interface GenerateKParserGrammarOptions extends ProcessControlOptions {
   readonly command?: readonly string[];
@@ -32,18 +35,23 @@ export interface GenerateKParserGrammarOptions extends ProcessControlOptions {
   readonly retainArtifactsTo?: string;
 }
 
-export interface KGeneratedParserGrammar {
-  readonly source: {
-    readonly bytes: Uint8Array;
-    readonly sha256: string;
-  };
-  readonly target: { readonly kind: "pgm" };
-  readonly kVersion: KVersionResult;
-  readonly diagnostics: readonly KDiagnostic[];
-  /** Exact process evidence; its argv may name the now-private workspace. */
-  readonly process: CompletedProcess;
-  readonly retainedArtifactsTo?: string | undefined;
-}
+export const KGeneratedParserGrammarSchema = z
+  .object({
+    source: z.object({ bytes: Uint8ArraySchema, sha256: z.string().regex(/^[0-9a-f]{64}$/u) }).readonly(),
+    target: z.object({ kind: z.literal("pgm") }).readonly(),
+    kVersion: KVersionResultSchema,
+    diagnostics: z.array(KDiagnosticSchema).readonly(),
+    /** Exact process evidence; its argv may name the now-private workspace. */
+    process: CompletedProcessSchema,
+    retainedArtifactsTo: z.string().optional(),
+  })
+  .superRefine((capture, context) => {
+    if (sha256(capture.source.bytes) !== capture.source.sha256) {
+      context.addIssue({ code: "custom", path: ["source", "sha256"], message: "source digest does not match bytes" });
+    }
+  })
+  .readonly();
+export type KGeneratedParserGrammar = z.infer<typeof KGeneratedParserGrammarSchema>;
 
 /** Compose K parser-source capture with the K-independent Bison analyzer. */
 export interface CheckKGrammarLr1Options {
@@ -55,25 +63,31 @@ export interface CheckKGrammarLr1Options {
  * The K capture and Bison classification remain independently inspectable.
  * These boundaries are intentionally not claims established by this operation.
  */
-export interface KGrammarLr1Check {
-  readonly capture: KGeneratedParserGrammar;
-  readonly analysis: BisonLr1Analysis;
-  readonly unprovedBoundaries: readonly (
-    | "k-to-bison-grammar-correspondence"
-    | "scanner-determinism"
-    | "semantic-action-correctness"
-    | "generated-parser-runtime-correctness"
-  )[];
-}
-
-export const KGeneratedParserGrammarSchema: z.ZodType<KGeneratedParserGrammar> = z.object({
-  source: z.object({ bytes: z.instanceof(Uint8Array), sha256: z.string().regex(/^[0-9a-f]{64}$/u) }),
-  target: z.object({ kind: z.literal("pgm") }),
-  kVersion: KVersionResultSchema,
-  diagnostics: z.array(KDiagnosticSchema),
-  process: CompletedProcessSchema,
-  retainedArtifactsTo: z.string().optional(),
-});
+export const KGrammarLr1CheckSchema = z
+  .object({
+    capture: KGeneratedParserGrammarSchema,
+    analysis: BisonLr1AnalysisSchema,
+    unprovedBoundaries: z
+      .array(
+        z.enum([
+          "k-to-bison-grammar-correspondence",
+          "scanner-determinism",
+          "semantic-action-correctness",
+          "generated-parser-runtime-correctness",
+        ]),
+      )
+      .readonly(),
+  })
+  .superRefine((check, context) => {
+    if (check.capture.source.sha256 !== check.analysis.source.sha256) {
+      context.addIssue({ code: "custom", path: ["analysis", "source", "sha256"], message: "source digests differ" });
+    }
+    if (!sameBytes(check.capture.source.bytes, check.analysis.source.bytes)) {
+      context.addIssue({ code: "custom", path: ["analysis", "source", "bytes"], message: "source bytes differ" });
+    }
+  })
+  .readonly();
+export type KGrammarLr1Check = z.infer<typeof KGrammarLr1CheckSchema>;
 
 export type KParserGrammarCaptureErrorCode =
   | "invalid-request"
@@ -248,7 +262,7 @@ export async function generateKParserGrammar(
     throw withRetainedArtifacts(asCaptureError(failure), retainedArtifactsTo);
   }
   if (result === undefined) throw new Error("K parser capture completed without a result or failure");
-  return Object.freeze({
+  return KGeneratedParserGrammarSchema.parse({
     ...result,
     ...(retainedArtifactsTo === undefined ? {} : { retainedArtifactsTo }),
   });
@@ -261,7 +275,7 @@ export async function checkKGrammarLr1(
 ): Promise<KGrammarLr1Check> {
   const capture = await generateKParserGrammar(spec, options.capture);
   const analysis = await analyzeBisonLr1({ ...options.bison, source: capture.source.bytes });
-  return Object.freeze({
+  return KGrammarLr1CheckSchema.parse({
     capture,
     analysis,
     unprovedBoundaries: Object.freeze([
@@ -499,6 +513,10 @@ async function disposeWorkspace(
 
 function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  return left.byteLength === right.byteLength && left.every((byte, index) => byte === right[index]);
 }
 
 function captureError(

@@ -488,6 +488,16 @@ $ ktool lr1 k language.k --main-module LANGUAGE --syntax-module LANGUAGE-SYNTAX
 $ ktool check-k v7.1.400
 ```
 
+Some notes on the `lr1` output format:
+- Both `lr1` routes emit the same versioned JSON envelope: `{"format":"KtoolLr1Result","version":1,"operation":...}`.
+- The `result` retains the complete library analysis/check aggregate.
+- Exact byte fields are inline objects with `encoding: "base64"`, `data`, `byteLength`, and `sha256`;
+- there is no sidecar evidence directory.
+- Values that are required in memory but `undefined` are represented explicitly as `null`.
+- A K diagnostic is emitted as `{ record, classification }`: `record` is the complete original parsed record (including `raw` and `rawLines`) while `classification` adds its semantic family and tag.
+- Consumers can validate and type the contract with `KtoolLr1JsonSchema` and its schema-inferred `KtoolLr1Json` type.
+- Contract objects are strict: unknown keys are rejected rather than silently stripped.
+
 | route       | what it calls                                                                                                                            |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `kompile`   | `KompileSpec` + `KompileCallOptions` → `kompile()`, or `buildKompileArgv()` under `--dry-run`                                            |

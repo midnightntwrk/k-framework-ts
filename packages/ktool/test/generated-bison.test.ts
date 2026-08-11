@@ -7,6 +7,7 @@ import {
   checkKGrammarLr1,
   generateKParserGrammar,
   KGeneratedParserGrammarSchema,
+  KGrammarLr1CheckSchema,
   KParserGrammarCaptureError,
   type GenerateKParserGrammarOptions,
 } from "../src/generated-bison.ts";
@@ -128,6 +129,10 @@ describe("generateKParserGrammar", () => {
     });
 
     expect(new TextDecoder().decode(checked.capture.source.bytes)).toBe("parser:composed\n");
+    expect(KGrammarLr1CheckSchema.safeParse(checked).success).toBe(true);
+    expect(Object.isFrozen(checked)).toBe(true);
+    expect(Object.isFrozen(checked.capture)).toBe(true);
+    expect(Object.isFrozen(checked.analysis)).toBe(true);
     expect(checked.analysis.classification.kind).toBe("tool-failure");
     expect(checked.unprovedBoundaries).toEqual([
       "k-to-bison-grammar-correspondence",
@@ -146,6 +151,8 @@ describe("generateKParserGrammar", () => {
     });
 
     expect(KGeneratedParserGrammarSchema.safeParse(generated).success).toBe(true);
+    expect(Object.isFrozen(generated)).toBe(true);
+    expect(Object.isFrozen(generated.source)).toBe(true);
     expect(new TextDecoder().decode(generated.source.bytes)).toBe("parser:one\n");
     expect(generated.source.sha256).toHaveLength(64);
     expect(generated.target).toEqual({ kind: "pgm" });

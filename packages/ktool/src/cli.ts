@@ -41,7 +41,7 @@
  * `@kframework-ts/kompiled`'s and `@kframework-ts/k-parser`'s CLIs take.
  */
 
-import { analyzeBisonLr1File, type BisonLr1Analysis } from "@kframework-ts/bison";
+import { analyzeBisonLr1File } from "@kframework-ts/bison";
 import { claimDependencies, kastTermToDict, ksort, ktoken, sentenceLabel, type KInner } from "@kframework-ts/kast";
 import { koreText, KoreParser, type Pattern } from "@kframework-ts/kore";
 import {
@@ -58,8 +58,9 @@ import { join } from "node:path";
 import { ClaimIndexError, staticOrder } from "./claim-index.js";
 import { ClaimLoader, type LoadClaimsOptions } from "./claim-loader.js";
 import { getKDistribution } from "./distribution.js";
-import { checkKGrammarLr1, type KGrammarLr1Check } from "./generated-bison.js";
+import { checkKGrammarLr1 } from "./generated-bison.js";
 import { llvmInterpret } from "./interpreter.js";
+import { bisonLr1Json, kGrammarLr1Json, KtoolLr1JsonSchema } from "./lr1-json.js";
 import {
   buildKompileArgv,
   kompile,
@@ -1490,44 +1491,9 @@ function timeoutFlag() {
   } as const;
 }
 
-function analysisJson(analysis: BisonLr1Analysis): object {
-  return {
-    source: { sha256: analysis.source.sha256 },
-    classification: analysis.classification,
-    policyDiagnostics: analysis.policyDiagnostics,
-    ...(analysis.tool === undefined ? {} : { tool: analysis.tool }),
-    ...(analysis.evidence === undefined
-      ? {}
-      : {
-          evidence: {
-            argv: analysis.evidence.argv,
-            process: analysis.evidence.process,
-            xmlBytes: analysis.evidence.xml?.byteLength,
-            textReportBytes: analysis.evidence.textReport?.byteLength,
-          },
-        }),
-  };
-}
-
-function kCheckJson(check: KGrammarLr1Check): object {
-  return {
-    capture: {
-      source: { sha256: check.capture.source.sha256 },
-      target: check.capture.target,
-      kVersion: check.capture.kVersion,
-      diagnostics: check.capture.diagnostics,
-      process: check.capture.process,
-      ...(check.capture.retainedArtifactsTo === undefined
-        ? {}
-        : { retainedArtifactsTo: check.capture.retainedArtifactsTo }),
-    },
-    analysis: analysisJson(check.analysis),
-    unprovedBoundaries: check.unprovedBoundaries,
-  };
-}
-
-function printJson(context: KtoolCliContext, value: object, compact: boolean | undefined): void {
-  context.out(`${JSON.stringify(value, undefined, compact === true ? undefined : 2)}\n`);
+function printLr1Json(context: KtoolCliContext, value: unknown, compact: boolean | undefined): void {
+  const wire = KtoolLr1JsonSchema.parse(value);
+  context.out(`${JSON.stringify(wire, undefined, compact === true ? undefined : 2)}\n`);
 }
 
 const lr1BisonCommand = buildCommand<Lr1BisonFlags, [string], KtoolCliContext>({
@@ -1558,7 +1524,7 @@ const lr1BisonCommand = buildCommand<Lr1BisonFlags, [string], KtoolCliContext>({
         ...(flags.tempDir === undefined ? {} : { tempDir: flags.tempDir }),
         ...(flags.timeoutMs === undefined ? {} : { timeoutMs: flags.timeoutMs }),
       });
-      printJson(this, analysisJson(analysis), flags.compact);
+      printLr1Json(this, bisonLr1Json(analysis), flags.compact);
       finish(this, analysis.classification.kind === "lr1" ? 0 : 1);
     } catch (error: unknown) {
       this.err(`${error instanceof Error ? error.message : String(error)}\n`);
@@ -1643,7 +1609,7 @@ const lr1KCommand = buildCommand<Lr1KFlags, [string], KtoolCliContext>({
           ...(flags.tempDir === undefined ? {} : { tempDir: flags.tempDir }),
         },
       });
-      printJson(this, kCheckJson(check), flags.compact);
+      printLr1Json(this, kGrammarLr1Json(check), flags.compact);
       finish(this, check.analysis.classification.kind === "lr1" ? 0 : 1);
     } catch (error: unknown) {
       this.err(`${error instanceof Error ? error.message : String(error)}\n`);

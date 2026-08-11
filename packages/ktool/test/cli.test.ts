@@ -353,7 +353,15 @@ describe("lr1 CLI", () => {
     const { code, out, err } = await run(["lr1", "bison", grammar, "--compact"]);
     expect(code).toBe(1);
     expect(err).toBe("");
-    expect(JSON.parse(out)).toMatchObject({ classification: { kind: "invalid-grammar" } });
+    expect(JSON.parse(out)).toMatchObject({
+      format: "KtoolLr1Result",
+      version: 1,
+      operation: "bison",
+      result: {
+        source: { bytes: { encoding: "base64", data: "/w==", byteLength: 1 } },
+        classification: { kind: "invalid-grammar" },
+      },
+    });
   });
 
   test("the K route documents the two executable boundaries", async () => {

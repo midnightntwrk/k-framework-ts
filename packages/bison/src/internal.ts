@@ -30,6 +30,10 @@ import {
 } from "./proc.js";
 import { resolveOnPath } from "./proc.js";
 
+const Uint8ArraySchema: z.ZodType<Uint8Array> = z.custom<Uint8Array>(
+  (value): value is Uint8Array => value instanceof Uint8Array,
+);
+
 //////////////////////////////
 // Declaration policy       //
 //////////////////////////////
@@ -1435,55 +1439,84 @@ const SUPPORTED_BISON_VERSION = "3.8.2";
 /** Source-policy facts are metadata and never decide the LR(1) classification. */
 export type BisonSourcePolicyDiagnostic = BisonGrammarPolicyViolation;
 
-/** One source control that V1 intentionally does not analyze. */
-export type BisonUnsupportedReason = BisonDirectiveLocation & {
-  readonly kind: "glr" | "custom-skeleton" | "glr-runtime-control";
-  readonly directive: "%glr-parser" | "%skeleton" | "%dprec" | "%merge";
-};
-
-/** The observed selected tool and the exact XML adapter selected for it. */
-export interface BisonToolObservation {
-  readonly requestedCommand: readonly string[];
-  readonly resolvedExecutable: string;
-  readonly version: string;
-  readonly banner: string;
-  readonly adapter: typeof SUPPORTED_BISON_ADAPTER;
-}
-
 /** A conflict found in the forced-IELR automaton, including a Bison-solved one. */
-export type BisonAnalysisConflict = BisonConflict | { readonly kind: "solved"; readonly solved: BisonSolvedConflict };
+export const BisonAnalysisConflictSchema = z
+  .union([BisonConflictSchema, z.object({ kind: z.literal("solved"), solved: BisonSolvedConflictSchema })])
+  .readonly();
+export type BisonAnalysisConflict = z.infer<typeof BisonAnalysisConflictSchema>;
 
 /** Diagnostic evidence for source rejection or a Bison grammar failure. */
-export interface BisonDiagnostic {
-  readonly message: string;
-}
+export const BisonDiagnosticSchema = z.object({ message: z.string() }).readonly();
+export type BisonDiagnostic = z.infer<typeof BisonDiagnosticSchema>;
 
 /** Process/report evidence retained when it is useful for an audit. */
-export interface BisonAnalysisEvidence {
-  readonly argv: readonly string[];
-  readonly process: CompletedProcess;
-  readonly xml?: Uint8Array | undefined;
-  readonly textReport?: Uint8Array | undefined;
-}
+export const BisonAnalysisEvidenceSchema = z
+  .object({
+    argv: z.array(z.string()).readonly(),
+    process: CompletedProcessSchema,
+    xml: Uint8ArraySchema.optional(),
+    textReport: Uint8ArraySchema.optional(),
+  })
+  .readonly();
+export type BisonAnalysisEvidence = z.infer<typeof BisonAnalysisEvidenceSchema>;
 
-export type BisonLr1Classification =
-  | { readonly kind: "lr1" }
-  | { readonly kind: "not-lr1"; readonly conflicts: readonly BisonAnalysisConflict[] }
-  | { readonly kind: "invalid-grammar"; readonly diagnostics: readonly BisonDiagnostic[] }
-  | { readonly kind: "unsupported-input"; readonly reasons: readonly BisonUnsupportedReason[] }
-  | { readonly kind: "tool-failure"; readonly failure: BisonDiagnostic };
+export const BisonUnsupportedReasonSchema = z
+  .discriminatedUnion("kind", [
+    BisonDirectiveLocationSchema.extend({ kind: z.literal("glr"), directive: z.literal("%glr-parser") }),
+    BisonDirectiveLocationSchema.extend({ kind: z.literal("custom-skeleton"), directive: z.literal("%skeleton") }),
+    BisonDirectiveLocationSchema.extend({
+      kind: z.literal("glr-runtime-control"),
+      directive: z.enum(["%dprec", "%merge"]),
+    }),
+  ])
+  .readonly();
+export type BisonUnsupportedReason = z.infer<typeof BisonUnsupportedReasonSchema>;
+
+export const BisonLr1ClassificationSchema = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("lr1") }).readonly(),
+    z.object({ kind: z.literal("not-lr1"), conflicts: z.array(BisonAnalysisConflictSchema).readonly() }).readonly(),
+    z.object({ kind: z.literal("invalid-grammar"), diagnostics: z.array(BisonDiagnosticSchema).readonly() }).readonly(),
+    z
+      .object({ kind: z.literal("unsupported-input"), reasons: z.array(BisonUnsupportedReasonSchema).readonly() })
+      .readonly(),
+    z.object({ kind: z.literal("tool-failure"), failure: BisonDiagnosticSchema }).readonly(),
+  ])
+  .readonly();
+export type BisonLr1Classification = z.infer<typeof BisonLr1ClassificationSchema>;
 
 /** Stable V1 result for exactly the supplied Bison source bytes. */
-export interface BisonLr1Analysis {
-  readonly source: {
-    readonly bytes: Uint8Array;
-    readonly sha256: string;
-  };
-  readonly classification: BisonLr1Classification;
-  readonly policyDiagnostics: readonly BisonSourcePolicyDiagnostic[];
-  readonly tool?: BisonToolObservation | undefined;
-  readonly evidence?: BisonAnalysisEvidence | undefined;
-}
+export const BisonToolObservationSchema = z
+  .object({
+    requestedCommand: z.array(z.string()).readonly(),
+    resolvedExecutable: z.string(),
+    version: z.string(),
+    banner: z.string(),
+    adapter: z.literal(SUPPORTED_BISON_ADAPTER),
+  })
+  .readonly();
+export type BisonToolObservation = z.infer<typeof BisonToolObservationSchema>;
+
+export const BisonLr1AnalysisSchema = z
+  .object({
+    source: z
+      .object({
+        bytes: Uint8ArraySchema,
+        sha256: z.string().regex(/^[0-9a-f]{64}$/u),
+      })
+      .readonly(),
+    classification: BisonLr1ClassificationSchema,
+    policyDiagnostics: z.array(BisonGrammarPolicyViolationSchema).readonly(),
+    tool: BisonToolObservationSchema.optional(),
+    evidence: BisonAnalysisEvidenceSchema.optional(),
+  })
+  .superRefine((value, context) => {
+    if (sha256(value.source.bytes) !== value.source.sha256) {
+      context.addIssue({ code: "custom", path: ["source", "sha256"], message: "source digest does not match bytes" });
+    }
+  })
+  .readonly();
+export type BisonLr1Analysis = z.infer<typeof BisonLr1AnalysisSchema>;
 
 export interface BisonToolOptions {
   /**
@@ -1742,8 +1775,11 @@ function unsupportedBisonControls(source: string): readonly BisonUnsupportedReas
     }
   }
   for (const item of scan.unsupported) {
-    const kind = item.directive === "%skeleton" ? "custom-skeleton" : "glr-runtime-control";
-    controls.push(Object.freeze({ kind, directive: item.directive, line: item.line, raw: item.raw }));
+    controls.push(
+      item.directive === "%skeleton"
+        ? Object.freeze({ kind: "custom-skeleton", directive: item.directive, line: item.line, raw: item.raw })
+        : Object.freeze({ kind: "glr-runtime-control", directive: item.directive, line: item.line, raw: item.raw }),
+    );
   }
   return Object.freeze(controls);
 }
@@ -1755,7 +1791,7 @@ function analysis(
   tool?: BisonToolObservation,
   evidence?: BisonAnalysisEvidence,
 ): BisonLr1Analysis {
-  return Object.freeze({
+  return BisonLr1AnalysisSchema.parse({
     source,
     classification,
     policyDiagnostics: Object.freeze([...policyDiagnostics]),

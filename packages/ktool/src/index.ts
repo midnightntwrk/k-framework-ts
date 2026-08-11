@@ -99,6 +99,7 @@ export * from "./kparse.js";
 export * from "./kprint.js";
 export * from "./krun.js";
 export * from "./kserver.js";
+export * from "./lr1-json.js";
 export * from "./ksources.js";
 export * from "./parse-modules.js";
 export * from "./proc.js";
