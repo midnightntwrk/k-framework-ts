@@ -33,5 +33,8 @@
   "engines": {
     "bun": ">=1.3.14",
     "node": ">=20"
+  },
+  "patchedDependencies": {
+    "@stricli/core@1.3.0": "patches/@stricli%2Fcore@1.3.0.patch"
   }
 }

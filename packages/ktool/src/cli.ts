@@ -1,15 +1,11 @@
 /**
- * The `ktool` command: five subcommands, each a thin shell over the library.
+ * The `ktool` command: Stricli routes over thin library adapters.
  *
  * The rule this file is written to, and the reason the CLI stayed minimal
  * where `pyk`'s is large: **no logic here that is not in the library**.  Every
- * subcommand parses
- * flags into the option objects `src/*.ts` already defines, calls one exported
- * function, and renders what comes back.  The flag parsers are pure and
- * exported ({@link parseKompileArgs}, {@link parseRunArgs},
- * {@link parseParseArgs}, {@link parseClaimsArgs}), which is what makes the
- * mapping testable with no K installed — `ktool kompile … --dry-run` prints the
- * argv {@link buildKompileArgv} would have run and spawns nothing.
+ * route calls one exported function and renders what comes back. Stricli owns
+ * route discovery, flag scanning, validation, and generated help; the pure
+ * legacy parser exports remain temporarily available to downstream tests.
  *
  * - `ktool kompile <main-file>` — {@link kompile}, i.e. `kompile` itself.
  *   Prints the output directory.
@@ -21,6 +17,8 @@
  * - `ktool claims <spec.k>` — {@link ClaimLoader} over {@link KproveModuleParser},
  *   printing the resolved labels.
  * - `ktool check-k <k-release>` — the house drift check.
+ * - `ktool lr1 bison <grammar.y>` — classify an existing Bison grammar.
+ * - `ktool lr1 k <definition.k>` — capture K's PGM grammar and classify it.
  *
  * # Streams and exit codes
  *
@@ -43,14 +41,24 @@
  * `@kframework-ts/kompiled`'s and `@kframework-ts/k-parser`'s CLIs take.
  */
 
+import { analyzeBisonLr1File, type BisonLr1Analysis } from "@kframework-ts/bison";
 import { claimDependencies, kastTermToDict, ksort, ktoken, sentenceLabel, type KInner } from "@kframework-ts/kast";
 import { koreText, KoreParser, type Pattern } from "@kframework-ts/kore";
+import {
+  buildApplication,
+  buildCommand,
+  buildRouteMap,
+  run as runStricli,
+  type CommandContext,
+  type StricliProcess,
+} from "@stricli/core";
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 import { ClaimIndexError, staticOrder } from "./claim-index.js";
 import { ClaimLoader, type LoadClaimsOptions } from "./claim-loader.js";
 import { getKDistribution } from "./distribution.js";
+import { checkKGrammarLr1, type KGrammarLr1Check } from "./generated-bison.js";
 import { llvmInterpret } from "./interpreter.js";
 import {
   buildKompileArgv,
@@ -96,71 +104,6 @@ export type RunInput = (typeof RUN_INPUTS)[number];
  */
 export const RUN_OUTPUTS = ["pretty", "program", "kast", "binary", "json", "kore", "none"] as const;
 export type RunOutput = (typeof RUN_OUTPUTS)[number];
-
-export const USAGE = `ktool <command>
-
-  ktool kompile <main-file> [flags]
-      Compile a K definition and print the output directory. --backend defaults
-      to llvm; --emit-json is ON unless --no-emit-json, which is pyk's default
-      and not the CLI's — see the README. kompile's own output is mirrored onto
-      this process's streams. --dry-run prints the argv and spawns nothing.
-
-      common   --main-module M  --syntax-module M  -I DIR  --md-selector S
-               --hook-namespaces NS  --no-emit-json  --gen-bison-parser
-               --gen-glr-bison-parser  --bison-parser-library  --bison-lists
-               --post-process CMD  --coverage  --top-cell S  --outer-parsed-json
-               --read-only-kompiled-directory
-      call     -o DIR / --output-definition DIR  --temp-dir DIR
-               --type-inference-mode M  --warnings W  --warnings-to-errors
-               --no-exc-wrap  -Wno CODES  --verbose  --debug
-      llvm     -O0 -O1 -O2 -O3  --llvm-kompile-type T  --llvm-kompile-output F
-               -ccopt OPT  --no-llvm-kompile  --enable-search
-               --enable-llvm-debug  --heuristic H  --iterated-threshold N/D
-      haskell  --concrete-rules R  --no-haskell-binary
-
-  ktool run <kompiled-dir> <file> [flags]
-      Rewrite a program or a KORE configuration to its final state.
-
-      --input kore|program  defaults to kore for a .kore file, program otherwise
-      --depth N             maximal rewrite steps
-      --output FMT          ${RUN_OUTPUTS.join(" ")} (default pretty)
-      --krun                use krun even when the definition has an interpreter
-      --parser CMD          the command krun pipes $PGM through (program input)
-
-      A kore input goes through <dir>/interpreter when there is one — no K on
-      PATH required — and through 'krun --term' otherwise; the two agree.
-      --output kore and --output json are rendered in process; the rest go
-      through kore-print.
-
-  ktool parse <kompiled-dir> <text> --sort S [flags]
-      Parse program text at a sort, through the kast binary.
-
-      --sort S       required; the sort to parse at
-      --file         read <text> as a path instead of taking it literally
-      --as-rule      parse as rule syntax, so variables are allowed
-      --output FMT   json (default), pretty or kore
-
-  ktool claims <spec.k> --definition DIR [flags]
-      List the claim labels a spec file resolves to, loading and caching
-      <spec>.json beside it.
-
-      --definition DIR    the *-kompiled directory kprove parses against
-      --spec-module M     --md-selector S  -I DIR  --type-inference-mode M
-      --builtin-dir DIR   K's include/kframework/builtin; found on PATH if K is
-      --labels A,B        only these labels (repeatable, comma-separated)
-      --exclude A,B       drop these, and prune their dependencies
-      --no-depends        do not close the selection over depends()
-      --ordered           topological order, dependencies first
-      --verbose           trace the cache decision on stderr
-
-  ktool check-k <k-release>
-      Check whether the upstream sources this package was transcribed from are
-      unchanged at a given K release, e.g. ktool check-k ${K_RELEASE}.
-
-Exit codes: 0 success, 1 the operation failed, 2 could not run (usage). For
-check-k the format tier decides: 0 unchanged, 1 changed, 3 could not locate,
-2 could not ask. Content-tier drift (what the K binaries actually accept) is
-printed as advisory and does not affect the exit code.`;
 
 //////////////////////////////
 // The fetcher              //
@@ -628,7 +571,7 @@ async function mainKompile(
 ): Promise<number> {
   const parsed = parseKompileArgs(args);
   if (typeof parsed === "string") {
-    err(`kompile ${parsed}\n\n${USAGE}\n`);
+    err(`kompile ${parsed}\n`);
     return 2;
   }
 
@@ -783,7 +726,7 @@ async function mainRun(
 ): Promise<number> {
   const parsed = parseRunArgs(args);
   if (typeof parsed === "string") {
-    err(`run ${parsed}\n\n${USAGE}\n`);
+    err(`run ${parsed}\n`);
     return 2;
   }
 
@@ -906,7 +849,7 @@ async function mainParse(
 ): Promise<number> {
   const parsed = parseParseArgs(args);
   if (typeof parsed === "string") {
-    err(`parse ${parsed}\n\n${USAGE}\n`);
+    err(`parse ${parsed}\n`);
     return 2;
   }
 
@@ -1064,7 +1007,7 @@ async function mainClaims(
 ): Promise<number> {
   const parsed = parseClaimsArgs(args);
   if (typeof parsed === "string") {
-    err(`claims ${parsed}\n\n${USAGE}\n`);
+    err(`claims ${parsed}\n`);
     return 2;
   }
 
@@ -1165,7 +1108,7 @@ async function mainCheckK(
 ): Promise<number> {
   const [release, ...rest] = args;
   if (release === undefined || rest.length > 0) {
-    err(`check-k takes exactly one K release tag, e.g. ${K_RELEASE}\n\n${USAGE}\n`);
+    err(`check-k takes exactly one K release tag, e.g. ${K_RELEASE}\n`);
     return 2;
   }
 
@@ -1187,35 +1130,600 @@ async function mainCheckK(
 // Entry point              //
 //////////////////////////////
 
+interface KtoolCliContext extends CommandContext {
+  readonly process: StricliProcess;
+  readonly out: (text: string) => void;
+  readonly err: (text: string) => void;
+  readonly fetcher: KtoolSourceFetcher;
+}
+
+function finish(context: KtoolCliContext, code: number): void {
+  context.process.exitCode = code;
+}
+
+function parsedString(brief: string, placeholder = "value") {
+  return { kind: "parsed", parse: String, brief, placeholder, optional: true } as const;
+}
+
+function parsedStrings(brief: string, placeholder = "value", separator: true | string = true) {
+  return { kind: "parsed", parse: String, brief, placeholder, optional: true, variadic: separator } as const;
+}
+
+function booleanFlag(brief: string) {
+  return { kind: "boolean", brief, optional: true } as const;
+}
+
+function positionalParameter(brief: string, placeholder: string) {
+  return { parse: String, brief, placeholder } as const;
+}
+
+function appendValue(argv: string[], flag: string, value: string | number | undefined): void {
+  if (value !== undefined) argv.push(flag, String(value));
+}
+
+function appendValues(argv: string[], flag: string, values: readonly string[] | undefined): void {
+  for (const value of values ?? []) argv.push(flag, value);
+}
+
+interface KompileCliFlags {
+  readonly backend: KompileBackend;
+  readonly mainModule?: string;
+  readonly syntaxModule?: string;
+  readonly include?: readonly string[];
+  readonly mdSelector?: string;
+  readonly hookNamespaces?: readonly string[];
+  readonly emitJson: boolean;
+  readonly genBisonParser?: boolean;
+  readonly genGlrBisonParser?: boolean;
+  readonly bisonParserLibrary?: boolean;
+  readonly bisonLists?: boolean;
+  readonly postProcess?: string;
+  readonly readOnlyKompiledDirectory?: boolean;
+  readonly coverage?: boolean;
+  readonly outerParsedJson?: boolean;
+  readonly topCell?: string;
+  readonly llvmKompileType?: LLVMKompileType;
+  readonly llvmKompileOutput?: string;
+  readonly optLevel?: number;
+  readonly ccopt?: readonly string[];
+  readonly noLlvmKompile?: boolean;
+  readonly enableSearch?: boolean;
+  readonly enableLlvmDebug?: boolean;
+  readonly heuristic?: string;
+  readonly iteratedThreshold?: string;
+  readonly concreteRules?: readonly string[];
+  readonly haskellBinary: boolean;
+  readonly outputDefinition?: string;
+  readonly tempDir?: string;
+  readonly typeInferenceMode?: TypeInferenceMode;
+  readonly warnings?: Warnings;
+  readonly warningsToErrors?: boolean;
+  readonly noExcWrap?: boolean;
+  readonly ignoreWarning?: readonly string[];
+  readonly verbose?: boolean;
+  readonly debug?: boolean;
+  readonly dryRun?: boolean;
+}
+
+const kompileCommand = buildCommand<KompileCliFlags, [string], KtoolCliContext>({
+  docs: {
+    brief: "Compile a K definition",
+    fullDescription:
+      "Compile a K definition and print its output directory. Diagnostics are mirrored as they arrive; --dry-run prints the executable argv without spawning.",
+  },
+  parameters: {
+    aliases: { I: "include", o: "outputDefinition" },
+    flags: {
+      backend: { kind: "enum", values: KOMPILE_BACKENDS, default: "llvm", brief: "K backend" },
+      mainModule: parsedString("Main module", "module"),
+      syntaxModule: parsedString("Syntax module", "module"),
+      include: parsedStrings("Definition include directory", "directory"),
+      mdSelector: parsedString("Markdown selector", "selector"),
+      hookNamespaces: parsedStrings("Hook namespace", "namespace"),
+      emitJson: { kind: "boolean", default: true, brief: "Emit compiled.json" },
+      genBisonParser: booleanFlag("Generate a deterministic Bison parser"),
+      genGlrBisonParser: booleanFlag("Generate a GLR Bison parser"),
+      bisonParserLibrary: booleanFlag("Generate the Bison parser as a library"),
+      bisonLists: booleanFlag("Use Bison list lowering"),
+      postProcess: parsedString("Post-process command", "command"),
+      readOnlyKompiledDirectory: booleanFlag("Mark the kompiled directory read-only"),
+      coverage: booleanFlag("Enable coverage instrumentation"),
+      outerParsedJson: booleanFlag("Read an outer-parsed JSON definition"),
+      topCell: parsedString("Top-cell sort", "sort"),
+      llvmKompileType: { kind: "enum", values: LLVM_KOMPILE_TYPES, optional: true, brief: "LLVM output kind" },
+      llvmKompileOutput: parsedString("LLVM output file", "file"),
+      optLevel: {
+        kind: "parsed",
+        parse: (value) => {
+          const parsed = Number(value);
+          if (!Number.isInteger(parsed) || parsed < 0 || parsed > 3) throw new Error("expected 0, 1, 2, or 3");
+          return parsed;
+        },
+        brief: "LLVM optimization level",
+        placeholder: "0..3",
+        optional: true,
+      },
+      ccopt: parsedStrings("Option passed to the C compiler", "option"),
+      noLlvmKompile: booleanFlag("Skip llvm-kompile"),
+      enableSearch: booleanFlag("Enable LLVM search"),
+      enableLlvmDebug: booleanFlag("Enable LLVM debug information"),
+      heuristic: parsedString("LLVM decision-tree heuristic", "heuristic"),
+      iteratedThreshold: parsedString("LLVM iterated threshold", "fraction"),
+      concreteRules: parsedStrings("Haskell concrete rule", "label", ","),
+      haskellBinary: { kind: "boolean", default: true, brief: "Build the Haskell binary" },
+      outputDefinition: parsedString("Output definition directory", "directory"),
+      tempDir: parsedString("Temporary directory", "directory"),
+      typeInferenceMode: {
+        kind: "enum",
+        values: TYPE_INFERENCE_MODES,
+        optional: true,
+        brief: "Type inference mode",
+      },
+      warnings: { kind: "enum", values: WARNINGS, optional: true, brief: "Warning level" },
+      warningsToErrors: booleanFlag("Treat warnings as errors"),
+      noExcWrap: booleanFlag("Do not wrap exception messages"),
+      ignoreWarning: parsedStrings("Warning code to ignore", "code", ","),
+      verbose: booleanFlag("Print verbose tool output"),
+      debug: booleanFlag("Retain K temporary artifacts"),
+      dryRun: booleanFlag("Print argv and spawn nothing"),
+    },
+    positional: { kind: "tuple", parameters: [positionalParameter("K definition", "main-file")] },
+  },
+  func: async function (flags, mainFile) {
+    const argv = [mainFile, "--backend", flags.backend];
+    appendValue(argv, "--main-module", flags.mainModule);
+    appendValue(argv, "--syntax-module", flags.syntaxModule);
+    appendValues(argv, "--include", flags.include);
+    appendValue(argv, "--md-selector", flags.mdSelector);
+    appendValues(argv, "--hook-namespaces", flags.hookNamespaces);
+    if (!flags.emitJson) argv.push("--no-emit-json");
+    if (flags.genBisonParser === true) argv.push("--gen-bison-parser");
+    if (flags.genGlrBisonParser === true) argv.push("--gen-glr-bison-parser");
+    if (flags.bisonParserLibrary === true) argv.push("--bison-parser-library");
+    if (flags.bisonLists === true) argv.push("--bison-lists");
+    appendValue(argv, "--post-process", flags.postProcess);
+    if (flags.readOnlyKompiledDirectory === true) argv.push("--read-only-kompiled-directory");
+    if (flags.coverage === true) argv.push("--coverage");
+    if (flags.outerParsedJson === true) argv.push("--outer-parsed-json");
+    appendValue(argv, "--top-cell", flags.topCell);
+    appendValue(argv, "--llvm-kompile-type", flags.llvmKompileType);
+    appendValue(argv, "--llvm-kompile-output", flags.llvmKompileOutput);
+    if (flags.optLevel !== undefined) argv.push(`-O${flags.optLevel}`);
+    appendValues(argv, "-ccopt", flags.ccopt);
+    if (flags.noLlvmKompile === true) argv.push("--no-llvm-kompile");
+    if (flags.enableSearch === true) argv.push("--enable-search");
+    if (flags.enableLlvmDebug === true) argv.push("--enable-llvm-debug");
+    appendValue(argv, "--heuristic", flags.heuristic);
+    appendValue(argv, "--iterated-threshold", flags.iteratedThreshold);
+    appendValues(argv, "--concrete-rules", flags.concreteRules);
+    if (!flags.haskellBinary) argv.push("--no-haskell-binary");
+    appendValue(argv, "--output-definition", flags.outputDefinition);
+    appendValue(argv, "--temp-dir", flags.tempDir);
+    appendValue(argv, "--type-inference-mode", flags.typeInferenceMode);
+    appendValue(argv, "--warnings", flags.warnings);
+    if (flags.warningsToErrors === true) argv.push("--warnings-to-errors");
+    if (flags.noExcWrap === true) argv.push("--no-exc-wrap");
+    appendValues(argv, "-Wno", flags.ignoreWarning);
+    if (flags.verbose === true) argv.push("--verbose");
+    if (flags.debug === true) argv.push("--debug");
+    if (flags.dryRun === true) argv.push("--dry-run");
+    finish(this, await mainKompile(argv, this.out, this.err));
+  },
+});
+
+interface RunCliFlags {
+  readonly input?: RunInput;
+  readonly depth?: number;
+  readonly output: RunOutput;
+  readonly krun?: boolean;
+  readonly parser?: string;
+}
+
+const runCommand = buildCommand<RunCliFlags, [string, string], KtoolCliContext>({
+  docs: { brief: "Run a program or KORE configuration" },
+  parameters: {
+    flags: {
+      input: { kind: "enum", values: RUN_INPUTS, optional: true, brief: "Input kind" },
+      depth: {
+        kind: "parsed",
+        parse: (value) => {
+          const parsed = nonNegativeInt("--depth", value);
+          if (typeof parsed === "string") throw new Error(parsed);
+          return parsed;
+        },
+        brief: "Maximum rewrite depth",
+        optional: true,
+      },
+      output: { kind: "enum", values: RUN_OUTPUTS, default: "pretty", brief: "Output format" },
+      krun: booleanFlag("Use krun even when a native interpreter exists"),
+      parser: parsedString("Program parser command", "command"),
+    },
+    positional: {
+      kind: "tuple",
+      parameters: [
+        positionalParameter("Kompiled definition directory", "kompiled-dir"),
+        positionalParameter("Input file", "file"),
+      ],
+    },
+  },
+  func: async function (flags, definitionDir, file) {
+    const argv = [definitionDir, file, "--output", flags.output];
+    appendValue(argv, "--input", flags.input);
+    appendValue(argv, "--depth", flags.depth);
+    if (flags.krun === true) argv.push("--krun");
+    appendValue(argv, "--parser", flags.parser);
+    finish(this, await mainRun(argv, this.out, this.err));
+  },
+});
+
+interface ParseCliFlags {
+  readonly sort: string;
+  readonly file?: boolean;
+  readonly asRule?: boolean;
+  readonly output: ParseOutput;
+}
+
+const parseCommand = buildCommand<ParseCliFlags, [string, string], KtoolCliContext>({
+  docs: { brief: "Parse program text through kast" },
+  parameters: {
+    flags: {
+      sort: { kind: "parsed", parse: String, brief: "Start sort", placeholder: "sort" },
+      file: booleanFlag("Read the text positional as a path"),
+      asRule: booleanFlag("Allow rule syntax and variables"),
+      output: { kind: "enum", values: PARSE_OUTPUTS, default: "json", brief: "Output format" },
+    },
+    positional: {
+      kind: "tuple",
+      parameters: [
+        positionalParameter("Kompiled definition directory", "kompiled-dir"),
+        positionalParameter("Text or path", "text"),
+      ],
+    },
+  },
+  func: async function (flags, definitionDir, text) {
+    const argv = [definitionDir, text, "--sort", flags.sort, "--output", flags.output];
+    if (flags.file === true) argv.push("--file");
+    if (flags.asRule === true) argv.push("--as-rule");
+    finish(this, await mainParse(argv, this.out, this.err));
+  },
+});
+
+interface ClaimsCliFlags {
+  readonly definition: string;
+  readonly specModule?: string;
+  readonly mdSelector?: string;
+  readonly typeInferenceMode?: TypeInferenceMode;
+  readonly builtinDir?: string;
+  readonly include?: readonly string[];
+  readonly labels?: readonly string[];
+  readonly exclude?: readonly string[];
+  readonly depends: boolean;
+  readonly ordered?: boolean;
+  readonly verbose?: boolean;
+}
+
+const claimsCommand = buildCommand<ClaimsCliFlags, [string], KtoolCliContext>({
+  docs: { brief: "Resolve claim labels from a specification" },
+  parameters: {
+    aliases: { I: "include" },
+    flags: {
+      definition: { kind: "parsed", parse: String, brief: "Kompiled definition directory", placeholder: "directory" },
+      specModule: parsedString("Specification module", "module"),
+      mdSelector: parsedString("Markdown selector", "selector"),
+      typeInferenceMode: {
+        kind: "enum",
+        values: TYPE_INFERENCE_MODES,
+        optional: true,
+        brief: "Type inference mode",
+      },
+      builtinDir: parsedString("K builtin directory", "directory"),
+      include: parsedStrings("Specification include directory", "directory"),
+      labels: parsedStrings("Claim label", "label", ","),
+      exclude: parsedStrings("Claim label to exclude", "label", ","),
+      depends: { kind: "boolean", default: true, brief: "Close selection over claim dependencies" },
+      ordered: booleanFlag("Print dependencies before dependants"),
+      verbose: booleanFlag("Trace cache decisions"),
+    },
+    positional: { kind: "tuple", parameters: [positionalParameter("K specification", "spec-file")] },
+  },
+  func: async function (flags, specFile) {
+    const argv = [specFile, "--definition", flags.definition];
+    appendValue(argv, "--spec-module", flags.specModule);
+    appendValue(argv, "--md-selector", flags.mdSelector);
+    appendValue(argv, "--type-inference-mode", flags.typeInferenceMode);
+    appendValue(argv, "--builtin-dir", flags.builtinDir);
+    appendValues(argv, "--include", flags.include);
+    appendValues(argv, "--labels", flags.labels);
+    appendValues(argv, "--exclude", flags.exclude);
+    if (!flags.depends) argv.push("--no-depends");
+    if (flags.ordered === true) argv.push("--ordered");
+    if (flags.verbose === true) argv.push("--verbose");
+    finish(this, await mainClaims(argv, this.out, this.err));
+  },
+});
+
+const checkKCommand = buildCommand<NonNullable<unknown>, [string], KtoolCliContext>({
+  docs: { brief: "Check the upstream source identities for a K release" },
+  parameters: {
+    positional: {
+      kind: "tuple",
+      parameters: [positionalParameter(`K release (for example ${K_RELEASE})`, "k-release")],
+    },
+  },
+  func: async function (_flags, release) {
+    finish(this, await mainCheckK([release], this.out, this.err, this.fetcher));
+  },
+});
+
+interface Lr1BisonFlags {
+  readonly bison: string;
+  readonly tempDir?: string;
+  readonly timeoutMs?: number;
+  readonly compact?: boolean;
+}
+
+interface Lr1KFlags extends Lr1BisonFlags {
+  readonly kompile: string;
+  readonly backend: "llvm" | "haskell" | "maude";
+  readonly mainModule?: string;
+  readonly syntaxModule?: string;
+  readonly include?: readonly string[];
+  readonly mdSelector?: string;
+  readonly hookNamespaces?: readonly string[];
+  readonly bisonLists?: boolean;
+  readonly topCell?: string;
+  readonly temporaryParent?: string;
+  readonly retainArtifactsTo?: string;
+}
+
+function timeoutFlag() {
+  return {
+    kind: "parsed",
+    parse: (value: string) => {
+      const parsed = nonNegativeInt("--timeout-ms", value);
+      if (typeof parsed === "string" || parsed === 0) throw new Error("--timeout-ms takes a positive integer");
+      return parsed;
+    },
+    brief: "Per-process timeout in milliseconds",
+    placeholder: "milliseconds",
+    optional: true,
+  } as const;
+}
+
+function analysisJson(analysis: BisonLr1Analysis): object {
+  return {
+    source: { sha256: analysis.source.sha256 },
+    classification: analysis.classification,
+    policyDiagnostics: analysis.policyDiagnostics,
+    ...(analysis.tool === undefined ? {} : { tool: analysis.tool }),
+    ...(analysis.evidence === undefined
+      ? {}
+      : {
+          evidence: {
+            argv: analysis.evidence.argv,
+            process: analysis.evidence.process,
+            xmlBytes: analysis.evidence.xml?.byteLength,
+            textReportBytes: analysis.evidence.textReport?.byteLength,
+          },
+        }),
+  };
+}
+
+function kCheckJson(check: KGrammarLr1Check): object {
+  return {
+    capture: {
+      source: { sha256: check.capture.source.sha256 },
+      target: check.capture.target,
+      kVersion: check.capture.kVersion,
+      diagnostics: check.capture.diagnostics,
+      process: check.capture.process,
+      ...(check.capture.retainedArtifactsTo === undefined
+        ? {}
+        : { retainedArtifactsTo: check.capture.retainedArtifactsTo }),
+    },
+    analysis: analysisJson(check.analysis),
+    unprovedBoundaries: check.unprovedBoundaries,
+  };
+}
+
+function printJson(context: KtoolCliContext, value: object, compact: boolean | undefined): void {
+  context.out(`${JSON.stringify(value, undefined, compact === true ? undefined : 2)}\n`);
+}
+
+const lr1BisonCommand = buildCommand<Lr1BisonFlags, [string], KtoolCliContext>({
+  docs: {
+    brief: "Classify an existing Bison grammar as LR(1)",
+    fullDescription: "Analyze the exact bytes of an existing parser.y with the supported GNU Bison IELR adapter.",
+  },
+  parameters: {
+    flags: {
+      bison: {
+        kind: "parsed",
+        parse: String,
+        default: "bison",
+        brief: "GNU Bison executable",
+        placeholder: "executable",
+      },
+      tempDir: parsedString("Parent for the analyzer workspace", "directory"),
+      timeoutMs: timeoutFlag(),
+      compact: booleanFlag("Emit compact single-line JSON"),
+    },
+    positional: { kind: "tuple", parameters: [positionalParameter("Bison grammar", "grammar.y")] },
+  },
+  func: async function (flags, grammar) {
+    try {
+      const analysis = await analyzeBisonLr1File({
+        path: grammar,
+        tool: { command: [flags.bison] },
+        ...(flags.tempDir === undefined ? {} : { tempDir: flags.tempDir }),
+        ...(flags.timeoutMs === undefined ? {} : { timeoutMs: flags.timeoutMs }),
+      });
+      printJson(this, analysisJson(analysis), flags.compact);
+      finish(this, analysis.classification.kind === "lr1" ? 0 : 1);
+    } catch (error: unknown) {
+      this.err(`${error instanceof Error ? error.message : String(error)}\n`);
+      finish(this, 1);
+    }
+  },
+});
+
+const lr1KCommand = buildCommand<Lr1KFlags, [string], KtoolCliContext>({
+  docs: {
+    brief: "Generate a K definition's PGM grammar and classify it as LR(1)",
+    fullDescription:
+      "Run deterministic K parser capture, then classify the exact generated Bison grammar with the independent IELR analyzer.",
+  },
+  parameters: {
+    aliases: { I: "include" },
+    flags: {
+      bison: {
+        kind: "parsed",
+        parse: String,
+        default: "bison",
+        brief: "GNU Bison executable",
+        placeholder: "executable",
+      },
+      tempDir: parsedString("Parent for the Bison analyzer workspace", "directory"),
+      timeoutMs: timeoutFlag(),
+      compact: booleanFlag("Emit compact single-line JSON"),
+      kompile: {
+        kind: "parsed",
+        parse: String,
+        default: "kompile",
+        brief: "K kompile executable",
+        placeholder: "executable",
+      },
+      backend: {
+        kind: "enum",
+        values: ["llvm", "haskell", "maude"],
+        default: "haskell",
+        brief: "Backend used for parser capture",
+      },
+      mainModule: parsedString("Main module", "module"),
+      syntaxModule: parsedString("Syntax module", "module"),
+      include: parsedStrings("Definition include directory", "directory"),
+      mdSelector: parsedString("Markdown selector", "selector"),
+      hookNamespaces: parsedStrings("Hook namespace", "namespace"),
+      bisonLists: booleanFlag("Use Bison list lowering in the generated grammar"),
+      topCell: parsedString("Top-cell sort", "sort"),
+      temporaryParent: parsedString("Parent for K's capture workspace", "directory"),
+      retainArtifactsTo: parsedString("Fresh absolute destination for capture artifacts", "directory"),
+    },
+    positional: { kind: "tuple", parameters: [positionalParameter("K definition", "main-file")] },
+  },
+  func: async function (flags, mainFile) {
+    try {
+      const common = {
+        mainFile,
+        ...(flags.mainModule === undefined ? {} : { mainModule: flags.mainModule }),
+        ...(flags.syntaxModule === undefined ? {} : { syntaxModule: flags.syntaxModule }),
+        ...(flags.include === undefined ? {} : { includeDirs: flags.include }),
+        ...(flags.mdSelector === undefined ? {} : { mdSelector: flags.mdSelector }),
+        ...(flags.hookNamespaces === undefined ? {} : { hookNamespaces: flags.hookNamespaces }),
+        ...(flags.bisonLists === true ? { bisonLists: true } : {}),
+        ...(flags.topCell === undefined ? {} : { topCell: flags.topCell }),
+      };
+      const spec: KompileSpec =
+        flags.backend === "haskell"
+          ? { ...common, backend: "haskell", haskellBinary: false }
+          : flags.backend === "llvm"
+            ? { ...common, backend: "llvm", noLlvmKompile: true }
+            : { ...common, backend: "maude" };
+      const controls = flags.timeoutMs === undefined ? {} : { timeoutMs: flags.timeoutMs };
+      const check = await checkKGrammarLr1(spec, {
+        capture: {
+          command: [flags.kompile],
+          ...controls,
+          ...(flags.temporaryParent === undefined ? {} : { temporaryParent: flags.temporaryParent }),
+          ...(flags.retainArtifactsTo === undefined ? {} : { retainArtifactsTo: flags.retainArtifactsTo }),
+        },
+        bison: {
+          tool: { command: [flags.bison] },
+          ...controls,
+          ...(flags.tempDir === undefined ? {} : { tempDir: flags.tempDir }),
+        },
+      });
+      printJson(this, kCheckJson(check), flags.compact);
+      finish(this, check.analysis.classification.kind === "lr1" ? 0 : 1);
+    } catch (error: unknown) {
+      this.err(`${error instanceof Error ? error.message : String(error)}\n`);
+      finish(this, 1);
+    }
+  },
+});
+
+const lr1Routes = buildRouteMap({
+  docs: { brief: "Classify Bison or K grammars as LR(1)" },
+  routes: { bison: lr1BisonCommand, k: lr1KCommand },
+});
+
+export const application = buildApplication(
+  buildRouteMap({
+    docs: { brief: "Run and inspect K Framework tools" },
+    routes: {
+      kompile: kompileCommand,
+      run: runCommand,
+      parse: parseCommand,
+      claims: claimsCommand,
+      "check-k": checkKCommand,
+      lr1: lr1Routes,
+    },
+  }),
+  {
+    name: "ktool",
+    scanner: { caseStyle: "allow-kebab-for-camel", allowArgumentEscapeSequence: true },
+    documentation: { disableAnsiColor: true },
+  },
+);
+
+/** Normalize K's historical multi-character single-dash options for Stricli. */
+function normalizeLegacyFlags(argv: readonly string[]): readonly string[] {
+  if (argv[0] !== "kompile") return argv;
+  const normalized: string[] = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index] ?? "";
+    const optimization = /^-O([0-3])$/u.exec(arg);
+    if (optimization !== null) {
+      normalized.push("--opt-level", optimization[1] ?? "0");
+    } else if (arg === "-ccopt") {
+      const value = argv[index + 1];
+      if (value === undefined) {
+        normalized.push("--ccopt");
+      } else {
+        normalized.push(`--ccopt=${value}`);
+        index += 1;
+      }
+    } else if (arg === "-Wno") {
+      normalized.push("--ignore-warning");
+    } else {
+      normalized.push(arg);
+    }
+  }
+  return normalized;
+}
+
 /**
- * The whole command.
- *
- * The fetcher defaults to GitHub; passing it is what lets `check-k` be tested
- * offline.  Everything else reaches the real filesystem and the real K, because
- * a seam for those would be a seam for the one thing this package exists to do.
+ * Run the Stricli application against injected streams. Negative Stricli
+ * framework codes are projected onto ktool's established usage exit code 2.
  */
-export function main(
+export async function main(
   argv: readonly string[],
   out: (text: string) => void,
   err: (text: string) => void,
   fetcher: KtoolSourceFetcher = fetchFromGitHub,
 ): Promise<number> {
-  const [command, ...args] = argv;
-
-  if (command === undefined) {
-    err(`${USAGE}\n`);
-    return Promise.resolve(2);
+  const cliProcess: StricliProcess = {
+    stdout: { write: out },
+    stderr: { write: err },
+    env: process.env,
+  };
+  const context: KtoolCliContext = { process: cliProcess, out, err, fetcher };
+  if (argv.length === 0) {
+    const usageProcess: StricliProcess = { ...cliProcess, stdout: { write: err } };
+    await runStricli(application, ["--help"], { ...context, process: usageProcess });
+    return 2;
   }
-  if (command === "--help" || command === "-h" || command === "help") {
-    out(`${USAGE}\n`);
-    return Promise.resolve(0);
-  }
-  if (command === "kompile") return mainKompile(args, out, err);
-  if (command === "run") return mainRun(args, out, err);
-  if (command === "parse") return mainParse(args, out, err);
-  if (command === "claims") return mainClaims(args, out, err);
-  if (command === "check-k") return mainCheckK(args, out, err, fetcher);
-
-  err(`unknown command: ${command}\n\n${USAGE}\n`);
-  return Promise.resolve(2);
+  await runStricli(application, normalizeLegacyFlags(argv), context);
+  const code = typeof cliProcess.exitCode === "number" ? cliProcess.exitCode : 0;
+  return code < 0 ? 2 : code;
 }

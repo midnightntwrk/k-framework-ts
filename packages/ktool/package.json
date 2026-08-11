@@ -67,6 +67,7 @@
     "@kframework-ts/kompiled": "workspace:*",
     "@kframework-ts/konvert": "workspace:*",
     "@kframework-ts/kore": "workspace:*",
+    "@stricli/core": "^1.3.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

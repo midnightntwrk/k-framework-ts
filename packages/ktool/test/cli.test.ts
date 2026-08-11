@@ -30,7 +30,6 @@ import {
   parseRunArgs,
   render,
   runRoute,
-  USAGE,
 } from "../src/cli.ts";
 import { claimCacheFile, claimDigest, claimModuleListToDict } from "../src/claim-loader.ts";
 import { buildKompileArgv } from "../src/kompile.ts";
@@ -112,26 +111,33 @@ describe("argument handling", () => {
     const { code, out, err } = await run([]);
     expect(code).toBe(2);
     expect(out).toBe("");
-    expect(err).toContain("ktool <command>");
+    expect(err).toContain("ktool kompile");
   });
 
   test("--help prints usage to stdout and exits 0", async () => {
     const { code, out, err } = await run(["--help"]);
     expect(code).toBe(0);
-    expect(out).toBe(`${USAGE}\n`);
+    expect(out).toContain("USAGE");
+    expect(out).toContain("ktool kompile");
     expect(err).toBe("");
   });
 
   test("an unknown command exits 2 and names itself", async () => {
     const { code, err } = await run(["frobnicate"]);
     expect(code).toBe(2);
-    expect(err).toContain("unknown command: frobnicate");
+    expect(err).toContain("frobnicate");
   });
 
-  test("the usage names every subcommand", () => {
-    for (const command of ["kompile", "run", "parse", "claims", "check-k"]) {
-      expect(USAGE).toContain(`ktool ${command}`);
-    }
+  test("generated help names every route", async () => {
+    const { out } = await run(["--help"]);
+    for (const command of ["kompile", "run", "parse", "claims", "check-k", "lr1"]) expect(out).toContain(command);
+  });
+
+  test("lr1 help exposes both input routes", async () => {
+    const { code, out } = await run(["lr1", "--help"]);
+    expect(code).toBe(0);
+    expect(out).toContain("bison");
+    expect(out).toContain("k");
   });
 });
 
@@ -321,12 +327,40 @@ describe("kompile --dry-run", () => {
     expect(out).toContain(`--post-process 'echo "hi"'`);
   });
 
-  test("a bad flag exits 2 with a one-line reason and the usage", async () => {
+  test("Stricli preserves K's historical multi-character single-dash flags", async () => {
+    const { code, out } = await run(["kompile", "imp.k", "-O2", "-ccopt", "-g", "-Wno", "unused-var", "--dry-run"]);
+    expect(code).toBe(0);
+    expect(out).toContain("-O2 -ccopt -g");
+    expect(out).toContain("-Wno unused-var");
+  });
+
+  test("a bad flag exits 2 with Stricli's generated validation error", async () => {
     const { code, out, err } = await run(["kompile", "--backend", "ocaml", "imp.k"]);
     expect(code).toBe(2);
     expect(out).toBe("");
-    expect(err).toContain("kompile --backend must be one of:");
-    expect(err).toContain("ktool <command>");
+    expect(err).toContain("ocaml");
+    expect(err).toContain("llvm|haskell|kore|maude");
+  });
+});
+
+describe("lr1 CLI", () => {
+  test("the Bison route classifies invalid bytes without spawning a tool", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "ktool-lr1-cli-"));
+    scratchDirs.push(directory);
+    const grammar = join(directory, "invalid.y");
+    await writeFile(grammar, Uint8Array.of(0xff));
+
+    const { code, out, err } = await run(["lr1", "bison", grammar, "--compact"]);
+    expect(code).toBe(1);
+    expect(err).toBe("");
+    expect(JSON.parse(out)).toMatchObject({ classification: { kind: "invalid-grammar" } });
+  });
+
+  test("the K route documents the two executable boundaries", async () => {
+    const { code, out } = await run(["lr1", "k", "--help"]);
+    expect(code).toBe(0);
+    expect(out).toContain("--kompile");
+    expect(out).toContain("--bison");
   });
 });
 
@@ -626,7 +660,7 @@ describe("check-k", () => {
   test("takes exactly one release tag", async () => {
     expect((await run(["check-k"])).code).toBe(2);
     expect((await run(["check-k", "a", "b"])).code).toBe(2);
-    expect((await run(["check-k"])).err).toContain(K_RELEASE);
+    expect((await run(["check-k"])).err).toContain("k-release");
   });
 
   test("a stand-in body is drift, so both tiers report DIFF and the exit code is 1", async () => {

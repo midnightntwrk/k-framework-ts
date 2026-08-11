@@ -1,0 +1,44 @@
+diff --git a/dist/index.d.cts b/dist/index.d.cts
+index 7d75152e6f13ef9cd28b768f25341e8d930cf809..1365843b036cb12f6ffa110a8e094ff7e9c1426f 100644
+--- a/dist/index.d.cts
++++ b/dist/index.d.cts
+@@ -620,7 +620,7 @@ interface BaseBooleanFlagParameter extends BaseFlagParameter {
+      *
+      * If no value is provided, boolean flags default to `false`.
+      */
+-    readonly default?: boolean;
++    readonly default?: boolean | undefined;
+     /**
+      * Whether to generate a negated version of this flag (e.g., `--no-foo` for `--foo`).
+      *
+@@ -802,7 +802,7 @@ interface BaseParsedFlagParameter<T, CONTEXT extends CommandContext> extends Par
+      * Default input value if one is not provided at runtime.
+      * For variadic flags, this can be an array of input strings to be parsed.
+      */
+-    readonly default?: string | readonly string[];
++    readonly default?: string | readonly string[] | undefined;
+     /**
+      * If flag is specified with no corresponding input, infer an empty string `""` as the input.
+      */
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 7d75152e6f13ef9cd28b768f25341e8d930cf809..1365843b036cb12f6ffa110a8e094ff7e9c1426f 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -620,7 +620,7 @@ interface BaseBooleanFlagParameter extends BaseFlagParameter {
+      *
+      * If no value is provided, boolean flags default to `false`.
+      */
+-    readonly default?: boolean;
++    readonly default?: boolean | undefined;
+     /**
+      * Whether to generate a negated version of this flag (e.g., `--no-foo` for `--foo`).
+      *
+@@ -802,7 +802,7 @@ interface BaseParsedFlagParameter<T, CONTEXT extends CommandContext> extends Par
+      * Default input value if one is not provided at runtime.
+      * For variadic flags, this can be an array of input strings to be parsed.
+      */
+-    readonly default?: string | readonly string[];
++    readonly default?: string | readonly string[] | undefined;
+     /**
+      * If flag is specified with no corresponding input, infer an empty string `""` as the input.
+      */

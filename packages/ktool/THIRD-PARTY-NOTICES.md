@@ -1,5 +1,14 @@
 # Third-party notices
 
+## Stricli
+
+The `ktool` command uses `@stricli/core` 1.3.0 for typed command routing,
+argument validation, and generated help. Stricli is copyright Bloomberg
+Finance L.P. and distributed under the Apache License, Version 2.0. The
+dependency carries its complete license text. This repository applies a
+declaration-only compatibility patch for TypeScript 7 with
+`exactOptionalPropertyTypes`; it does not change Stricli's runtime code.
+
 ## K Framework (including pyk)
 
 This package is a **hand-transcription** of pyk's tool-orchestration layer,
