@@ -60,7 +60,7 @@
     "@kframework-ts/konvert": "workspace:*",
     "@kframework-ts/kore": "workspace:*",
     "@kframework-ts/ktool": "workspace:*",
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@kframework-ts/cterm": "workspace:*",
