@@ -56,7 +56,7 @@
     "@kframework-ts/kast": "workspace:*"
   },
   "peerDependencies": {
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
   "engines": {
     "bun": ">=1.3.14",

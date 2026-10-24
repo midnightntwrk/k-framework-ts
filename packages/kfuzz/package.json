@@ -57,7 +57,7 @@
     "@kframework-ts/kore": "workspace:*",
     "@kframework-ts/ktool": "workspace:*",
     "fast-check": "^4.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/node": "^26.1.2"
